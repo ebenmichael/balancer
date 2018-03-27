@@ -1,0 +1,8 @@
+## Files
+# Emacs autosave files
+*~
+
+## R stuff
+.Rproj.user
+.Rhistory
+.RData

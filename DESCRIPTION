@@ -1,0 +1,13 @@
+Package: balancer
+Title: Matrix constraints for covariate balance
+Version: 0.0.0.9000
+Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
+Description: A package for treatment effect heterogeneity and missing data in observational studies through matrix-constrained balancing weights
+Depends: R (>= 3.4.3)
+Imports: apg
+Remotes:
+    jpvert/apg
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
