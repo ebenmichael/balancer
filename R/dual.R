@@ -49,9 +49,10 @@ nuc_prox <- function(x, lam) {
     return(out$u %*% diag(s) %*% t(out$v))
 }
 
-balancer_int <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
+balancer_subgrp <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
                          normalized=TRUE) {
     #' Helper function to fit the dual for general odds function and prox
+    #' estimates heterogeneous treatment effects
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
     #' @param Z Vector of subgroup indicators
@@ -150,5 +151,150 @@ balancer_int <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
     ## The final imbalance
     out$imbalance <- matrix(grad(theta), ncol=m)
     
+    return(out)
+}
+
+
+
+balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
+                             normalized=TRUE) {
+    #' Helper function to fit the dual for general odds function and prox
+    #' Estimates ATT with missing outcomes
+    #' @param X n x d matrix of covariates
+    #' @param trt Vector of treatment status indicators
+    #' @param R vector of missingness indicators
+    #' @param conjprime Derivative of convex conjugate of dispersion function
+    #' @param proxfunc Prox operator of regularization function
+    #' @param hyperparam Regularization hyper parameter
+    #' @param normalized Whether to fit normalized weights, default: True
+    #'
+    #' @return \itemize{
+    #'          \item{theta }{Estimated dual propensity score parameters}
+    #'          \item{weights }{Estimated primal weights}
+    #'          \item{imbalance }{Imbalance in covariates}}
+
+    ## 3 sets of weights
+    m <- 3
+
+    n <- dim(X)[1]
+
+    if(normalized) {
+        ## add a bias term
+        X <- cbind(rep(1, n), X)
+    }
+
+    d <- dim(X)[2]
+    
+    ## get the moments for treated and control units, and treated units again
+    x_t <- cbind(colMeans(X[trt==0,]),
+                 colMeans(X[trt==1,]),
+                 colMeans(X[trt==1,]))
+    ##x_t <- as.numeric(x_t)
+
+
+    ## helper function to get weights for a given theta
+    weights_func <- function(theta) {
+        
+        ## weights for observed ctrl to all ctrl
+        weights1 <- sapply(1:n, function(i) {
+            if(trt[i] == 0 & R[i] == 1) {
+                conjprime(t(X[i,]) %*% theta[,1])
+            } else {
+                0
+            }})
+        ## weights for observed trt to all trt
+        weights2 <- sapply(1:n, function(i) {
+            if(trt[i] == 1 & R[i] == 1) {
+                conjprime(t(X[i,]) %*% theta[,2])
+            } else {
+                0
+            }})
+        
+        ## weights for all ctrl to all trt
+        weights3 <- sapply(1:n, function(i) {
+            if(trt[i] == 0) {
+                conjprime(t(X[i,]) %*% theta[,3])
+            } else {
+                0
+            }})
+        cbind(weights1, weights2, weights3)
+    }
+
+    
+    ## objective gradient
+    ## f^*'(x * theta) - x
+    grad <- function(theta, ...) {
+        ## reshape paramters into matrix
+        theta <- matrix(theta, ncol=m)
+
+        ## first part of gradient comes from units with observed outcomes
+        ## for trt and ctrl
+        weights <- weights_func(theta)
+
+        ## grad1 <- cbind(t(X[(trt == 0) & (R==1),]) %*%
+        ##                conjprime(X[(trt == 0) & (R == 1), , drop=FALSE] %*%
+        ##                          theta[,1]),
+        ##                t(X[(trt == 1) & (R==1),]) %*%
+        ##                conjprime(X[(trt == 1) & (R == 1), , drop=FALSE] %*%
+        ##                          theta[,2]),
+        ##                t(X[(trt == 0), ]) %*%
+        ##                conjprime(X[(trt == 0), , drop=FALSE] %*%
+        ##                          theta[,3]))
+
+        grad1 <- t(X) %*% weights
+        
+        ## second part of gradient comes from all ctrl and treated units
+        grad <- grad1 - x_t
+
+        ## cat("Theta\n")
+        ## print(theta[1:2,])
+        ## cat("Weighted Moment\n")
+        ## print(grad1[1:2,])
+        ## cat("Observed Moments\n")
+        ## print(x_t[1:2,])
+        ## cat("Imbalance \n")
+        ## print(grad[1:2,])
+        ## cat("--\n")
+
+        return(as.numeric(grad))
+    }
+
+    ## prox operator of regularizer
+
+    prox <- function(theta, step, ...) {
+        ## reshape paramters into matrix
+        theta <- matrix(theta, ncol=m)
+
+        if(normalized) {
+            ## apply prox operator for covariate parameters
+            proxtheta <- proxfunc(theta[-1,], step * hyperparam)
+            
+            ## prox is identity for bias
+            proxtheta <- rbind(theta[1,], proxtheta)
+        } else {
+               ## apply prox operator for covariate parameters
+            proxtheta <- proxfunc(theta, step * hyperparam)
+        }
+        
+        return(as.numeric(proxtheta))
+    }
+
+    
+    max_iters <- 5000
+    apgout <- apg::apg(grad, prox, d * m, opts=list(MAX_ITERS=max_iters))    
+
+    ## collect results
+    out <- list()
+
+    ## theta
+    theta <- matrix(apgout$x, ncol=m)
+
+    out$theta <- theta
+
+    out$weights <- weights_func(theta)
+
+    ## The final imbalance
+    out$imbalance <- t(X) %*% out$weights - x_t
+
     return(out)
 }
