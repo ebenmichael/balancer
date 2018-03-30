@@ -155,7 +155,6 @@ balancer_subgrp <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
 }
 
 
-
 balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
                              normalized=TRUE) {
     #' Helper function to fit the dual for general odds function and prox
@@ -173,8 +172,9 @@ balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
     #'          \item{weights }{Estimated primal weights}
     #'          \item{imbalance }{Imbalance in covariates}}
 
-    ## 3 sets of weights
-    m <- 3
+    ## one set of weights for R=1,T=1 -> T=1
+    ## one for R=1, T=0 -> T=1
+    m <- 2
 
     n <- dim(X)[1]
 
@@ -186,38 +186,29 @@ balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
     d <- dim(X)[2]
     
     ## get the moments for treated and control units, and treated units again
-    x_t <- cbind(colMeans(X[trt==0,]),
-                 colMeans(X[trt==1,]),
+    x_t <- cbind(colMeans(X[trt==1,]),
                  colMeans(X[trt==1,]))
-    ##x_t <- as.numeric(x_t)
 
 
     ## helper function to get weights for a given theta
     weights_func <- function(theta) {
         
-        ## weights for observed ctrl to all ctrl
+        ## weights for R=1 T=0 to T=1
         weights1 <- sapply(1:n, function(i) {
             if(trt[i] == 0 & R[i] == 1) {
                 conjprime(t(X[i,]) %*% theta[,1])
             } else {
                 0
             }})
-        ## weights for observed trt to all trt
+        ## weights for R=1 T=1 to T=1
         weights2 <- sapply(1:n, function(i) {
             if(trt[i] == 1 & R[i] == 1) {
                 conjprime(t(X[i,]) %*% theta[,2])
             } else {
                 0
             }})
-        
-        ## weights for all ctrl to all trt
-        weights3 <- sapply(1:n, function(i) {
-            if(trt[i] == 0) {
-                conjprime(t(X[i,]) %*% theta[,3])
-            } else {
-                0
-            }})
-        cbind(weights1, weights2, weights3)
+       
+        cbind(weights1, weights2)
     }
 
     
@@ -231,30 +222,10 @@ balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
         ## for trt and ctrl
         weights <- weights_func(theta)
 
-        ## grad1 <- cbind(t(X[(trt == 0) & (R==1),]) %*%
-        ##                conjprime(X[(trt == 0) & (R == 1), , drop=FALSE] %*%
-        ##                          theta[,1]),
-        ##                t(X[(trt == 1) & (R==1),]) %*%
-        ##                conjprime(X[(trt == 1) & (R == 1), , drop=FALSE] %*%
-        ##                          theta[,2]),
-        ##                t(X[(trt == 0), ]) %*%
-        ##                conjprime(X[(trt == 0), , drop=FALSE] %*%
-        ##                          theta[,3]))
-
         grad1 <- t(X) %*% weights
         
         ## second part of gradient comes from all ctrl and treated units
         grad <- grad1 - x_t
-
-        ## cat("Theta\n")
-        ## print(theta[1:2,])
-        ## cat("Weighted Moment\n")
-        ## print(grad1[1:2,])
-        ## cat("Observed Moments\n")
-        ## print(x_t[1:2,])
-        ## cat("Imbalance \n")
-        ## print(grad[1:2,])
-        ## cat("--\n")
 
         return(as.numeric(grad))
     }
