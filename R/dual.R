@@ -151,6 +151,7 @@ balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
     #'          \item{theta }{Estimated dual propensity score parameters}
     #'          \item{weights }{Estimated primal weights}
     #'          \item{imbalance }{Imbalance in covariates}}
+    #' @export
 
     if(link == "logit") {
         weightfunc <- softmax
