@@ -5,21 +5,18 @@
 \title{Helper function to fit the dual for general odds function and prox
 Estimates a CATE for each treated individual}
 \usage{
-balancer_individ(X, trt, conjprime, proxfunc, hyperparam, normalized = TRUE,
-  opts = list())
+balancer_individ(X, trt, weightfunc, proxfunc, hyperparam, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
 
 \item{trt}{Vector of treatment status indicators}
 
-\item{conjprime}{Derivative of convex conjugate of dispersion function}
+\item{weightfunc}{Derivative of convex conjugate of dispersion function (possibly normalized)}
 
 \item{proxfunc}{Prox operator of regularization function}
 
 \item{hyperparam}{Regularization hyper parameter}
-
-\item{normalized}{Whether to fit normalized weights, default: True}
 
 \item{opts}{Optimization options
 \itemize{

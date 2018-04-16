@@ -5,8 +5,7 @@
 \title{Helper function to fit the dual for general odds function and prox
 Estimates ATT with missing outcomes}
 \usage{
-balancer_missing(X, trt, R, conjprime, proxfunc, hyperparam,
-  normalized = TRUE, opts = list())
+balancer_missing(X, trt, R, weightfunc, proxfunc, hyperparam, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -15,13 +14,11 @@ balancer_missing(X, trt, R, conjprime, proxfunc, hyperparam,
 
 \item{R}{vector of missingness indicators}
 
-\item{conjprime}{Derivative of convex conjugate of dispersion function}
+\item{weightfunc}{Derivative of convex conjugate of dispersion function (possibly normalized)}
 
 \item{proxfunc}{Prox operator of regularization function}
 
 \item{hyperparam}{Regularization hyper parameter}
-
-\item{normalized}{Whether to fit normalized weights, default: True}
 
 \item{opts}{Optimization options
 \itemize{

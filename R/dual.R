@@ -2,6 +2,18 @@
 ## Functions to solve the dual problem
 ################################################################################
 
+#### Helper weights functions
+softmax <- function(eta) {
+    #' Compute numerically stable softmax with natural param eta
+    m <- max(eta)
+    num <- as.numeric(exp(eta - m))
+    denom <- sum(exp(eta - m))
+    return(num / denom)
+
+}
+
+
+
 ##### Helper prox functions
 no_prox <- function(x, lam) {
     #' Prox of 0 is the identity
@@ -84,14 +96,14 @@ nuc_prox <- function(x, lam) {
 }
 
 
-balancer_subgrp <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
+balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, proxfunc, hyperparam,
                          normalized=TRUE, opts=list()) {
     #' Helper function to fit the dual for general odds function and prox
     #' estimates heterogeneous treatment effects
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
     #' @param Z Vector of subgroup indicators
-    #' @param conjprime Derivative of convex conjugate of dispersion function
+    #' @param weightfunc Derivative of convex conjugate of dispersion function (possibly normalized)
     #' @param proxfunc Prox operator of regularization function
     #' @param hyperparam Regularization hyper parameter
     #' @param normalized Whether to fit normalized weights, default: True
@@ -105,24 +117,27 @@ balancer_subgrp <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
     #'          \item{weights }{Estimated primal weights}
     #'          \item{imbalance }{Imbalance in covariates}}
 
+    ## if no subgroups, put everything into one group
+    if(is.null(Z)) {
+        Z <- rep(1, length(trt))
+    }
     ## get the distinct group labels
     grps <- sort(unique(Z))
     m <- length(grps)
 
     n <- dim(X)[1]
 
-    if(normalized) {
-        ## add a bias term
-        X <- cbind(rep(1, n), X)
-    }
+    ## if(normalized) {
+    ##     ## add a bias term
+    ##     X <- cbind(rep(1, n), X)
+    ## }
 
     d <- dim(X)[2]
 
     ## get the group treated moments
     x_t <- sapply(grps,
-                    function(k) colMeans(X[(trt ==0) & (Z==k), , drop=FALSE]))
+                    function(k) colMeans(X[(trt ==1) & (Z==k), , drop=FALSE]))
 
-    
     ##x_t <- as.numeric(x_t)
     
     ## objective gradient
@@ -130,26 +145,13 @@ balancer_subgrp <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
     grad <- function(theta, ...) {
         ## reshape paramters into matrix
         theta <- matrix(theta, ncol=m)
-
         ## first part of gradient comes from control units
         grad1 <- sapply(grps,
                         function(k) t(X[(trt == 0) & (Z == k),]) %*%
-                                    conjprime(X[(trt == 0) & (Z == k), , drop=FALSE] %*% theta[,k]))
+                                    weightfunc(X[(trt == 0) & (Z == k), , drop=FALSE] %*% theta[,k]))
 
-        ## grad1 <- rep(0, length(theta))
-        ## for(k in grps) {
-        ##     strt <-(1+((k-1)*d))
-        ##     stp <- (((k-1)*d) + d)
-        ##     thetak <- matrix(theta[strt:stp], nrow=d)
-
-        ##     grad1[strt:stp] <- t(X[(trt == 0) & (Z == k),,drop=FALSE]) %*%
-        ##         conjprime(X[(trt == 0) & (Z == k), , drop=FALSE] %*% thetak)
-            
-        ## }
-        
         ## second part of gradient comes from treated units
         grad <- grad1 - x_t
-
         return(as.numeric(grad))
     }
 
@@ -183,28 +185,30 @@ balancer_subgrp <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
     theta <- matrix(apgout$x, ncol=m)
     out$theta <- theta
     ## weights
-    weights <- sapply(1:n,
-                      function(i) conjprime(X[i,] %*% theta[,Z[i]]))
+    weights <- numeric(n)
+    for(k in grps) {
+        weights[(trt == 0) & (Z == k)] <-
+            weightfunc(X[(trt == 0) & (Z == k), , drop=FALSE] %*% theta[,k])
+    }
+
     out$weights <- weights
 
     ## The final imbalance
     out$imbalance <- matrix(grad(theta), ncol=m)
-    
     return(out)
 }
 
 
-balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
-                             normalized=TRUE, opts=list()) {
+balancer_missing <- function(X, trt, R, weightfunc, proxfunc,
+                             hyperparam, opts=list()) {
     #' Helper function to fit the dual for general odds function and prox
     #' Estimates ATT with missing outcomes
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
     #' @param R vector of missingness indicators
-    #' @param conjprime Derivative of convex conjugate of dispersion function
+    #' @param weightfunc Derivative of convex conjugate of dispersion function (possibly normalized)
     #' @param proxfunc Prox operator of regularization function
     #' @param hyperparam Regularization hyper parameter
-    #' @param normalized Whether to fit normalized weights, default: True
     #' @param opts Optimization options
     #'        \itemize{
     #'          \item{MAX_ITERS }{Maximum number of iterations to run}
@@ -221,13 +225,13 @@ balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
 
     n <- dim(X)[1]
 
-    if(normalized) {
-        ## add a bias term
-        X <- cbind(rep(1, n), X)
-    }
+    ## if(normalized) {
+    ##     ## add a bias term
+    ##     X <- cbind(rep(1, n), X)
+    ## }
 
     d <- dim(X)[2]
-    
+
     ## get the moments for treated units twice
     x_t <- cbind(colMeans(X[trt==1,]),
                  colMeans(X[trt==1,]))
@@ -237,19 +241,28 @@ balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
     weights_func <- function(theta) {
         
         ## weights for R=1 T=0 to T=1
-        weights1 <- sapply(1:n, function(i) {
-            if(trt[i] == 0 & R[i] == 1) {
-                conjprime(t(X[i,]) %*% theta[,1])
-            } else {
-                0
-            }})
+        weights1 <- numeric(n)
+        weights1[trt == 0 & R == 1] <-
+            weightfunc(X[trt == 0 & R == 1,,drop=FALSE] %*% theta[,1])
+        
+        ## weights1 <- sapply(1:n, function(i) {
+        ##     if(trt[i] == 0 & R[i] == 1) {
+        ##         conjprime(t(X[i,]) %*% theta[,1])
+        ##     } else {
+        ##         0
+        ##     }})
+        
         ## weights for R=1 T=1 to T=1
-        weights2 <- sapply(1:n, function(i) {
-            if(trt[i] == 1 & R[i] == 1) {
-                conjprime(t(X[i,]) %*% theta[,2])
-            } else {
-                0
-            }})
+        weights2 <- numeric(n)
+        weights2[trt == 1 & R == 1] <-
+            weightfunc(X[trt == 1 & R == 1,,drop=FALSE] %*% theta[,1])
+
+        ## weights2 <- sapply(1:n, function(i) {
+        ##     if(trt[i] == 1 & R[i] == 1) {
+        ##         conjprime(t(X[i,]) %*% theta[,2])
+        ##     } else {
+        ##         0
+        ##     }})
        
         cbind(weights1, weights2)
     }
@@ -279,16 +292,16 @@ balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
         ## reshape paramters into matrix
         theta <- matrix(theta, ncol=m)
 
-        if(normalized) {
-            ## apply prox operator for covariate parameters
-            proxtheta <- proxfunc(theta[-1,], step * hyperparam)
+        ## if(normalized) {
+        ##     ## apply prox operator for covariate parameters
+        ##     proxtheta <- proxfunc(theta[-1,], step * hyperparam)
             
-            ## prox is identity for bias
-            proxtheta <- rbind(theta[1,], proxtheta)
-        } else {
+        ##     ## prox is identity for bias
+        ##     proxtheta <- rbind(theta[1,], proxtheta)
+        ## } else {
                ## apply prox operator for covariate parameters
             proxtheta <- proxfunc(theta, step * hyperparam)
-        }
+        ## }
         
         return(as.numeric(proxtheta))
     }
@@ -315,16 +328,15 @@ balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
 
 
 
-balancer_individ <- function(X, trt, conjprime, proxfunc, hyperparam,
-                             normalized=TRUE, opts=list()) {
+balancer_individ <- function(X, trt, weightfunc, proxfunc,
+                             hyperparam, opts=list()) {
     #' Helper function to fit the dual for general odds function and prox
     #' Estimates a CATE for each treated individual
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
-    #' @param conjprime Derivative of convex conjugate of dispersion function
+    #' @param weightfunc Derivative of convex conjugate of dispersion function (possibly normalized)
     #' @param proxfunc Prox operator of regularization function
     #' @param hyperparam Regularization hyper parameter
-    #' @param normalized Whether to fit normalized weights, default: True
     #' @param opts Optimization options
     #'        \itemize{
     #'          \item{MAX_ITERS }{Maximum number of iterations to run}
@@ -341,10 +353,10 @@ balancer_individ <- function(X, trt, conjprime, proxfunc, hyperparam,
 
     n <- dim(X)[1]
 
-    if(normalized) {
-        ## add a bias term
-        X <- cbind(rep(1, n), X)
-    }
+    ## if(normalized) {
+    ##     ## add a bias term
+    ##     X <- cbind(rep(1, n), X)
+    ## }
 
     d <- dim(X)[2]
     
@@ -356,9 +368,11 @@ balancer_individ <- function(X, trt, conjprime, proxfunc, hyperparam,
 
     ## helper function to get weights for a given theta
     weights_func <- function(theta) {
-        weights <- conjprime(X %*% theta)
+        eta <- X %*% theta
+        eta[trt==1,] <- 0
+        weights <- apply(eta, 2, weightfunc)
         ## zero out weights on treated units
-        weights[trt==1,] <- 0
+        ## weights[trt==1,] <- 0
         weights
     }
 
@@ -386,16 +400,16 @@ balancer_individ <- function(X, trt, conjprime, proxfunc, hyperparam,
         ## reshape paramters into matrix
         theta <- matrix(theta, ncol=m)
 
-        if(normalized) {
-            ## apply prox operator for covariate parameters
-            proxtheta <- proxfunc(theta[-1,], step * hyperparam)
+        ## if(normalized) {
+        ##     ## apply prox operator for covariate parameters
+        ##     proxtheta <- proxfunc(theta[-1,], step * hyperparam)
             
-            ## prox is identity for bias
-            proxtheta <- rbind(theta[1,], proxtheta)
-        } else {
+        ##     ## prox is identity for bias
+        ##     proxtheta <- rbind(theta[1,], proxtheta)
+        ## } else {
                ## apply prox operator for covariate parameters
-            proxtheta <- proxfunc(theta, step * hyperparam)
-        }
+        proxtheta <- proxfunc(theta, step * hyperparam)
+        ## }
         
         return(as.numeric(proxtheta))
     }
