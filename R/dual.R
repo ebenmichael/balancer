@@ -52,6 +52,19 @@ l1_prox <- function(x, lam) {
 }
 
 
+l2_prox <- function(x, lam) {
+    #' L2 norm prox operator
+    #' @param x input
+    #' @param lam scaling function
+    #'
+    #' @return result of prox
+    
+    shrink <- max(0, 1 - lam / sqrt(sum(x^2)))
+    
+    return(shrink * x)
+}
+
+
 linf_prox <- function(x, lam) {
     #' L infinity norm prox operator
     #' Uses algorithm for projection onto the L1 ball from Duchi (2008)
@@ -130,7 +143,7 @@ ridge_prox <- function(x, lam) {
 
 balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
                      link=c("logit", "linear", "pos-linear"),
-                     regularizer=c(NULL, "l1", "grpl1", "ridge", "linf", "nuc"),
+                     regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc"),
                      hyperparam, normalized=TRUE, opts=list()) {
     #' Find Balancing weights by solving the dual optimization problem
     #' @param X n x d matrix of covariates
@@ -177,6 +190,8 @@ balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
         proxfunc <- l1_prox
     } else if(regularizer == "grpl1") {
         proxfunc <- l1_grp_prox
+    } else if(regularizer == "l2") {
+        proxfunc <- l2_prox
     } else if(regularizer == "ridge") {
         proxfunc <- ridge_prox
     } else if(regularizer == "linf") {
