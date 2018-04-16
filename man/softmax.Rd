@@ -2,10 +2,12 @@
 % Please edit documentation in R/dual.R
 \name{softmax}
 \alias{softmax}
-\title{Compute numerically stable softmax with natural param eta}
+\title{Compute numerically stable softmax with natural param eta
+Logit link}
 \usage{
 softmax(eta)
 }
 \description{
 Compute numerically stable softmax with natural param eta
+Logit link
 }

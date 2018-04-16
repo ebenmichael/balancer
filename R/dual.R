@@ -5,6 +5,7 @@
 #### Helper weights functions
 softmax <- function(eta) {
     #' Compute numerically stable softmax with natural param eta
+    #' Logit link
     m <- max(eta)
     num <- as.numeric(exp(eta - m))
     denom <- sum(exp(eta - m))
@@ -12,6 +13,18 @@ softmax <- function(eta) {
 
 }
 
+
+normlin <- function(eta) {
+    #' Linear odds, normalized weights
+    return(eta / (sum(eta) + 0.00001))
+    
+}
+
+
+poslin <- function(eta) {
+    #' Linear odds, constrained to be positive
+    return(eta * (eta >= 0))
+}
 
 
 ##### Helper prox functions
