@@ -27,6 +27,12 @@ poslin <- function(eta) {
 }
 
 
+normposlin <- function(eta) {
+    #' Linear odds, constrained to be positive, normalized
+    w <- eta * (eta >= 0)
+    return(w / sum(w + 0.0000001))
+}
+
 ##### Helper prox functions
 no_prox <- function(x, lam) {
     #' Prox of 0 is the identity
