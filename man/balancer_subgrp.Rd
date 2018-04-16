@@ -6,7 +6,7 @@
 estimates heterogeneous treatment effects}
 \usage{
 balancer_subgrp(X, trt, Z = NULL, weightfunc, proxfunc, hyperparam,
-  normalized = TRUE, opts = list())
+  opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -20,8 +20,6 @@ balancer_subgrp(X, trt, Z = NULL, weightfunc, proxfunc, hyperparam,
 \item{proxfunc}{Prox operator of regularization function}
 
 \item{hyperparam}{Regularization hyper parameter}
-
-\item{normalized}{Whether to fit normalized weights, default: True}
 
 \item{opts}{Optimization options
 \itemize{
