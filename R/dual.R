@@ -3,6 +3,10 @@
 ################################################################################
 
 ##### Helper prox functions
+no_prox <- function(x, lam) {
+    #' Prox of 0 is the identity
+    return(x)
+}
 
 l1_prox <- function(x, lam) {
     #' L1 norm prox operator, soft thresholding
@@ -40,8 +44,8 @@ nuc_prox <- function(x, lam) {
     #' @return result of prox
 
     ## compute svd
+    ##out <- RSpectra::svds(x, 10)#min(dim(x))/2)
     out <- svd(x)
-
     ## soft threshold singular values
     s <- l1_prox(out$d, lam)
 
@@ -50,7 +54,7 @@ nuc_prox <- function(x, lam) {
 }
 
 balancer_subgrp <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
-                         normalized=TRUE) {
+                         normalized=TRUE, opts=list()) {
     #' Helper function to fit the dual for general odds function and prox
     #' estimates heterogeneous treatment effects
     #' @param X n x d matrix of covariates
@@ -60,6 +64,10 @@ balancer_subgrp <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
     #' @param proxfunc Prox operator of regularization function
     #' @param hyperparam Regularization hyper parameter
     #' @param normalized Whether to fit normalized weights, default: True
+    #' @param opts Optimization options
+    #'        \itemize{
+    #'          \item{MAX_ITERS }{Maximum number of iterations to run}
+    #'          \item{EPS }{Error rolerance}}
     #'
     #' @return \itemize{
     #'          \item{theta }{Estimated dual propensity score parameters}
@@ -78,11 +86,12 @@ balancer_subgrp <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
     }
 
     d <- dim(X)[2]
-    
+
     ## get the group treated moments
     x_t <- sapply(grps,
                     function(k) colMeans(X[(trt ==0) & (Z==k), , drop=FALSE]))
 
+    
     ##x_t <- as.numeric(x_t)
     
     ## objective gradient
@@ -118,13 +127,12 @@ balancer_subgrp <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
     prox <- function(theta, step, ...) {
         ## reshape paramters into matrix
         theta <- matrix(theta, ncol=m)
-
         if(normalized) {
             ## apply prox operator for covariate parameters
-            proxtheta <- proxfunc(theta[-1,], step * hyperparam)
-            
+            proxtheta <- proxfunc(theta[-1,,drop=FALSE], step * hyperparam)
+            proxtheta <- matrix(proxtheta, ncol=m)
             ## prox is identity for bias
-            proxtheta <- rbind(theta[1,], proxtheta)
+            proxtheta <- rbind(theta[1,,drop=FALSE], proxtheta)
         } else {
                ## apply prox operator for covariate parameters
             proxtheta <- proxfunc(theta, step * hyperparam)
@@ -133,9 +141,9 @@ balancer_subgrp <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
         return(as.numeric(proxtheta))
     }
 
-    
-    max_iters <- 5000
-    apgout <- apg::apg(grad, prox, d * m, opts=list(MAX_ITERS=max_iters))    
+    ## combine opts with defauls
+    opts <- c(opts, MAX_ITERS=5000, EPS=1e-8)
+    apgout <- apg::apg(grad, prox, d * m, opts=opts)
 
     ## collect results
     out <- list()
@@ -156,7 +164,7 @@ balancer_subgrp <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
 
 
 balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
-                             normalized=TRUE) {
+                             normalized=TRUE, opts=list()) {
     #' Helper function to fit the dual for general odds function and prox
     #' Estimates ATT with missing outcomes
     #' @param X n x d matrix of covariates
@@ -166,6 +174,10 @@ balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
     #' @param proxfunc Prox operator of regularization function
     #' @param hyperparam Regularization hyper parameter
     #' @param normalized Whether to fit normalized weights, default: True
+    #' @param opts Optimization options
+    #'        \itemize{
+    #'          \item{MAX_ITERS }{Maximum number of iterations to run}
+    #'          \item{EPS }{Error rolerance}}
     #'
     #' @return \itemize{
     #'          \item{theta }{Estimated dual propensity score parameters}
@@ -185,7 +197,7 @@ balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
 
     d <- dim(X)[2]
     
-    ## get the moments for treated and control units, and treated units again
+    ## get the moments for treated units twice
     x_t <- cbind(colMeans(X[trt==1,]),
                  colMeans(X[trt==1,]))
 
@@ -250,9 +262,116 @@ balancer_missing <- function(X, trt, R, conjprime, proxfunc, hyperparam,
         return(as.numeric(proxtheta))
     }
 
+    ## combine opts with defauls
+    opts <- c(opts, MAX_ITERS=5000, EPS=1e-8)
+    apgout <- apg::apg(grad, prox, d * m, opts=opts)
+
+    ## collect results
+    out <- list()
+
+    ## theta
+    theta <- matrix(apgout$x, ncol=m)
+
+    out$theta <- theta
+
+    out$weights <- weights_func(theta)
+
+    ## The final imbalance
+    out$imbalance <- t(X) %*% out$weights - x_t
+
+    return(out)
+}
+
+
+
+balancer_individ <- function(X, trt, conjprime, proxfunc, hyperparam,
+                             normalized=TRUE, opts=list()) {
+    #' Helper function to fit the dual for general odds function and prox
+    #' Estimates a CATE for each treated individual
+    #' @param X n x d matrix of covariates
+    #' @param trt Vector of treatment status indicators
+    #' @param conjprime Derivative of convex conjugate of dispersion function
+    #' @param proxfunc Prox operator of regularization function
+    #' @param hyperparam Regularization hyper parameter
+    #' @param normalized Whether to fit normalized weights, default: True
+    #' @param opts Optimization options
+    #'        \itemize{
+    #'          \item{MAX_ITERS }{Maximum number of iterations to run}
+    #'          \item{EPS }{Error rolerance}}
+    #'
+    #' @return \itemize{
+    #'          \item{theta }{Estimated dual propensity score parameters}
+    #'          \item{weights }{Estimated primal weights}
+    #'          \item{imbalance }{Imbalance in covariates}}
+
+
+    ## one set of weights for each treated unit
+    m <- sum(trt)
+
+    n <- dim(X)[1]
+
+    if(normalized) {
+        ## add a bias term
+        X <- cbind(rep(1, n), X)
+    }
+
+    d <- dim(X)[2]
     
-    max_iters <- 5000
-    apgout <- apg::apg(grad, prox, d * m, opts=list(MAX_ITERS=max_iters))    
+    ## keep the covariates for the treated units
+    x_t <- t(X[trt==1,])
+
+    ## covariates for control units
+    x_c <- X[trt==0,]
+
+    ## helper function to get weights for a given theta
+    weights_func <- function(theta) {
+        weights <- conjprime(X %*% theta)
+        ## zero out weights on treated units
+        weights[trt==1,] <- 0
+        weights
+    }
+
+    
+    ## objective gradient
+    ## f^*'(x * theta) - x
+    grad <- function(theta, ...) {
+        ## reshape paramters into matrix
+        theta <- matrix(theta, ncol=m)
+
+        ## first part of gradient comes from units with observed outcomes
+        ## for trt and ctrl
+        weights <- weights_func(theta)
+
+        grad1 <- t(X) %*% weights
+
+        ## second part of gradient comes from all ctrl and treated units
+        grad <- grad1 - x_t
+        return(as.numeric(grad))
+    }
+
+    ## prox operator of regularizer
+
+    prox <- function(theta, step, ...) {
+        ## reshape paramters into matrix
+        theta <- matrix(theta, ncol=m)
+
+        if(normalized) {
+            ## apply prox operator for covariate parameters
+            proxtheta <- proxfunc(theta[-1,], step * hyperparam)
+            
+            ## prox is identity for bias
+            proxtheta <- rbind(theta[1,], proxtheta)
+        } else {
+               ## apply prox operator for covariate parameters
+            proxtheta <- proxfunc(theta, step * hyperparam)
+        }
+        
+        return(as.numeric(proxtheta))
+    }
+
+    ## combine opts with defauls
+    opts <- c(opts, MAX_ITERS=5000, EPS=1e-8)
+    apgout <- apg::apg(grad, prox, d * m, opts=opts)
 
     ## collect results
     out <- list()

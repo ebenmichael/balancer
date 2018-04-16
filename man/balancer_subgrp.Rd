@@ -5,7 +5,8 @@
 \title{Helper function to fit the dual for general odds function and prox
 estimates heterogeneous treatment effects}
 \usage{
-balancer_subgrp(X, trt, Z, conjprime, proxfunc, hyperparam, normalized = TRUE)
+balancer_subgrp(X, trt, Z, conjprime, proxfunc, hyperparam, normalized = TRUE,
+  opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -21,6 +22,11 @@ balancer_subgrp(X, trt, Z, conjprime, proxfunc, hyperparam, normalized = TRUE)
 \item{hyperparam}{Regularization hyper parameter}
 
 \item{normalized}{Whether to fit normalized weights, default: True}
+
+\item{opts}{Optimization options
+\itemize{
+  \item{MAX_ITERS }{Maximum number of iterations to run}
+  \item{EPS }{Error rolerance}}}
 }
 \value{
 \itemize{
