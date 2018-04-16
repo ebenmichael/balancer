@@ -8,8 +8,8 @@
 \title{balancer: A package for treatment effect heterogeneity and missing data in observational studies through matrix-constrained balancing weights}
 \usage{
 balancer(X, trt, Z = NULL, type = c("att", "subgrp", "missing", "hte"),
-  link = c("logit", "linear", "pos-linear"), regularizer = c(NULL, "l1",
-  "grpl1", "l2", "ridge", "linf", "nuc"), hyperparam, normalized = TRUE,
+  link = c("logit", "linear", "pos-linear", "enet"), regularizer = c(NULL,
+  "l1", "grpl1", "l2", "ridge", "linf", "nuc"), hyperparam, normalized = TRUE,
   opts = list())
 }
 \arguments{
@@ -33,7 +33,8 @@ ATT with missing outcomes, and heterogeneouts effects}
 \item{opts}{Optimization options
 \itemize{
   \item{MAX_ITERS }{Maximum number of iterations to run}
-  \item{EPS }{Error rolerance}}}
+  \item{EPS }{Error rolerance}
+  \item{alpha }{Elastic net parameter}}}
 }
 \value{
 \itemize{

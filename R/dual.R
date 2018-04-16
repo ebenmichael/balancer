@@ -33,6 +33,15 @@ normposlin <- function(eta) {
     return(w / sum(w + 0.0000001))
 }
 
+
+enet <- function(eta, alpha) {
+    #' Odds as the dual to elastic net
+    1 / (1 - alpha) * (eta - alpha / 2) * (eta > alpha / 2) +
+        1 / (1 - alpha) * (eta + alpha / 2) * (eta < -alpha / 2)
+    
+}
+
+
 ##### Helper prox functions
 no_prox <- function(x, lam) {
     #' Prox of 0 is the identity
@@ -136,13 +145,12 @@ ridge_prox <- function(x, lam) {
     #' @param lam scaling function
     #'
     #' @return result of prox
-
     return(1 / (1 + lam) * x)
 }
 
 
 balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
-                     link=c("logit", "linear", "pos-linear"),
+                     link=c("logit", "linear", "pos-linear", "enet"),
                      regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc"),
                      hyperparam, normalized=TRUE, opts=list()) {
     #' Find Balancing weights by solving the dual optimization problem
@@ -158,7 +166,8 @@ balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
     #' @param opts Optimization options
     #'        \itemize{
     #'          \item{MAX_ITERS }{Maximum number of iterations to run}
-    #'          \item{EPS }{Error rolerance}}
+    #'          \item{EPS }{Error rolerance}
+    #'          \item{alpha }{Elastic net parameter}}
     #'
     #' @return \itemize{
     #'          \item{theta }{Estimated dual propensity score parameters}
@@ -180,7 +189,10 @@ balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
         } else {
             weightfunc <- poslin
         }
-    } else {
+    } else if(link == "enet") {
+        alpha <- if(is.null(opts$alpha)) 0.5 else opts$alpha
+        weightfunc <- function(eta) enet(eta, alpha)
+    }else {
         stop("link must be one of ('logit', 'linear', 'pos-linear')")
     }
 
