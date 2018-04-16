@@ -8,6 +8,7 @@ no_prox <- function(x, lam) {
     return(x)
 }
 
+
 l1_prox <- function(x, lam) {
     #' L1 norm prox operator, soft thresholding
     #' @param x input
@@ -17,6 +18,34 @@ l1_prox <- function(x, lam) {
     out <- (x - lam) * (x > lam) + (x + lam) * (x < -lam)
     return(out)
     
+}
+
+
+linf_prox <- function(x, lam) {
+    #' L infinity norm prox operator
+    #' Uses algorithm for projection onto the L1 ball from Duchi (2008)
+    #' @param x input
+    #' @param lam scaling function
+    #'
+    #' @return result of prox
+
+    ## compute projection onto L1 ball
+    absx <- abs(x)
+    if(sum(absx) <= lam) {
+        w <- x
+    } else {
+        absx <- sort(absx, decreasing = TRUE)
+        
+        ## get cumulative mean
+        csx <- cumsum(absx)
+        
+        rho <- max(which(absx - (csx - lam) /  1:length(x) > 0))
+        theta <- (csx[rho]- lam) / rho
+
+        w <- ((x - theta) > 0)  * (x - theta)
+        w <- sign(x) * w
+    }
+    return(x-w)
 }
 
 
@@ -36,6 +65,7 @@ l1_grp_prox <- function(x, lam) {
     t(apply(x, 1, function(xrow) shrinkfunc(xrow, lam) * xrow))
 }
 
+
 nuc_prox <- function(x, lam) {
     #' Nuclear norm prox operator, soft thresholding
     #' @param x input
@@ -52,6 +82,7 @@ nuc_prox <- function(x, lam) {
     ## combine back into matrix
     return(out$u %*% diag(s) %*% t(out$v))
 }
+
 
 balancer_subgrp <- function(X, trt, Z, conjprime, proxfunc, hyperparam,
                          normalized=TRUE, opts=list()) {
