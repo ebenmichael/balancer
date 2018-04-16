@@ -42,6 +42,13 @@ enet <- function(eta, alpha) {
 }
 
 
+posenet <- function(eta, alpha) {
+    #' Odds as the dual to elastic net with positive weights
+    1 / (1 - alpha) * (eta - alpha / 2) * (eta > alpha / 2)
+    
+}
+
+
 ##### Helper prox functions
 no_prox <- function(x, lam) {
     #' Prox of 0 is the identity
@@ -150,7 +157,7 @@ ridge_prox <- function(x, lam) {
 
 
 balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
-                     link=c("logit", "linear", "pos-linear", "enet"),
+                     link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
                      regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc"),
                      hyperparam, normalized=TRUE, opts=list()) {
     #' Find Balancing weights by solving the dual optimization problem
@@ -192,7 +199,10 @@ balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
     } else if(link == "enet") {
         alpha <- if(is.null(opts$alpha)) 0.5 else opts$alpha
         weightfunc <- function(eta) enet(eta, alpha)
-    }else {
+    } else if(link == "pos-enet") {
+        alpha <- if(is.null(opts$alpha)) 0.5 else opts$alpha
+        weightfunc <- function(eta) posenet(eta, alpha)
+    } else {
         stop("link must be one of ('logit', 'linear', 'pos-linear')")
     }
 

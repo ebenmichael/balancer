@@ -8,9 +8,9 @@
 \title{balancer: A package for treatment effect heterogeneity and missing data in observational studies through matrix-constrained balancing weights}
 \usage{
 balancer(X, trt, Z = NULL, type = c("att", "subgrp", "missing", "hte"),
-  link = c("logit", "linear", "pos-linear", "enet"), regularizer = c(NULL,
-  "l1", "grpl1", "l2", "ridge", "linf", "nuc"), hyperparam, normalized = TRUE,
-  opts = list())
+  link = c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
+  regularizer = c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc"),
+  hyperparam, normalized = TRUE, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
