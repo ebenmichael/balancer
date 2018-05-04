@@ -5,8 +5,8 @@
 \title{Helper function to fit the dual for general odds function and prox
 estimates heterogeneous treatment effects}
 \usage{
-balancer_subgrp2(X, trt, Z = NULL, weightfunc, proxfunc, hyperparam,
-  opts = list())
+balancer_subgrp2(X, trt, Z = NULL, weightfunc, weightfunc_ptr, proxfunc,
+  hyperparam, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -16,6 +16,8 @@ balancer_subgrp2(X, trt, Z = NULL, weightfunc, proxfunc, hyperparam,
 \item{Z}{Vector of subgroup indicators}
 
 \item{weightfunc}{Derivative of convex conjugate of dispersion function (possibly normalized)}
+
+\item{weightfunc_ptr}{Pointer to weightfunc}
 
 \item{proxfunc}{Prox operator of regularization function}
 

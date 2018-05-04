@@ -1,11 +1,4 @@
 
-logsumexp <- function(x0) {
-    #' Compute numerically stable logsumexp
-    m <- max(x0)
-    val <- log(sum(exp(x0 - m))) + m
-    return(val)
-}
-
 
 balancer2 <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
                      link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
@@ -89,14 +82,17 @@ balancer2 <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
     return(out)
 }
 
-balancer_subgrp2 <- function(X, trt, Z=NULL, weightfunc,
-                            proxfunc, hyperparam, opts=list()) {
+
+
+balancer_subgrp2 <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
+                             proxfunc, hyperparam, opts=list()) {
     #' Helper function to fit the dual for general odds function and prox
     #' estimates heterogeneous treatment effects
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
-    #' @param Z Vector of subgroup indicators
+    #' @param Z Vector of subgroup indicators    
     #' @param weightfunc Derivative of convex conjugate of dispersion function (possibly normalized)
+    #' @param weightfunc_ptr Pointer to weightfunc
     #' @param proxfunc Prox operator of regularization function
     #' @param hyperparam Regularization hyper parameter
     #' @param opts Optimization options
@@ -131,65 +127,47 @@ balancer_subgrp2 <- function(X, trt, Z=NULL, weightfunc,
                     function(k) colMeans(X[(trt ==1) & (Z==k), , drop=FALSE]))
 
     ##x_t <- as.numeric(x_t)
+
+    ## combine opts with defauls
+    opts <- c(opts,
+              list(max_it=50000,
+                   eps=1e-8,
+                   alpha=1.01, beta=.9,
+                   accel=T))
     
-    ## objective gradient
-    ## f^*'(x * theta) - x
-    grad <- function(theta) {
-        ## reshape paramters into matrix
-        theta <- matrix(theta, ncol=m)
-        ## first part of gradient comes from control units
-        grad1 <- sapply(grps,
-                        function(k) t(X[(trt == 0) & (Z == k),]) %*%
-                                    weightfunc(X[(trt == 0) & (Z == k), , drop=FALSE] %*% theta[,k]))
-
-        ## second part of gradient comes from treated units
-        grad <- grad1 - x_t
-
-        return(as.numeric(grad))
+    loss_opts = list(Xc=X[trt==0,],
+                     Xt=x_t,
+                     weight_func=weightfunc_ptr,
+                     weight_type="subgroup",
+                     z=Z[trt==0]
+                     )
+    if(m==1) {
+        loss_opts$weight_type="base"
     }
 
-    ## prox operator of regularizer
+    prox_opts = list(lam=hyperparam)
 
-    prox <- function(theta, step) {
-        ## reshape paramters into matrix
-        theta <- matrix(theta, ncol=m)
+    apgout <- apg(make_balancing_grad(), proxfunc, loss_opts, prox_opts,
+                  dim(X)[2], m, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel)
+                  
 
-        ## apply prox operator for covariate parameters
-        proxtheta <- proxfunc(theta, step * hyperparam)
-        
-        return(as.numeric(proxtheta))
-    }
-
-    loss <- function(theta) {
-        l <- logsumexp(X[trt==0,] %*% theta) - t(x_t) %*% theta
-        ## l <- sum((X[trt==0,] %*% theta)^2) - t(x_t) %*% theta
-        ## print(as.numeric(l))
-        return(as.numeric(l))
-    }
-
-    ## combine opts with defaults
-    ## opts <- c(max_it=5000, eps=1e-8, beta=.9, opts)
-    print(opts$eps)
-    print(opts$max_it)
-
-    apgout <- apg2(loss, grad, prox, d * m, opts$max_it, opts$eps, opts$beta, opts$accel)
-    ## apgout <- apg3(grad, prox, d * m, opts$max_it, opts$eps, opts$beta, opts$accel, opts$alpha)
     ## collect results
     out <- list()
 
     ## theta
-    theta <- matrix(apgout, ncol=m)
+    theta <- apgout
     out$theta <- theta
     ## weights
     weights <- numeric(n)
-    for(k in grps) {
+    for(i in 1:m) {
+        k = grps[i]
         weights[(trt == 0) & (Z == k)] <-
-            weightfunc(X[(trt == 0) & (Z == k), , drop=FALSE] %*% theta[,k])
+            weightfunc(X[(trt == 0) & (Z == k), , drop=FALSE], theta[,i,drop=FALSE])
     }
 
     out$weights <- weights
 
     ## The final imbalance
-    out$imbalance <- matrix(grad(theta), ncol=m)
+    out$imbalance <- balancing_grad(theta, loss_opts)
     return(out)
 }
