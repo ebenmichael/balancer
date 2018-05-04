@@ -20,26 +20,14 @@ apg2 <- function(f, grad_f, prox_h, dim, max_it, eps, beta, accel) {
 #'
 #' @return Optimal value
 #' @export
-apg <- function(grad_ptr, prox_ptr, loss_opts, prox_opts, dim, max_it, eps, alpha, beta, accel) {
-    .Call('_balancer_apg', PACKAGE = 'balancer', grad_ptr, prox_ptr, loss_opts, prox_opts, dim, max_it, eps, alpha, beta, accel)
+apg <- function(grad_ptr, prox_ptr, loss_opts, prox_opts, dim1, dim2, max_it, eps, alpha, beta, accel) {
+    .Call('_balancer_apg', PACKAGE = 'balancer', grad_ptr, prox_ptr, loss_opts, prox_opts, dim1, dim2, max_it, eps, alpha, beta, accel)
 }
 
 #' Accelerated Proximal Gradient method
 #' @export
 apg3 <- function(grad_f, prox_h, dim, max_it, eps, beta, accel, alpha) {
     .Call('_balancer_apg3', PACKAGE = 'balancer', grad_f, prox_h, dim, max_it, eps, beta, accel, alpha)
-}
-
-#' Loss function for linear link
-NULL
-
-#' Generic balancing loss function
-balancing_loss <- function(theta, opts) {
-    .Call('_balancer_balancing_loss', PACKAGE = 'balancer', theta, opts)
-}
-
-make_balancing_loss <- function() {
-    .Call('_balancer_make_balancing_loss', PACKAGE = 'balancer')
 }
 
 #' Generic balancing loss gradient

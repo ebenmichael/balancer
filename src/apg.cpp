@@ -171,11 +171,11 @@ vec apg2(Function f,
 //' @return Optimal value
 //' @export
 // [[Rcpp::export]]
-vec apg(gptr grad_ptr,
+mat apg(gptr grad_ptr,
         pptr prox_ptr,
         List loss_opts,
         List prox_opts,
-        int dim, int max_it,
+        int dim1, int dim2, int max_it,
         double eps, double alpha,
         double beta, bool accel) {
   // grab the functions from pointers
@@ -183,15 +183,15 @@ vec apg(gptr grad_ptr,
   proxPtr prox_h = *prox_ptr;
   
   // initialize at zero
-  vec x(dim, fill::zeros);
-  vec y = x;
+  mat x = zeros<mat>(dim1, dim2);
+  mat y = x;
   // accelerated
   double theta = 1;
-  vec oldx;
-  vec oldy;
-  vec gtx;
-  vec grad;
-  vec oldg;
+  mat oldx;
+  mat oldy;
+  mat gtx;
+  mat grad;
+  mat oldg;
   double fx;
   double fgtx;
   double improve;
@@ -206,14 +206,14 @@ vec apg(gptr grad_ptr,
   grad = grad_f(y, loss_opts);
   t = 1 / sqrt(accu(pow(grad,2)));
 
-  vec x_hat = x - t * grad;
-  vec g_hat = grad_f(x_hat, loss_opts);
+  mat x_hat = x - t * grad;
+  mat g_hat = grad_f(x_hat, loss_opts);
   t = abs(accu( (x - x_hat) % (grad - g_hat)) / accu(pow(grad - g_hat,2)));
 
   for(int i = 1; i <= max_it; i++) {
     
-    oldx = vec(x);
-    oldy = vec(y);
+    oldx = mat(x);
+    oldy = mat(y);
 
     grad = grad_f(y, loss_opts);
 
@@ -242,7 +242,7 @@ vec apg(gptr grad_ptr,
 
     y = x + (1-theta) * (x - oldx);
 
-    oldg = vec(grad);
+    oldg = mat(grad);
     grad = prox_h(y - t * grad, t, prox_opts);
     
      t_hat = 0.5 * accu(pow(y - oldy, 2)) / abs(accu((y - oldy) % (oldg - grad)));

@@ -6,49 +6,63 @@
 
 using namespace arma;
 using namespace Rcpp;
+using namespace std;
 
 
-// GENERIC LOSS AND GRADIENT FUNCTIONS
-
-//' Generic balancing loss function
-// [[Rcpp::export]]
-double balancing_loss(vec theta, List opts) {
-
-  // control data
-  mat Xc = as<mat>(opts["Xc"]);
-  mat Xt = as<mat>(opts["Xt"]);
-  
-  // weighted loss portion
-  wlossPtr wloss_func = *as<wlossptr>(opts["wloss"]);
-  double wloss = wloss_func(Xc, theta);
-
-  //combine with treated values
-  return wloss - trace(Xt.t() * theta);
-    
-  
-}
-
-
-// [[Rcpp::export]]
-lptr make_balancing_loss() {
-  return lptr(new lossPtr(balancing_loss));
-}
-
+// GENERIC GRADIENT FUNCTIONS
 
 
 //' Generic balancing loss gradient
 // [[Rcpp::export]]
-vec balancing_grad(vec theta, List opts) {
+mat balancing_grad(mat theta, List opts) {
 
   // control data
   mat Xc = as<mat>(opts["Xc"]);
   mat Xt = as<mat>(opts["Xt"]);
   // weights function
+  // wptr weight_func = as<wptr>(opts["weight_func"]);
+
+  // fullWeightPtr full_w_func = *as<fwptr>(opts["weight_type"]);
+
+  // // get weights
+  // mat weights = full_w_func(Xc, theta, weight_func, opts);
+
   weightPtr weight_func = *as<wptr>(opts["weight_func"]);
 
-  // get weights
-  mat weights = weight_func(Xc, theta);
-
+  mat weights;
+  //compute weights in different ways
+  if(as<string>(opts["weight_type"]) == "base") {
+    
+    weights = weight_func(Xc, theta);
+    
+  } else if(as<string>(opts["weight_type"])=="subgroup") {
+    // subgroup indicators
+    vec z = as<vec>(opts["z"]);
+    vec uni_z = unique(z);
+    
+    // initialize weights as zero
+    weights = zeros(Xc.n_rows, uni_z.size());
+    // Rcout << weights.n_rows << ", " << weights.n_cols << "\n";
+    // iterate over subgroups and set weights
+    for(int i=0; i < uni_z.size(); i++) {
+      int k = uni_z(i);
+      // Rcout << k<< "\n";
+      // get indices for subgroups
+      uvec idxs = find(z == k);
+      uvec col = find(uni_z == k);
+      // Rcout << col << "\n---\n";
+      // Rcout << idxs << "\n---\n";
+      // get weights for subgroup
+      mat tmp_w = weight_func(Xc.rows(idxs),theta.col(i));
+      // Rcout << tmp_w.n_rows << ", " << tmp_w.n_cols << "\n";
+      weights.submat(idxs, col) = tmp_w;
+      // Rcout << weights.n_rows << ", " << weights.n_cols << "\n--\n";
+    }
+    // Rcout << weights.n_rows << ", " << weights.n_cols << "\n--\n";
+  } else  {
+    throw runtime_error("weight_type must be one of 'base', 'subgroup'");
+  }
+  // Rcout << weights.n_rows << ", " << weights.n_cols << "\n";
   //combine to get gradient
   return Xc.t() * weights - Xt;
     
@@ -62,25 +76,11 @@ gptr make_balancing_grad() {
 }
 
 
-// WEIGHTED PORITON OF LOSS FUNCTION
-
-//' Loss function for linear link
-// [Rcpp::export]]
-double var_loss(mat X, vec theta) {
-  return norm(X * theta, "fro");
-}
-
-// [Rcpp::export]]
-wlossptr make_var_loss() {
-  return wlossptr(new wlossPtr(var_loss));
-}
-
-
 // WEIGHT FUNCTIONS FOR GRADIENT
 
 //' Linear weights
 // [[Rcpp::export]]
-vec lin_weights(mat Xc, vec theta) {
+mat lin_weights(mat Xc, mat theta) {
   return Xc * theta;
 }
 
@@ -94,9 +94,9 @@ wptr make_lin_weights() {
 
 //' normalized logit weights, numerically stable
 // [[Rcpp::export]]
-vec softmax_weights(mat Xc, vec theta) {
-  vec eta = Xc * theta;
-  double m = arma::max(eta);
+mat softmax_weights(mat Xc, mat theta) {
+  mat eta = Xc * theta;
+  double m = arma::max(arma::max(eta));
 
   return arma::exp(eta-m) / accu(exp(eta-m));
 }
@@ -111,7 +111,7 @@ wptr make_softmax_weights() {
 // PROX FUNCTIONS
 
 
-arma::vec no_prox(arma::vec theta, double t, List opts) {
+mat no_prox(mat theta, double t, List opts) {
 
   return theta;
      
@@ -123,7 +123,7 @@ pptr make_no_prox() {
 }
 
 
-vec prox_l1(vec x, double lam, List opts) {
+mat prox_l1(mat x, double lam, List opts) {
   lam = lam * as<double>(opts["lam"]);
   return (x - lam) % (x > lam) + (x + lam) % (x < -lam);
 }
