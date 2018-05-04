@@ -2,6 +2,7 @@
 
 export(apg)
 export(apg2)
+export(apg3)
 export(balancer)
 export(balancer2)
 importFrom(Rcpp,sourceCpp)

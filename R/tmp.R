@@ -171,8 +171,9 @@ balancer_subgrp2 <- function(X, trt, Z=NULL, weightfunc,
     ## opts <- c(max_it=5000, eps=1e-8, beta=.9, opts)
     print(opts$eps)
     print(opts$max_it)
-    apgout <- apg2(loss, grad, prox, d * m, opts$max_it, opts$eps, opts$beta)
 
+    ## apgout <- apg2(loss, grad, prox, d * m, opts$max_it, opts$eps, opts$beta, opts$accel)
+    apgout <- apg3(grad, prox, d * m, opts$max_it, opts$eps, opts$beta, opts$accel, opts$alpha)
     ## collect results
     out <- list()
 

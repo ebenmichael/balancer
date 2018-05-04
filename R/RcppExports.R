@@ -3,8 +3,8 @@
 
 #' Accelerated Proximal Gradient method
 #' @export
-apg2 <- function(f, grad_f, prox_h, dim, max_it, eps, beta) {
-    .Call('_balancer_apg2', PACKAGE = 'balancer', f, grad_f, prox_h, dim, max_it, eps, beta)
+apg2 <- function(f, grad_f, prox_h, dim, max_it, eps, beta, accel) {
+    .Call('_balancer_apg2', PACKAGE = 'balancer', f, grad_f, prox_h, dim, max_it, eps, beta, accel)
 }
 
 #' Accelerated proximal gradient method
@@ -22,6 +22,12 @@ apg2 <- function(f, grad_f, prox_h, dim, max_it, eps, beta) {
 #' @export
 apg <- function(loss_ptr, grad_ptr, prox_ptr, loss_opts, dim, max_it, eps, beta) {
     .Call('_balancer_apg', PACKAGE = 'balancer', loss_ptr, grad_ptr, prox_ptr, loss_opts, dim, max_it, eps, beta)
+}
+
+#' Accelerated Proximal Gradient method
+#' @export
+apg3 <- function(grad_f, prox_h, dim, max_it, eps, beta, accel, alpha) {
+    .Call('_balancer_apg3', PACKAGE = 'balancer', grad_f, prox_h, dim, max_it, eps, beta, accel, alpha)
 }
 
 #' Generic balancing loss gradient

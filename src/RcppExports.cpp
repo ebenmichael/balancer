@@ -8,8 +8,8 @@
 using namespace Rcpp;
 
 // apg2
-vec apg2(Function f, Function grad_f, Function prox_h, int dim, int max_it, double eps, double beta);
-RcppExport SEXP _balancer_apg2(SEXP fSEXP, SEXP grad_fSEXP, SEXP prox_hSEXP, SEXP dimSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP betaSEXP) {
+vec apg2(Function f, Function grad_f, Function prox_h, int dim, int max_it, double eps, double beta, bool accel);
+RcppExport SEXP _balancer_apg2(SEXP fSEXP, SEXP grad_fSEXP, SEXP prox_hSEXP, SEXP dimSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP betaSEXP, SEXP accelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -20,7 +20,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type max_it(max_itSEXP);
     Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
-    rcpp_result_gen = Rcpp::wrap(apg2(f, grad_f, prox_h, dim, max_it, eps, beta));
+    Rcpp::traits::input_parameter< bool >::type accel(accelSEXP);
+    rcpp_result_gen = Rcpp::wrap(apg2(f, grad_f, prox_h, dim, max_it, eps, beta, accel));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -39,6 +40,24 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
     rcpp_result_gen = Rcpp::wrap(apg(loss_ptr, grad_ptr, prox_ptr, loss_opts, dim, max_it, eps, beta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// apg3
+vec apg3(Function grad_f, Function prox_h, int dim, int max_it, double eps, double beta, bool accel, double alpha);
+RcppExport SEXP _balancer_apg3(SEXP grad_fSEXP, SEXP prox_hSEXP, SEXP dimSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP betaSEXP, SEXP accelSEXP, SEXP alphaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Function >::type grad_f(grad_fSEXP);
+    Rcpp::traits::input_parameter< Function >::type prox_h(prox_hSEXP);
+    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
+    Rcpp::traits::input_parameter< int >::type max_it(max_itSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< bool >::type accel(accelSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    rcpp_result_gen = Rcpp::wrap(apg3(grad_f, prox_h, dim, max_it, eps, beta, accel, alpha));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -120,8 +139,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_balancer_apg2", (DL_FUNC) &_balancer_apg2, 7},
+    {"_balancer_apg2", (DL_FUNC) &_balancer_apg2, 8},
     {"_balancer_apg", (DL_FUNC) &_balancer_apg, 8},
+    {"_balancer_apg3", (DL_FUNC) &_balancer_apg3, 8},
     {"_balancer_balancing_loss", (DL_FUNC) &_balancer_balancing_loss, 2},
     {"_balancer_make_balancing_loss", (DL_FUNC) &_balancer_make_balancing_loss, 0},
     {"_balancer_make_balancing_grad", (DL_FUNC) &_balancer_make_balancing_grad, 0},
