@@ -20,8 +20,8 @@ apg2 <- function(f, grad_f, prox_h, dim, max_it, eps, beta, accel) {
 #'
 #' @return Optimal value
 #' @export
-apg <- function(loss_ptr, grad_ptr, prox_ptr, loss_opts, dim, max_it, eps, beta) {
-    .Call('_balancer_apg', PACKAGE = 'balancer', loss_ptr, grad_ptr, prox_ptr, loss_opts, dim, max_it, eps, beta)
+apg <- function(grad_ptr, prox_ptr, loss_opts, prox_opts, dim, max_it, eps, alpha, beta, accel) {
+    .Call('_balancer_apg', PACKAGE = 'balancer', grad_ptr, prox_ptr, loss_opts, prox_opts, dim, max_it, eps, alpha, beta, accel)
 }
 
 #' Accelerated Proximal Gradient method
@@ -30,13 +30,7 @@ apg3 <- function(grad_f, prox_h, dim, max_it, eps, beta, accel, alpha) {
     .Call('_balancer_apg3', PACKAGE = 'balancer', grad_f, prox_h, dim, max_it, eps, beta, accel, alpha)
 }
 
-#' Generic balancing loss gradient
-NULL
-
 #' Loss function for linear link
-NULL
-
-#' Linear weights
 NULL
 
 #' Generic balancing loss function
@@ -48,20 +42,35 @@ make_balancing_loss <- function() {
     .Call('_balancer_make_balancing_loss', PACKAGE = 'balancer')
 }
 
+#' Generic balancing loss gradient
+balancing_grad <- function(theta, opts) {
+    .Call('_balancer_balancing_grad', PACKAGE = 'balancer', theta, opts)
+}
+
 make_balancing_grad <- function() {
     .Call('_balancer_make_balancing_grad', PACKAGE = 'balancer')
 }
 
-no_prox <- function(theta, t) {
-    .Call('_balancer_no_prox', PACKAGE = 'balancer', theta, t)
+#' Linear weights
+lin_weights <- function(Xc, theta) {
+    .Call('_balancer_lin_weights', PACKAGE = 'balancer', Xc, theta)
+}
+
+make_lin_weights <- function() {
+    .Call('_balancer_make_lin_weights', PACKAGE = 'balancer')
+}
+
+#' normalized logit weights, numerically stable
+softmax_weights <- function(Xc, theta) {
+    .Call('_balancer_softmax_weights', PACKAGE = 'balancer', Xc, theta)
+}
+
+make_softmax_weights <- function() {
+    .Call('_balancer_make_softmax_weights', PACKAGE = 'balancer')
 }
 
 make_no_prox <- function() {
     .Call('_balancer_make_no_prox', PACKAGE = 'balancer')
-}
-
-prox_l1 <- function(x, lam) {
-    .Call('_balancer_prox_l1', PACKAGE = 'balancer', x, lam)
 }
 
 make_prox_l1 <- function() {

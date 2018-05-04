@@ -171,62 +171,84 @@ vec apg2(Function f,
 //' @return Optimal value
 //' @export
 // [[Rcpp::export]]
-vec apg(lptr loss_ptr,
-        gptr grad_ptr,
+vec apg(gptr grad_ptr,
         pptr prox_ptr,
         List loss_opts,
+        List prox_opts,
         int dim, int max_it,
-        double eps, double beta) {
+        double eps, double alpha,
+        double beta, bool accel) {
   // grab the functions from pointers
-  lossPtr f = *loss_ptr;
   gradPtr grad_f = *grad_ptr;
   proxPtr prox_h = *prox_ptr;
   
   // initialize at zero
   vec x(dim, fill::zeros);
+  vec y = x;
   // accelerated
-  vec y = vec(x);
+  double theta = 1;
   vec oldx;
+  vec oldy;
   vec gtx;
   vec grad;
+  vec oldg;
   double fx;
   double fgtx;
   double improve;
   double diff;
   double t = 1;
+  double oldt;
+  double t_hat;
   bool backcond;
+  int j;
+
+  // step size initialization
+  grad = grad_f(y, loss_opts);
+  t = 1 / sqrt(accu(pow(grad,2)));
+
+  vec x_hat = x - t * grad;
+  vec g_hat = grad_f(x_hat, loss_opts);
+  t = abs(accu( (x - x_hat) % (grad - g_hat)) / accu(pow(grad - g_hat,2)));
+
   for(int i = 1; i <= max_it; i++) {
     
     oldx = vec(x);
-    fx = f(y, loss_opts);
-    grad = grad_f(x, loss_opts);
-    gtx = 1 / t * (y - prox_h(y - t * grad, t));
+    oldy = vec(y);
+
+    grad = grad_f(y, loss_opts);
+
+
+    x = prox_h(y - t * grad, t, prox_opts);
+
     
-
-    // backtracking line search
-    backcond = f(y - gtx, loss_opts) <= fx - t * dot(grad, gtx) + t / 2 * dot(gtx, gtx);
-
-    while(!backcond) {
-      t = beta * t;
-
-      gtx = 1 / t * (y -
-                     prox_h(y -
-                            t * grad, t));
-      fgtx = f(y - t * gtx, loss_opts);
-      improve = fx - t * dot(grad , gtx) +
-        t / 2 * dot(gtx, gtx);
-      backcond =  fgtx <= improve;
-
-    }
-
-    x = y - t * gtx;
-    y = x + (i - 1) / (i + 2) * (x - oldx);
-
-    diff = norm(gtx, 2);
-
-    if(diff <= eps) {
+    // stopping criterion
+    if(accu(pow(y - x,2)) < eps) {
       break;
     }
+
+    if(accel) {
+      theta = 2 / (1 + sqrt(1 + 4/(pow(theta,2))));
+    } else {
+      theta = 1;
+    }
+
+    // restart
+    if(dot(grad, (x - oldx)) > 0) {
+      x = oldx;
+      y = x;
+      theta = 1;
+    }
+    
+
+    y = x + (1-theta) * (x - oldx);
+
+    oldg = vec(grad);
+    grad = prox_h(y - t * grad, t, prox_opts);
+    
+     t_hat = 0.5 * accu(pow(y - oldy, 2)) / abs(accu((y - oldy) % (oldg - grad)));
+
+    double maxval = (t_hat > beta * t) ? t_hat : beta * t;
+    t = (alpha * t < maxval) ? alpha * t : maxval;
   }
 
   return(x);

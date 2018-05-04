@@ -26,20 +26,22 @@ BEGIN_RCPP
 END_RCPP
 }
 // apg
-vec apg(lptr loss_ptr, gptr grad_ptr, pptr prox_ptr, List loss_opts, int dim, int max_it, double eps, double beta);
-RcppExport SEXP _balancer_apg(SEXP loss_ptrSEXP, SEXP grad_ptrSEXP, SEXP prox_ptrSEXP, SEXP loss_optsSEXP, SEXP dimSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP betaSEXP) {
+vec apg(gptr grad_ptr, pptr prox_ptr, List loss_opts, List prox_opts, int dim, int max_it, double eps, double alpha, double beta, bool accel);
+RcppExport SEXP _balancer_apg(SEXP grad_ptrSEXP, SEXP prox_ptrSEXP, SEXP loss_optsSEXP, SEXP prox_optsSEXP, SEXP dimSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP accelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< lptr >::type loss_ptr(loss_ptrSEXP);
     Rcpp::traits::input_parameter< gptr >::type grad_ptr(grad_ptrSEXP);
     Rcpp::traits::input_parameter< pptr >::type prox_ptr(prox_ptrSEXP);
     Rcpp::traits::input_parameter< List >::type loss_opts(loss_optsSEXP);
+    Rcpp::traits::input_parameter< List >::type prox_opts(prox_optsSEXP);
     Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
     Rcpp::traits::input_parameter< int >::type max_it(max_itSEXP);
     Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
-    rcpp_result_gen = Rcpp::wrap(apg(loss_ptr, grad_ptr, prox_ptr, loss_opts, dim, max_it, eps, beta));
+    Rcpp::traits::input_parameter< bool >::type accel(accelSEXP);
+    rcpp_result_gen = Rcpp::wrap(apg(grad_ptr, prox_ptr, loss_opts, prox_opts, dim, max_it, eps, alpha, beta, accel));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -83,6 +85,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// balancing_grad
+vec balancing_grad(vec theta, List opts);
+RcppExport SEXP _balancer_balancing_grad(SEXP thetaSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< vec >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(balancing_grad(theta, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
 // make_balancing_grad
 gptr make_balancing_grad();
 RcppExport SEXP _balancer_make_balancing_grad() {
@@ -93,15 +107,47 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// no_prox
-arma::vec no_prox(arma::vec theta, double t);
-RcppExport SEXP _balancer_no_prox(SEXP thetaSEXP, SEXP tSEXP) {
+// lin_weights
+vec lin_weights(mat Xc, vec theta);
+RcppExport SEXP _balancer_lin_weights(SEXP XcSEXP, SEXP thetaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< double >::type t(tSEXP);
-    rcpp_result_gen = Rcpp::wrap(no_prox(theta, t));
+    Rcpp::traits::input_parameter< mat >::type Xc(XcSEXP);
+    Rcpp::traits::input_parameter< vec >::type theta(thetaSEXP);
+    rcpp_result_gen = Rcpp::wrap(lin_weights(Xc, theta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_lin_weights
+wptr make_lin_weights();
+RcppExport SEXP _balancer_make_lin_weights() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_lin_weights());
+    return rcpp_result_gen;
+END_RCPP
+}
+// softmax_weights
+vec softmax_weights(mat Xc, vec theta);
+RcppExport SEXP _balancer_softmax_weights(SEXP XcSEXP, SEXP thetaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type Xc(XcSEXP);
+    Rcpp::traits::input_parameter< vec >::type theta(thetaSEXP);
+    rcpp_result_gen = Rcpp::wrap(softmax_weights(Xc, theta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_softmax_weights
+wptr make_softmax_weights();
+RcppExport SEXP _balancer_make_softmax_weights() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_softmax_weights());
     return rcpp_result_gen;
 END_RCPP
 }
@@ -112,18 +158,6 @@ BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(make_no_prox());
-    return rcpp_result_gen;
-END_RCPP
-}
-// prox_l1
-vec prox_l1(vec x, double lam);
-RcppExport SEXP _balancer_prox_l1(SEXP xSEXP, SEXP lamSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< vec >::type x(xSEXP);
-    Rcpp::traits::input_parameter< double >::type lam(lamSEXP);
-    rcpp_result_gen = Rcpp::wrap(prox_l1(x, lam));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -140,14 +174,17 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_balancer_apg2", (DL_FUNC) &_balancer_apg2, 8},
-    {"_balancer_apg", (DL_FUNC) &_balancer_apg, 8},
+    {"_balancer_apg", (DL_FUNC) &_balancer_apg, 10},
     {"_balancer_apg3", (DL_FUNC) &_balancer_apg3, 8},
     {"_balancer_balancing_loss", (DL_FUNC) &_balancer_balancing_loss, 2},
     {"_balancer_make_balancing_loss", (DL_FUNC) &_balancer_make_balancing_loss, 0},
+    {"_balancer_balancing_grad", (DL_FUNC) &_balancer_balancing_grad, 2},
     {"_balancer_make_balancing_grad", (DL_FUNC) &_balancer_make_balancing_grad, 0},
-    {"_balancer_no_prox", (DL_FUNC) &_balancer_no_prox, 2},
+    {"_balancer_lin_weights", (DL_FUNC) &_balancer_lin_weights, 2},
+    {"_balancer_make_lin_weights", (DL_FUNC) &_balancer_make_lin_weights, 0},
+    {"_balancer_softmax_weights", (DL_FUNC) &_balancer_softmax_weights, 2},
+    {"_balancer_make_softmax_weights", (DL_FUNC) &_balancer_make_softmax_weights, 0},
     {"_balancer_make_no_prox", (DL_FUNC) &_balancer_make_no_prox, 0},
-    {"_balancer_prox_l1", (DL_FUNC) &_balancer_prox_l1, 2},
     {"_balancer_make_prox_l1", (DL_FUNC) &_balancer_make_prox_l1, 0},
     {NULL, NULL, 0}
 };

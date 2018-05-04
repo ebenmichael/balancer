@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 typedef double (*lossPtr)(arma::vec x, List opts);
 typedef arma::vec (*gradPtr)(arma::vec x, List opts);
-typedef arma::vec (*proxPtr)(arma::vec x, double t);
+typedef arma::vec (*proxPtr)(arma::vec x, double t, List opts);
 typedef vec (*weightPtr)(mat X, vec theta);
 typedef double (*wlossPtr)(mat X, vec theta);
 typedef double (*regPtr)(vec theta);

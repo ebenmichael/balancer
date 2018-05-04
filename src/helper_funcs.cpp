@@ -37,6 +37,7 @@ lptr make_balancing_loss() {
 
 
 //' Generic balancing loss gradient
+// [[Rcpp::export]]
 vec balancing_grad(vec theta, List opts) {
 
   // control data
@@ -64,12 +65,12 @@ gptr make_balancing_grad() {
 // WEIGHTED PORITON OF LOSS FUNCTION
 
 //' Loss function for linear link
-//[Rcpp::export]]
+// [Rcpp::export]]
 double var_loss(mat X, vec theta) {
   return norm(X * theta, "fro");
 }
 
-//[Rcpp::export]]
+// [Rcpp::export]]
 wlossptr make_var_loss() {
   return wlossptr(new wlossPtr(var_loss));
 }
@@ -78,22 +79,39 @@ wlossptr make_var_loss() {
 // WEIGHT FUNCTIONS FOR GRADIENT
 
 //' Linear weights
+// [[Rcpp::export]]
 vec lin_weights(mat Xc, vec theta) {
   return Xc * theta;
 }
 
 
-
-//[Rcpp::export]]
+// [[Rcpp::export]]
 wptr make_lin_weights() {
   return wptr(new weightPtr(lin_weights));
 }
 
 
-// PROX FUNCTIONS
+
+//' normalized logit weights, numerically stable
+// [[Rcpp::export]]
+vec softmax_weights(mat Xc, vec theta) {
+  vec eta = Xc * theta;
+  double m = arma::max(eta);
+
+  return arma::exp(eta-m) / accu(exp(eta-m));
+}
+
 
 // [[Rcpp::export]]
-arma::vec no_prox(arma::vec theta, double t) {
+wptr make_softmax_weights() {
+  return wptr(new weightPtr(softmax_weights));
+}
+
+
+// PROX FUNCTIONS
+
+
+arma::vec no_prox(arma::vec theta, double t, List opts) {
 
   return theta;
      
@@ -104,9 +122,10 @@ pptr make_no_prox() {
   return pptr(new proxPtr(no_prox));
 }
 
-// [[Rcpp::export]]
-vec prox_l1(vec x, double lam) {
-  return (x - lam) * (x > lam) + (x + lam) * (x < -lam);
+
+vec prox_l1(vec x, double lam, List opts) {
+  lam = lam * as<double>(opts["lam"]);
+  return (x - lam) % (x > lam) + (x + lam) % (x < -lam);
 }
 
 
