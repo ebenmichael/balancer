@@ -59,7 +59,30 @@ mat balancing_grad(mat theta, List opts) {
       // Rcout << weights.n_rows << ", " << weights.n_cols << "\n--\n";
     }
     // Rcout << weights.n_rows << ", " << weights.n_cols << "\n--\n";
-  } else  {
+  } else if(as<string>(opts["weight_type"])=="missing"){
+
+    // treatment assignment
+    // here Xc is the matrix of covariates for units with outcomes observed
+    vec trt = as<vec>(opts["trt"]);
+    
+    // two sets of weights
+    // ctrl -> trt weights
+    uvec idx_ctrl = find(trt == 0);
+    vec weights1 = zeros(Xc.n_rows);
+    weights1.elem(idx_ctrl) = weight_func(Xc.rows(idx_ctrl), theta.col(0));
+
+    // observed trt -> trt weights
+    uvec idx_trt = find(trt == 1);
+    vec weights2 = zeros(Xc.n_rows);
+    weights2.elem(idx_trt) = weight_func(Xc.rows(idx_trt), theta.col(1));
+
+    // combine weights
+    weights = join_horiz(weights1, weights2);
+                                             
+    
+    
+
+  } else {
     throw runtime_error("weight_type must be one of 'base', 'subgroup'");
   }
   // Rcout << weights.n_rows << ", " << weights.n_cols << "\n";
