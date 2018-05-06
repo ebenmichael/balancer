@@ -51,6 +51,10 @@ make_prox_l1_grp <- function() {
     .Call('_balancer_make_prox_l1_grp', PACKAGE = 'balancer')
 }
 
+make_prox_nuc <- function() {
+    .Call('_balancer_make_prox_nuc', PACKAGE = 'balancer')
+}
+
 #' Linear weights
 lin_weights <- function(Xc, theta) {
     .Call('_balancer_lin_weights', PACKAGE = 'balancer', Xc, theta)

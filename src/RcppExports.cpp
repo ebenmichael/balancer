@@ -115,6 +115,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// make_prox_nuc
+pptr make_prox_nuc();
+RcppExport SEXP _balancer_make_prox_nuc() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_prox_nuc());
+    return rcpp_result_gen;
+END_RCPP
+}
 // lin_weights
 mat lin_weights(mat Xc, mat theta);
 RcppExport SEXP _balancer_lin_weights(SEXP XcSEXP, SEXP thetaSEXP) {
@@ -211,6 +221,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_balancer_make_no_prox", (DL_FUNC) &_balancer_make_no_prox, 0},
     {"_balancer_make_prox_l1", (DL_FUNC) &_balancer_make_prox_l1, 0},
     {"_balancer_make_prox_l1_grp", (DL_FUNC) &_balancer_make_prox_l1_grp, 0},
+    {"_balancer_make_prox_nuc", (DL_FUNC) &_balancer_make_prox_nuc, 0},
     {"_balancer_lin_weights", (DL_FUNC) &_balancer_lin_weights, 2},
     {"_balancer_lin_weights2", (DL_FUNC) &_balancer_lin_weights2, 1},
     {"_balancer_make_lin_weights", (DL_FUNC) &_balancer_make_lin_weights, 0},

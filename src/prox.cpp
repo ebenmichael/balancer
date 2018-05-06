@@ -50,3 +50,20 @@ mat prox_l1_grp(mat x, double lam, List opts) {
 pptr make_prox_l1_grp() {
   return pptr(new proxPtr(prox_l1_grp));
 }
+
+
+
+// Nuclear norm PROX
+mat prox_nuc(mat x, double lam, List opts) {
+  mat U; vec s; mat V;
+  // SVD then threshold singular values
+  svd(U, s, V, x);
+  lam = lam * as<double>(opts["lam"]);
+  s = (s - lam) % (s > lam) + (s + lam) % (s < -lam);
+  return U * diagmat(s) * V.t();
+}
+
+// [[Rcpp::export]]
+pptr make_prox_nuc() {
+  return pptr(new proxPtr(prox_nuc));
+}

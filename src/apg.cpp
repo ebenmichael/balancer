@@ -187,7 +187,7 @@ mat apg(gptr grad_ptr,
   proxPtr prox_h = *prox_ptr;
   
 
-  mat y = mat(x);
+  mat y = x;
   // accelerated
   double theta = 1;
   mat oldx;
@@ -216,9 +216,12 @@ mat apg(gptr grad_ptr,
 
   for(int i = 1; i <= max_it; i++) {
     Rcout << i << "\n";
+    Rcout << t << "\n";
     oldx = mat(x);
     oldy = mat(y);
 
+    grad = grad_f(y, loss_opts);
+    
     x = prox_h(y - t * grad, t, prox_opts);
 
     Rcout << accu(pow(y - x,2)) << "\n";
