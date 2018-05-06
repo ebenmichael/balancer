@@ -2,8 +2,7 @@
 % Please edit documentation in R/tmp.R
 \name{balancer_subgrp2}
 \alias{balancer_subgrp2}
-\title{Helper function to fit the dual for general odds function and prox
-estimates heterogeneous treatment effects}
+\title{Balancing weights for ATT (in subgroups)}
 \usage{
 balancer_subgrp2(X, trt, Z = NULL, weightfunc, weightfunc_ptr, proxfunc,
   hyperparam, opts = list())
@@ -35,6 +34,5 @@ balancer_subgrp2(X, trt, Z = NULL, weightfunc, weightfunc_ptr, proxfunc,
          \item{imbalance }{Imbalance in covariates}}
 }
 \description{
-Helper function to fit the dual for general odds function and prox
-estimates heterogeneous treatment effects
+Balancing weights for ATT (in subgroups)
 }

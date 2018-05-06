@@ -27,15 +27,16 @@ mat balancing_grad(mat theta, List opts) {
   // // get weights
   // mat weights = full_w_func(Xc, theta, weight_func, opts);
 
-  weightPtr weight_func = *as<wptr>(opts["weight_func"]);
+  
 
   mat weights;
   //compute weights in different ways
   if(as<string>(opts["weight_type"]) == "base") {
-    
+    weightPtr weight_func = *as<wptr>(opts["weight_func"]);
     weights = weight_func(Xc, theta);
     
   } else if(as<string>(opts["weight_type"])=="subgroup") {
+    weightPtr weight_func = *as<wptr>(opts["weight_func"]);
     // subgroup indicators
     vec z = as<vec>(opts["z"]);
     vec uni_z = unique(z);
@@ -60,7 +61,7 @@ mat balancing_grad(mat theta, List opts) {
     }
     // Rcout << weights.n_rows << ", " << weights.n_cols << "\n--\n";
   } else if(as<string>(opts["weight_type"])=="missing"){
-
+    weightPtr weight_func = *as<wptr>(opts["weight_func"]);
     // treatment assignment
     // here Xc is the matrix of covariates for units with outcomes observed
     vec trt = as<vec>(opts["trt"]);
@@ -82,6 +83,13 @@ mat balancing_grad(mat theta, List opts) {
     
     
 
+  } else if(as<string>(opts["weight_type"])=="hte"){
+
+    weightPtr2 weight_func = *as<wptr2>(opts["weight_func"]);
+    // iterate over the columns of theta
+    int m = theta.n_cols;
+    mat eta = Xc * theta;
+    weights = weight_func(eta);
   } else {
     throw runtime_error("weight_type must be one of 'base', 'subgroup'");
   }
@@ -99,60 +107,3 @@ gptr make_balancing_grad() {
 }
 
 
-// WEIGHT FUNCTIONS FOR GRADIENT
-
-//' Linear weights
-// [[Rcpp::export]]
-mat lin_weights(mat Xc, mat theta) {
-  return Xc * theta;
-}
-
-
-// [[Rcpp::export]]
-wptr make_lin_weights() {
-  return wptr(new weightPtr(lin_weights));
-}
-
-
-
-//' normalized logit weights, numerically stable
-// [[Rcpp::export]]
-mat softmax_weights(mat Xc, mat theta) {
-  mat eta = Xc * theta;
-  double m = arma::max(arma::max(eta));
-
-  return arma::exp(eta-m) / accu(exp(eta-m));
-}
-
-
-// [[Rcpp::export]]
-wptr make_softmax_weights() {
-  return wptr(new weightPtr(softmax_weights));
-}
-
-
-// PROX FUNCTIONS
-
-
-mat no_prox(mat theta, double t, List opts) {
-
-  return theta;
-     
-}
-
-// [[Rcpp::export]]
-pptr make_no_prox() {
-  return pptr(new proxPtr(no_prox));
-}
-
-
-mat prox_l1(mat x, double lam, List opts) {
-  lam = lam * as<double>(opts["lam"]);
-  return (x - lam) % (x > lam) + (x + lam) % (x < -lam);
-}
-
-
-// [[Rcpp::export]]
-pptr make_prox_l1() {
-  return pptr(new proxPtr(prox_l1));
-}

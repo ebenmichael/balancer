@@ -4,8 +4,8 @@
 \alias{apg}
 \title{Accelerated proximal gradient method}
 \usage{
-apg(grad_ptr, prox_ptr, loss_opts, prox_opts, dim1, dim2, max_it, eps, alpha,
-  beta, accel)
+apg(grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta,
+  accel)
 }
 \arguments{
 \item{grad_ptr}{Pointer to gradient function}
@@ -14,15 +14,15 @@ apg(grad_ptr, prox_ptr, loss_opts, prox_opts, dim1, dim2, max_it, eps, alpha,
 
 \item{loss_opts}{List of options for loss (input data, tuning params, etc.)}
 
+\item{prox_opts}{List of options for prox (regularization parameter)}
+
+\item{x}{Initial value}
+
 \item{max_it}{Maximum number of iterations}
 
 \item{eps}{Convergence tolerance}
 
 \item{beta}{Backtracking line search parameter}
-
-\item{loss_ptr}{Pointer to loss function}
-
-\item{dim}{Dimension}
 }
 \value{
 Optimal value

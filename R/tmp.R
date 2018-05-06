@@ -86,8 +86,7 @@ balancer2 <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
 
 balancer_subgrp2 <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
                              proxfunc, hyperparam, opts=list()) {
-    #' Helper function to fit the dual for general odds function and prox
-    #' estimates heterogeneous treatment effects
+    #' Balancing weights for ATT (in subgroups)
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
     #' @param Z Vector of subgroup indicators    
@@ -127,13 +126,6 @@ balancer_subgrp2 <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
                     function(k) colMeans(X[(trt ==1) & (Z==k), , drop=FALSE]))
 
     ##x_t <- as.numeric(x_t)
-
-    ## combine opts with defauls
-    opts <- c(opts,
-              list(max_it=50000,
-                   eps=1e-8,
-                   alpha=1.01, beta=.9,
-                   accel=T))
     
     loss_opts = list(Xc=X[trt==0,],
                      Xt=x_t,
@@ -147,8 +139,20 @@ balancer_subgrp2 <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
 
     prox_opts = list(lam=hyperparam)
 
+    ## initialize at 0
+    init = matrix(0, nrow=dim(X)[2], ncol=m)
+    
+    ## combine opts with defauls
+    opts <- c(opts,
+              list(max_it=50000,
+                   eps=1e-8,
+                   alpha=1.01, beta=.9,
+                   accel=T,
+                   x=init))
+    
+
     apgout <- apg(make_balancing_grad(), proxfunc, loss_opts, prox_opts,
-                  dim(X)[2], m, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel)
+                  opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel)
                   
 
     ## collect results
@@ -176,8 +180,7 @@ balancer_subgrp2 <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
 
 balancer_missing2 <- function(X, trt, R, weightfunc, weightfunc_ptr,
                              proxfunc, hyperparam, opts=list()) {
-    #' Helper function to fit the dual for general odds function and prox
-    #' estimates heterogeneous treatment effects
+    #' Balancing weights for missing outcomes
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
     #' @param R vector of missingness indicators
@@ -204,14 +207,6 @@ balancer_missing2 <- function(X, trt, R, weightfunc, weightfunc_ptr,
     ## get the moments for treated units twice
     x_t <- cbind(colMeans(X[trt==1,]),
                  colMeans(X[trt==1,]))
-
-    ## combine opts with defauls
-    opts <- c(opts,
-              list(max_it=50000,
-                   eps=1e-8,
-                   alpha=1.01, beta=.9,
-                   accel=T))
-    
     loss_opts = list(Xc=X[R==1,],
                      Xt=x_t,
                      weight_func=weightfunc_ptr,
@@ -220,8 +215,21 @@ balancer_missing2 <- function(X, trt, R, weightfunc, weightfunc_ptr,
                      )
     prox_opts = list(lam=hyperparam)
 
+
+    ## initialize at 0
+    init = matrix(0, nrow=dim(X)[2], ncol=m)
+    
+    ## combine opts with defauls
+    opts <- c(opts,
+              list(max_it=50000,
+                   eps=1e-8,
+                   alpha=1.01, beta=.9,
+                   accel=T,
+                   x=init))
+    
+
     apgout <- apg(make_balancing_grad(), proxfunc, loss_opts, prox_opts,
-                  dim(X)[2], m, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel)
+                  opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel)
                   
 
     ## collect results
@@ -230,9 +238,8 @@ balancer_missing2 <- function(X, trt, R, weightfunc, weightfunc_ptr,
     ## theta
     theta <- apgout
     out$theta <- theta
-    ## weights
-    ## helper function to get weights for a given theta
-    
+
+    ## weights    
     ## weights for R=1 T=0 to T=1
     weights1 <- numeric(n)
     weights1[trt == 0 & R == 1] <-
@@ -244,6 +251,77 @@ balancer_missing2 <- function(X, trt, R, weightfunc, weightfunc_ptr,
         weightfunc(X[trt == 1 & R == 1,,drop=FALSE], theta[,2, drop=FALSE])
     weights <- cbind(weights1, weights2)
 
+    out$weights <- weights
+
+    ## The final imbalance
+    out$imbalance <- balancing_grad(theta, loss_opts)
+    return(out)
+}
+
+
+
+
+balancer_hte2 <- function(X, trt, weightfunc, weightfunc_ptr,
+                             proxfunc, hyperparam, opts=list()) {
+    #' Balancing weights for heterogeneous treatment effects
+    #' @param X n x d matrix of covariates
+    #' @param trt Vector of treatment status indicators
+    #' @param weightfunc Derivative of convex conjugate of dispersion function (possibly normalized)
+    #' @param weightfunc_ptr Pointer to weightfunc
+    #' @param proxfunc Prox operator of regularization function
+    #' @param hyperparam Regularization hyper parameter
+    #' @param opts Optimization options
+    #'        \itemize{
+    #'          \item{MAX_ITERS }{Maximum number of iterations to run}
+    #'          \item{EPS }{Error rolerance}}
+    #'
+    #' @return \itemize{
+    #'          \item{theta }{Estimated dual propensity score parameters}
+    #'          \item{weights }{Estimated primal weights}
+    #'          \item{imbalance }{Imbalance in covariates}}
+    
+    ## one set of weights for each treated unit
+    m <- sum(trt)
+
+    n <- dim(X)[1]
+    
+    d <- dim(X)[2]
+    
+    ## keep the covariates for the treated units
+    x_t <- t(X[trt==1,])
+
+    ## initialize at 0
+    init = matrix(0, nrow=dim(X)[2], ncol=m)
+    
+    ## combine opts with defauls
+    opts <- c(opts,
+              list(max_it=50000,
+                   eps=1e-8,
+                   alpha=1.01, beta=.9,
+                   accel=T,
+                   x=init))
+    
+    loss_opts = list(Xc=X[trt==0,],
+                     Xt=x_t,
+                     weight_func=weightfunc_ptr,
+                     weight_type="hte"
+                     )
+    prox_opts = list(lam=hyperparam)
+
+    apgout <- apg(make_balancing_grad(), proxfunc, loss_opts, prox_opts,
+                  opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel)
+                  
+
+    ## collect results
+    out <- list()
+
+    ## theta
+    theta <- apgout
+    out$theta <- theta
+    ## weights
+    eta <- X %*% theta
+    eta[trt==1,] <- 0
+    weights <- weightfunc(eta)
     out$weights <- weights
 
     ## The final imbalance

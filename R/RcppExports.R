@@ -9,19 +9,19 @@ apg2 <- function(f, grad_f, prox_h, dim, max_it, eps, beta, accel) {
 
 #' Accelerated proximal gradient method
 #'
-#' @param loss_ptr Pointer to loss function
 #' @param grad_ptr Pointer to gradient function
 #' @param prox_ptr Pointer to prox function
 #' @param loss_opts List of options for loss (input data, tuning params, etc.)
-#' @param dim Dimension
+#' @param prox_opts List of options for prox (regularization parameter)
+#' @param x Initial value
 #' @param max_it Maximum number of iterations
 #' @param eps Convergence tolerance
 #' @param beta Backtracking line search parameter
 #'
 #' @return Optimal value
 #' @export
-apg <- function(grad_ptr, prox_ptr, loss_opts, prox_opts, dim1, dim2, max_it, eps, alpha, beta, accel) {
-    .Call('_balancer_apg', PACKAGE = 'balancer', grad_ptr, prox_ptr, loss_opts, prox_opts, dim1, dim2, max_it, eps, alpha, beta, accel)
+apg <- function(grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta, accel) {
+    .Call('_balancer_apg', PACKAGE = 'balancer', grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta, accel)
 }
 
 #' Accelerated Proximal Gradient method
@@ -39,13 +39,34 @@ make_balancing_grad <- function() {
     .Call('_balancer_make_balancing_grad', PACKAGE = 'balancer')
 }
 
+make_no_prox <- function() {
+    .Call('_balancer_make_no_prox', PACKAGE = 'balancer')
+}
+
+make_prox_l1 <- function() {
+    .Call('_balancer_make_prox_l1', PACKAGE = 'balancer')
+}
+
+make_prox_l1_grp <- function() {
+    .Call('_balancer_make_prox_l1_grp', PACKAGE = 'balancer')
+}
+
 #' Linear weights
 lin_weights <- function(Xc, theta) {
     .Call('_balancer_lin_weights', PACKAGE = 'balancer', Xc, theta)
 }
 
+#' Linear weights
+lin_weights2 <- function(eta) {
+    .Call('_balancer_lin_weights2', PACKAGE = 'balancer', eta)
+}
+
 make_lin_weights <- function() {
     .Call('_balancer_make_lin_weights', PACKAGE = 'balancer')
+}
+
+make_lin_weights2 <- function() {
+    .Call('_balancer_make_lin_weights2', PACKAGE = 'balancer')
 }
 
 #' normalized logit weights, numerically stable
@@ -53,15 +74,16 @@ softmax_weights <- function(Xc, theta) {
     .Call('_balancer_softmax_weights', PACKAGE = 'balancer', Xc, theta)
 }
 
+#' normalized logit weights, numerically stable
+softmax_weights2 <- function(eta) {
+    .Call('_balancer_softmax_weights2', PACKAGE = 'balancer', eta)
+}
+
 make_softmax_weights <- function() {
     .Call('_balancer_make_softmax_weights', PACKAGE = 'balancer')
 }
 
-make_no_prox <- function() {
-    .Call('_balancer_make_no_prox', PACKAGE = 'balancer')
-}
-
-make_prox_l1 <- function() {
-    .Call('_balancer_make_prox_l1', PACKAGE = 'balancer')
+make_softmax_weights2 <- function() {
+    .Call('_balancer_make_softmax_weights2', PACKAGE = 'balancer')
 }
 

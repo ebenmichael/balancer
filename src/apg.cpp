@@ -159,11 +159,11 @@ vec apg2(Function f,
 
 //' Accelerated proximal gradient method
 //'
-//' @param loss_ptr Pointer to loss function
 //' @param grad_ptr Pointer to gradient function
 //' @param prox_ptr Pointer to prox function
 //' @param loss_opts List of options for loss (input data, tuning params, etc.)
-//' @param dim Dimension
+//' @param prox_opts List of options for prox (regularization parameter)
+//' @param x Initial value
 //' @param max_it Maximum number of iterations
 //' @param eps Convergence tolerance
 //' @param beta Backtracking line search parameter
@@ -175,16 +175,19 @@ mat apg(gptr grad_ptr,
         pptr prox_ptr,
         List loss_opts,
         List prox_opts,
-        int dim1, int dim2, int max_it,
+        mat x,
+        int max_it,
         double eps, double alpha,
         double beta, bool accel) {
+
+  int dim1 = x.n_rows;
+  int dim2 = x.n_cols;
   // grab the functions from pointers
   gradPtr grad_f = *grad_ptr;
   proxPtr prox_h = *prox_ptr;
   
-  // initialize at zero
-  mat x = zeros<mat>(dim1, dim2);
-  mat y = x;
+
+  mat y = mat(x);
   // accelerated
   double theta = 1;
   mat oldx;
@@ -196,7 +199,7 @@ mat apg(gptr grad_ptr,
   double fgtx;
   double improve;
   double diff;
-  double t = 1;
+  double t = 1.0;
   double oldt;
   double t_hat;
   bool backcond;
@@ -205,22 +208,20 @@ mat apg(gptr grad_ptr,
   // step size initialization
   grad = grad_f(y, loss_opts);
   t = 1 / sqrt(accu(pow(grad,2)));
-
   mat x_hat = x - t * grad;
   mat g_hat = grad_f(x_hat, loss_opts);
-  t = abs(accu( (x - x_hat) % (grad - g_hat)) / accu(pow(grad - g_hat,2)));
+  double num = accu((x - x_hat) % (grad - g_hat));
+  double denom = accu(pow(grad - g_hat,2));
+  t = fabs(num / denom);
 
   for(int i = 1; i <= max_it; i++) {
-    
+    Rcout << i << "\n";
     oldx = mat(x);
     oldy = mat(y);
 
-    grad = grad_f(y, loss_opts);
-
-
     x = prox_h(y - t * grad, t, prox_opts);
 
-    
+    Rcout << accu(pow(y - x,2)) << "\n";
     // stopping criterion
     if(accu(pow(y - x,2)) < eps) {
       break;
@@ -245,7 +246,8 @@ mat apg(gptr grad_ptr,
     oldg = mat(grad);
     grad = prox_h(y - t * grad, t, prox_opts);
     
-     t_hat = 0.5 * accu(pow(y - oldy, 2)) / abs(accu((y - oldy) % (oldg - grad)));
+    t_hat = 0.5 * accu(pow(y - oldy, 2)) /
+      fabs(accu((y - oldy) % (oldg - grad)));
 
     double maxval = (t_hat > beta * t) ? t_hat : beta * t;
     t = (alpha * t < maxval) ? alpha * t : maxval;
