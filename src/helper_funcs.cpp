@@ -88,8 +88,14 @@ mat balancing_grad(mat theta, List opts) {
     weightPtr2 weight_func = *as<wptr2>(opts["weight_func"]);
     // iterate over the columns of theta
     int m = theta.n_cols;
-    mat eta = Xc * theta;
-    weights = weight_func(eta);
+
+    // special case for linear weights
+    if(as<bool>(opts["linear"])) {
+      return (Xc.t() * Xc) * theta - Xt;
+    } else {
+      mat eta = Xc * theta;
+      weights = weight_func(eta);
+    }
   } else {
     throw runtime_error("weight_type must be one of 'base', 'subgroup'");
   }

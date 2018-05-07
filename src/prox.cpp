@@ -57,9 +57,27 @@ pptr make_prox_l1_grp() {
 mat prox_nuc(mat x, double lam, List opts) {
   mat U; vec s; mat V;
   // SVD then threshold singular values
-  svd(U, s, V, x);
+  svd_econ(U, s, V, x);
+  // Rcout << U.n_rows << ", " << U.n_cols << "\n";
+  // Rcout << V.n_rows << ", " << V.n_cols << "\n";
+  // Rcout << s.size() << "\n";
+  int d = x.n_rows;
+  int m = x.n_cols;
+
+  // threshold singular values
   lam = lam * as<double>(opts["lam"]);
   s = (s - lam) % (s > lam) + (s + lam) % (s < -lam);
+  // mat smat;
+  // if(d >= m) {
+  //   //smat = join_vert(diagmat(s), zeros<mat>(d - m, m));
+  //   x = U.cols(0, m-1) * (diagmat(s) * V.t());
+  // } else {
+  //   // smat = join_horiz(diagmat(s), zeros<mat>(d, m - d));
+    
+  //   x = (U * diagmat(s)) * V.cols(0, d-1).t();
+  // }
+  // return x;
+
   return U * diagmat(s) * V.t();
 }
 

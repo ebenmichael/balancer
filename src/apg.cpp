@@ -219,8 +219,6 @@ mat apg(gptr grad_ptr,
     Rcout << t << "\n";
     oldx = mat(x);
     oldy = mat(y);
-
-    grad = grad_f(y, loss_opts);
     
     x = prox_h(y - t * grad, t, prox_opts);
 
@@ -247,7 +245,7 @@ mat apg(gptr grad_ptr,
     y = x + (1-theta) * (x - oldx);
 
     oldg = mat(grad);
-    grad = prox_h(y - t * grad, t, prox_opts);
+    grad = grad_f(y, loss_opts);
     
     t_hat = 0.5 * accu(pow(y - oldy, 2)) /
       fabs(accu((y - oldy) % (oldg - grad)));

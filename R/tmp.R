@@ -304,7 +304,8 @@ balancer_hte2 <- function(X, trt, weightfunc, weightfunc_ptr,
     loss_opts = list(Xc=X[trt==0,],
                      Xt=x_t,
                      weight_func=weightfunc_ptr,
-                     weight_type="hte"
+                     weight_type="hte",
+                     linear=TRUE
                      )
     prox_opts = list(lam=hyperparam)
 
