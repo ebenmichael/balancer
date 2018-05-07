@@ -43,12 +43,60 @@ make_no_prox <- function() {
     .Call('_balancer_make_no_prox', PACKAGE = 'balancer')
 }
 
+#' L1 Prox
+#'
+#' @param x Input matrix
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return Soft thresholded X
+prox_l1 <- function(x, lam, opts) {
+    .Call('_balancer_prox_l1', PACKAGE = 'balancer', x, lam, opts)
+}
+
 make_prox_l1 <- function() {
     .Call('_balancer_make_prox_l1', PACKAGE = 'balancer')
 }
 
+#' Group L1 Prox
+#'
+#' @param x Input matrix
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return Group soft thresholded X
+prox_l1_grp <- function(x, lam, opts) {
+    .Call('_balancer_prox_l1_grp', PACKAGE = 'balancer', x, lam, opts)
+}
+
 make_prox_l1_grp <- function() {
     .Call('_balancer_make_prox_l1_grp', PACKAGE = 'balancer')
+}
+
+#' L2 Prox
+#'
+#' @param x Input matrix
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return Column soft thresholded X
+prox_l2 <- function(x, lam, opts) {
+    .Call('_balancer_prox_l2', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_l2 <- function() {
+    .Call('_balancer_make_prox_l2', PACKAGE = 'balancer')
+}
+
+#' Nuclear norm prox
+#'
+#' @param x Input matrix
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return Singular value soft thresholded X
+prox_nuc <- function(x, lam, opts) {
+    .Call('_balancer_prox_nuc', PACKAGE = 'balancer', x, lam, opts)
 }
 
 make_prox_nuc <- function() {
@@ -89,5 +137,41 @@ make_softmax_weights <- function() {
 
 make_softmax_weights2 <- function() {
     .Call('_balancer_make_softmax_weights2', PACKAGE = 'balancer')
+}
+
+#' un-normalized logit weights
+exp_weights <- function(Xc, theta) {
+    .Call('_balancer_exp_weights', PACKAGE = 'balancer', Xc, theta)
+}
+
+#' un-normalized logit weights
+exp_weights2 <- function(eta) {
+    .Call('_balancer_exp_weights2', PACKAGE = 'balancer', eta)
+}
+
+make_exp_weights <- function() {
+    .Call('_balancer_make_exp_weights', PACKAGE = 'balancer')
+}
+
+make_exp_weights2 <- function() {
+    .Call('_balancer_make_exp_weights2', PACKAGE = 'balancer')
+}
+
+#' Linear weights
+pos_lin_weights <- function(Xc, theta) {
+    .Call('_balancer_pos_lin_weights', PACKAGE = 'balancer', Xc, theta)
+}
+
+#' Linear weights
+pos_lin_weights2 <- function(eta) {
+    .Call('_balancer_pos_lin_weights2', PACKAGE = 'balancer', eta)
+}
+
+make_pos_lin_weights <- function() {
+    .Call('_balancer_make_pos_lin_weights', PACKAGE = 'balancer')
+}
+
+make_pos_lin_weights2 <- function() {
+    .Call('_balancer_make_pos_lin_weights2', PACKAGE = 'balancer')
 }
 

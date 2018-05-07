@@ -1,6 +1,6 @@
 
 
-balancer2 <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
+balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
                      link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
                      regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc"),
                      hyperparam, normalized=TRUE, opts=list()) {
@@ -26,55 +26,107 @@ balancer2 <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
     #'          \item{imbalance }{Imbalance in covariates}}
     #' @export
 
-    if(link == "logit") {
-        weightfunc <- softmax
-    } else if(link == "linear") {
-        if(normalized) {
-            weightfunc <- normlin
+
+
+    if(type != "hte") {
+        if(link == "logit") {
+            if(normalized) {
+                weightfunc <- softmax_weights
+                weightptr <- make_softmax_weights()
+            } else {
+                weightfunc <- softmax_weights
+                weightptr <- make_softmax_weights()
+            }
+        } else if(link == "linear") {
+            if(normalized) {
+                weightfunc <- lin_weights
+                weightptr <- make_lin_weights()
+            } else {
+                weightfunc <- lin_weights
+                weightptr <- make_lin_weights()
+            }
+        } else if(link == "pos-linear") {
+            if(normalized) {
+                weightfunc <- pos_lin_weights
+                weightptr <- make_pos_lin_weights()
+            } else {
+                weightfunc <- pos_lin_weights
+                weightptr <- make_pos_lin_weights()
+            }
+        } else if(link == "enet") {
+            stop("Elastic Net not impleneted")
+        } else if(link == "pos-enet") {
+            stop("Elastic Net not impleneted")
         } else {
-            weightfunc <- identity
+            stop("link must be one of ('logit', 'linear', 'pos-linear')")
         }
-    } else if(link == "pos-linear") {
-        if(normalized) {
-            weightfunc <- normposlin
-        } else {
-            weightfunc <- poslin
-        }
-    } else if(link == "enet") {
-        alpha <- if(is.null(opts$alpha)) 0.5 else opts$alpha
-        weightfunc <- function(eta) enet(eta, alpha)
-    } else if(link == "pos-enet") {
-        alpha <- if(is.null(opts$alpha)) 0.5 else opts$alpha
-        weightfunc <- function(eta) posenet(eta, alpha)
     } else {
-        stop("link must be one of ('logit', 'linear', 'pos-linear')")
+        linear <- FALSE
+        if(link == "logit") {
+            if(normalized) {
+                weightfunc <- softmax_weights2
+                weightptr <- make_softmax_weights2()
+            } else {
+                weightfunc <- softmax_weights2
+                weightptr <- make_softmax_weights2()
+            }
+        } else if(link == "linear") {
+            if(normalized) {
+                weightfunc <- lin_weights2
+                weightptr <- make_lin_weights2()
+            } else {
+                weightfunc <- lin_weights2
+                weightptr <- make_lin_weights2()
+            }
+            linear <- TRUE
+        } else if(link == "pos-linear") {
+            if(normalized) {
+                weightfunc <- pos_lin_weights2
+                weightptr <- make_pos_lin_weights2()
+            } else {
+                weightfunc <- pos_lin_weights2
+                weightptr <- make_pos_lin_weights2()
+            }
+        } else if(link == "enet") {
+            stop("Elastic Net not impleneted")
+        } else if(link == "pos-enet") {
+            stop("Elastic Net not impleneted")
+        } else {
+            stop("link must be one of ('logit', 'linear', 'pos-linear')")
+        }        
     }
 
+    
     if(is.null(regularizer)) {
-        proxfunc <- no_prox
+        proxfunc <- make_no_prox()
     } else if(regularizer == "l1") {
-        proxfunc <- l1_prox
+        proxfunc <- make_prox_l1()
     } else if(regularizer == "grpl1") {
-        proxfunc <- l1_grp_prox
+        proxfunc <- make_prox_l1_grp()
     } else if(regularizer == "l2") {
-        proxfunc <- l2_prox
+        proxfunc <- make_prox_l2()
     } else if(regularizer == "ridge") {
-        proxfunc <- ridge_prox
+        stop("Ridge not implemented yet")
     } else if(regularizer == "linf") {
-        proxfunc <- linf_prox
+        stop("L infinity regularization not implemented")
     } else if(regularizer == "nuc") {
-        proxfunc <- nuc_prox
+        proxfunc <- make_prox_nuc()
     } else {
         stop("regularizer must be one of (NULL, ;l1', 'grpl1', 'ridge', 'linf', 'nuc')")
     }
     if(type == "att") {
-        out <- balancer_subgrp2(X, trt, NULL, weightfunc, proxfunc, hyperparam, opts)
+        out <- balancer_subgrp(X, trt, NULL, weightfunc, weightptr,
+                                proxfunc, hyperparam, opts)
     } else if(type == "subgrp") {
-        out <- balancer_subgrp2(X, trt, Z, weightfunc, proxfunc, hyperparam, opts)
+        out <- balancer_subgrp(X, trt, Z, weightfunc, weightptr,
+                                proxfunc, hyperparam, opts)
     } else if(type == "missing") {
-        out <- balancer_missing(X, trt, Z, weightfunc, proxfunc, hyperparam, opts)
+        out <- balancer_missing(X, trt, Z, weightfunc, weightptr,
+                                proxfunc, hyperparam, opts)
     } else if(type == "hte") {
-        out <- balancer_hte(X, trt, weightfunc, proxfunc, hyperparam, opts)
+        opts$linear <- linear
+        out <- balancer_hte(X, trt,weightfunc, weightptr,
+                            proxfunc, hyperparam, opts)
     } else {
         stop("type must be one of ('att', 'subgrp', 'missing', 'hte')")
     }
@@ -84,7 +136,7 @@ balancer2 <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
 
 
 
-balancer_subgrp2 <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
+balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
                              proxfunc, hyperparam, opts=list()) {
     #' Balancing weights for ATT (in subgroups)
     #' @param X n x d matrix of covariates
@@ -133,6 +185,10 @@ balancer_subgrp2 <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
                      weight_type="subgroup",
                      z=Z[trt==0]
                      )
+    ## indices of subgroups
+    ctrl_z = z[trt==0]
+    loss_opts$z_ind <- lapply(grps, function(k) which(ctrl_z==k)-1)
+    
     if(m==1) {
         loss_opts$weight_type="base"
     }
@@ -144,7 +200,7 @@ balancer_subgrp2 <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
     
     ## combine opts with defauls
     opts <- c(opts,
-              list(max_it=50000,
+              list(max_it=5000,
                    eps=1e-8,
                    alpha=1.01, beta=.9,
                    accel=T,
@@ -178,7 +234,7 @@ balancer_subgrp2 <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
 
 
 
-balancer_missing2 <- function(X, trt, R, weightfunc, weightfunc_ptr,
+balancer_missing <- function(X, trt, R, weightfunc, weightfunc_ptr,
                              proxfunc, hyperparam, opts=list()) {
     #' Balancing weights for missing outcomes
     #' @param X n x d matrix of covariates
@@ -207,12 +263,18 @@ balancer_missing2 <- function(X, trt, R, weightfunc, weightfunc_ptr,
     ## get the moments for treated units twice
     x_t <- cbind(colMeans(X[trt==1,]),
                  colMeans(X[trt==1,]))
+
+    obs_trt <- trt[R==1]
     loss_opts = list(Xc=X[R==1,],
                      Xt=x_t,
                      weight_func=weightfunc_ptr,
                      weight_type="missing",
-                     trt=trt[R==1]
+                     trt=obs_trt
                      )
+
+    loss_opts$idx_ctrl = which(obs_trt == 0) - 1
+    loss_opts$idx_trt = which(obs_trt == 1) - 1
+    
     prox_opts = list(lam=hyperparam)
 
 
@@ -221,7 +283,7 @@ balancer_missing2 <- function(X, trt, R, weightfunc, weightfunc_ptr,
     
     ## combine opts with defauls
     opts <- c(opts,
-              list(max_it=50000,
+              list(max_it=5000,
                    eps=1e-8,
                    alpha=1.01, beta=.9,
                    accel=T,
@@ -261,8 +323,8 @@ balancer_missing2 <- function(X, trt, R, weightfunc, weightfunc_ptr,
 
 
 
-balancer_hte2 <- function(X, trt, weightfunc, weightfunc_ptr,
-                             proxfunc, hyperparam, opts=list()) {
+balancer_hte <- function(X, trt, weightfunc, weightfunc_ptr,
+                          proxfunc, hyperparam, opts=list()) {
     #' Balancing weights for heterogeneous treatment effects
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
@@ -295,7 +357,7 @@ balancer_hte2 <- function(X, trt, weightfunc, weightfunc_ptr,
     
     ## combine opts with defauls
     opts <- c(opts,
-              list(max_it=50000,
+              list(max_it=5000,
                    eps=1e-8,
                    alpha=1.01, beta=.9,
                    accel=T,
@@ -305,8 +367,9 @@ balancer_hte2 <- function(X, trt, weightfunc, weightfunc_ptr,
                      Xt=x_t,
                      weight_func=weightfunc_ptr,
                      weight_type="hte",
-                     linear=TRUE
+                     linear=opts$linear
                      )
+    
     prox_opts = list(lam=hyperparam)
 
     apgout <- apg(make_balancing_grad(), proxfunc, loss_opts, prox_opts,

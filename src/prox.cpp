@@ -22,7 +22,14 @@ pptr make_no_prox() {
   return pptr(new proxPtr(no_prox));
 }
 
-// L1 PROX
+//' L1 Prox
+//'
+//' @param x Input matrix
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return Soft thresholded X
+// [[Rcpp::export]]
 mat prox_l1(mat x, double lam, List opts) {
   lam = lam * as<double>(opts["lam"]);
   return (x - lam) % (x > lam) + (x + lam) % (x < -lam);
@@ -35,7 +42,15 @@ pptr make_prox_l1() {
 }
 
 
-// GROUP L1 PROX
+
+//' Group L1 Prox
+//'
+//' @param x Input matrix
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return Group soft thresholded X
+// [[Rcpp::export]]
 mat prox_l1_grp(mat x, double lam, List opts) {
   lam = lam * as<double>(opts["lam"]);
   double rownorm;
@@ -52,8 +67,39 @@ pptr make_prox_l1_grp() {
 }
 
 
+//' L2 Prox
+//'
+//' @param x Input matrix
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return Column soft thresholded X
+// [[Rcpp::export]]
+mat prox_l2(mat x, double lam, List opts) {
+  lam = lam * as<double>(opts["lam"]);
+  double colnorm;
+  for(int j=0; j < x.n_cols; j++) {
+    colnorm = norm(x.col(j), 2);
+    x.col(j) = (x.col(j) - x.col(j) / colnorm * lam) * (colnorm > lam);
+  }
+  return x;
+}
 
-// Nuclear norm PROX
+// [[Rcpp::export]]
+pptr make_prox_l2() {
+  return pptr(new proxPtr(prox_l2));
+}
+
+
+
+//' Nuclear norm prox
+//'
+//' @param x Input matrix
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return Singular value soft thresholded X
+// [[Rcpp::export]]
 mat prox_nuc(mat x, double lam, List opts) {
   mat U; vec s; mat V;
   // SVD then threshold singular values

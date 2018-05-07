@@ -68,3 +68,61 @@ wptr2 make_softmax_weights2() {
   return wptr2(new weightPtr2(softmax_weights2));
 }
 
+
+
+
+//' un-normalized logit weights
+// [[Rcpp::export]]
+mat exp_weights(mat Xc, mat theta) {
+  mat eta = Xc * theta;
+  double m = arma::max(arma::max(eta));
+
+  return arma::exp(eta-1);
+}
+
+
+
+//' un-normalized logit weights
+// [[Rcpp::export]]
+mat exp_weights2(mat eta) {
+  return exp(eta - 1);
+}
+
+
+// [[Rcpp::export]]
+wptr make_exp_weights() {
+  return wptr(new weightPtr(exp_weights));
+}
+
+
+// [[Rcpp::export]]
+wptr2 make_exp_weights2() {
+  return wptr2(new weightPtr2(exp_weights2));
+}
+
+
+
+//' Linear weights
+// [[Rcpp::export]]
+mat pos_lin_weights(mat Xc, mat theta) {
+  mat eta = Xc * theta;
+  return eta % (eta > 0);
+}
+
+
+//' Linear weights
+// [[Rcpp::export]]
+mat pos_lin_weights2(mat eta) {
+  return eta % (eta > 0);
+}
+
+
+// [[Rcpp::export]]
+wptr make_pos_lin_weights() {
+  return wptr(new weightPtr(pos_lin_weights));
+}
+
+// [[Rcpp::export]]
+wptr2 make_pos_lin_weights2() {
+  return wptr2(new weightPtr2(pos_lin_weights2));
+}

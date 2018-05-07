@@ -156,7 +156,7 @@ ridge_prox <- function(x, lam) {
 }
 
 
-balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
+balancer_old <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
                      link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
                      regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc"),
                      hyperparam, normalized=TRUE, opts=list()) {
@@ -224,13 +224,13 @@ balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
         stop("regularizer must be one of (NULL, ;l1', 'grpl1', 'ridge', 'linf', 'nuc')")
     }
     if(type == "att") {
-        out <- balancer_subgrp(X, trt, NULL, weightfunc, proxfunc, hyperparam, opts)
+        out <- balancer_subgrp_old(X, trt, NULL, weightfunc, proxfunc, hyperparam, opts)
     } else if(type == "subgrp") {
-        out <- balancer_subgrp(X, trt, Z, weightfunc, proxfunc, hyperparam, opts)
+        out <- balancer_subgrp_old(X, trt, Z, weightfunc, proxfunc, hyperparam, opts)
     } else if(type == "missing") {
-        out <- balancer_missing(X, trt, Z, weightfunc, proxfunc, hyperparam, opts)
+        out <- balancer_missing_old(X, trt, Z, weightfunc, proxfunc, hyperparam, opts)
     } else if(type == "hte") {
-        out <- balancer_hte(X, trt, weightfunc, proxfunc, hyperparam, opts)
+        out <- balancer_hte_old(X, trt, weightfunc, proxfunc, hyperparam, opts)
     } else {
         stop("type must be one of ('att', 'subgrp', 'missing', 'hte')")
     }
@@ -238,7 +238,7 @@ balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
     return(out)
 }
 
-balancer_subgrp <- function(X, trt, Z=NULL, weightfunc,
+balancer_subgrp_old <- function(X, trt, Z=NULL, weightfunc,
                             proxfunc, hyperparam, opts=list()) {
     #' Helper function to fit the dual for general odds function and prox
     #' estimates heterogeneous treatment effects
@@ -333,7 +333,7 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc,
 }
 
 
-balancer_missing <- function(X, trt, R, weightfunc, proxfunc,
+balancer_missing_old <- function(X, trt, R, weightfunc, proxfunc,
                              hyperparam, opts=list()) {
     #' Helper function to fit the dual for general odds function and prox
     #' Estimates ATT with missing outcomes
@@ -462,7 +462,7 @@ balancer_missing <- function(X, trt, R, weightfunc, proxfunc,
 
 
 
-balancer_hte <- function(X, trt, weightfunc, proxfunc,
+balancer_hte_old <- function(X, trt, weightfunc, proxfunc,
                              hyperparam, opts=list()) {
     #' Helper function to fit the dual for general odds function and prox
     #' Estimates a CATE for each treated individual

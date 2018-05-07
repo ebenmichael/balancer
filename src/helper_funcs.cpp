@@ -40,48 +40,48 @@ mat balancing_grad(mat theta, List opts) {
     // subgroup indicators
     vec z = as<vec>(opts["z"]);
     vec uni_z = unique(z);
+    List z_ind = as<List>(opts["z_ind"]);
     
-    // initialize weights as zero
-    weights = zeros(Xc.n_rows, uni_z.size());
-    // Rcout << weights.n_rows << ", " << weights.n_cols << "\n";
-    // iterate over subgroups and set weights
+    // initialize gradient as zero
+    mat grad = zeros(Xc.n_cols, uni_z.size());
+
+    mat Xz;
+    // iterate over subgroups and compute gradient
     for(int i=0; i < uni_z.size(); i++) {
       int k = uni_z(i);
       // Rcout << k<< "\n";
-      // get indices for subgroups
-      uvec idxs = find(z == k);
-      uvec col = find(uni_z == k);
-      // Rcout << col << "\n---\n";
-      // Rcout << idxs << "\n---\n";
-      // get weights for subgroup
-      mat tmp_w = weight_func(Xc.rows(idxs),theta.col(i));
-      // Rcout << tmp_w.n_rows << ", " << tmp_w.n_cols << "\n";
-      weights.submat(idxs, col) = tmp_w;
-      // Rcout << weights.n_rows << ", " << weights.n_cols << "\n--\n";
+      // get indices for subgroups, passed in through opts
+   
+      uvec idxs = as<uvec>(z_ind[k]);
+      uvec col(1);
+      col.fill(i);
+      // get gradient for subgroup
+      Xz = Xc.rows(idxs);
+      grad.col(i) = Xz.t() * weight_func(Xz, theta.col(i));
+
     }
-    // Rcout << weights.n_rows << ", " << weights.n_cols << "\n--\n";
+    return grad - Xt;
+    
   } else if(as<string>(opts["weight_type"])=="missing"){
     weightPtr weight_func = *as<wptr>(opts["weight_func"]);
     // treatment assignment
     // here Xc is the matrix of covariates for units with outcomes observed
     vec trt = as<vec>(opts["trt"]);
+
+    mat grad = zeros(Xc.n_cols, 2);
     
-    // two sets of weights
-    // ctrl -> trt weights
-    uvec idx_ctrl = find(trt == 0);
-    vec weights1 = zeros(Xc.n_rows);
-    weights1.elem(idx_ctrl) = weight_func(Xc.rows(idx_ctrl), theta.col(0));
+    // two sets of gradientss
+    // ctrl -> trt gradients
+    uvec idx_ctrl = as<uvec>(opts["idx_ctrl"]);
+    mat Xz = Xc.rows(idx_ctrl);
+    grad.col(0) = Xz.t() * weight_func(Xz, theta.col(0));
 
     // observed trt -> trt weights
-    uvec idx_trt = find(trt == 1);
-    vec weights2 = zeros(Xc.n_rows);
-    weights2.elem(idx_trt) = weight_func(Xc.rows(idx_trt), theta.col(1));
+    uvec idx_trt = as<uvec>(opts["idx_trt"]);
+    Xz = Xc.rows(idx_trt);
+    grad.col(1) = Xz.t() * weight_func(Xz, theta.col(1));
 
-    // combine weights
-    weights = join_horiz(weights1, weights2);
-                                             
-    
-    
+    return grad - Xt;
 
   } else if(as<string>(opts["weight_type"])=="hte"){
 

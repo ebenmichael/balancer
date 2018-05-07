@@ -215,14 +215,14 @@ mat apg(gptr grad_ptr,
   t = fabs(num / denom);
 
   for(int i = 1; i <= max_it; i++) {
-    Rcout << i << "\n";
-    Rcout << t << "\n";
+    // Rcout << i << "\n";
+    // Rcout << t << "\n";
     oldx = mat(x);
     oldy = mat(y);
     
     x = prox_h(y - t * grad, t, prox_opts);
 
-    Rcout << accu(pow(y - x,2)) << "\n";
+    // Rcout << accu(pow(y - x,2)) << "\n";
     // stopping criterion
     if(accu(pow(y - x,2)) < eps) {
       break;
@@ -252,6 +252,12 @@ mat apg(gptr grad_ptr,
 
     double maxval = (t_hat > beta * t) ? t_hat : beta * t;
     t = (alpha * t < maxval) ? alpha * t : maxval;
+
+    if((i % 100) == 0) {
+      // Rcout << i << "\n";
+      // Rcout << t << "\n";
+      Rcpp::checkUserInterrupt();
+    }
   }
 
   return(x);
