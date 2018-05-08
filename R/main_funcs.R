@@ -175,18 +175,18 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
 
     ## get the group treated moments
     x_t <- sapply(grps,
-                    function(k) colMeans(X[(trt ==1) & (Z==k), , drop=FALSE]))
-
+                 function(k) colMeans(X[(trt ==1) & (Z==k), , drop=FALSE]))
+    x_t <- as.matrix(x_t)
     ##x_t <- as.numeric(x_t)
     
-    loss_opts = list(Xc=X[trt==0,],
+    loss_opts = list(Xc=X[trt==0,,drop=FALSE],
                      Xt=x_t,
                      weight_func=weightfunc_ptr,
                      weight_type="subgroup",
                      z=Z[trt==0]
                      )
     ## indices of subgroups
-    ctrl_z = z[trt==0]
+    ctrl_z = Z[trt==0]
     loss_opts$z_ind <- lapply(grps, function(k) which(ctrl_z==k)-1)
     
     if(m==1) {
@@ -206,7 +206,6 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
                    accel=T,
                    x=init))
     
-
     apgout <- apg(make_balancing_grad(), proxfunc, loss_opts, prox_opts,
                   opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel)
                   
@@ -261,11 +260,11 @@ balancer_missing <- function(X, trt, R, weightfunc, weightfunc_ptr,
     d <- dim(X)[2]
 
     ## get the moments for treated units twice
-    x_t <- cbind(colMeans(X[trt==1,]),
-                 colMeans(X[trt==1,]))
+    x_t <- cbind(colMeans(X[trt==1,, drop=FALSE]),
+                 colMeans(X[trt==1,, drop=FALSE]))
 
     obs_trt <- trt[R==1]
-    loss_opts = list(Xc=X[R==1,],
+    loss_opts = list(Xc=X[R==1,,drop=FALSE],
                      Xt=x_t,
                      weight_func=weightfunc_ptr,
                      weight_type="missing",
@@ -350,7 +349,7 @@ balancer_hte <- function(X, trt, weightfunc, weightfunc_ptr,
     d <- dim(X)[2]
     
     ## keep the covariates for the treated units
-    x_t <- t(X[trt==1,])
+    x_t <- t(X[trt==1,, drop=FALSE])
 
     ## initialize at 0
     init = matrix(0, nrow=dim(X)[2], ncol=m)
@@ -363,13 +362,13 @@ balancer_hte <- function(X, trt, weightfunc, weightfunc_ptr,
                    accel=T,
                    x=init))
     
-    loss_opts = list(Xc=X[trt==0,],
+    loss_opts = list(Xc=X[trt==0,,drop=FALSE],
                      Xt=x_t,
                      weight_func=weightfunc_ptr,
                      weight_type="hte",
                      linear=opts$linear
                      )
-    
+
     prox_opts = list(lam=hyperparam)
 
     apgout <- apg(make_balancing_grad(), proxfunc, loss_opts, prox_opts,

@@ -88,7 +88,6 @@ mat balancing_grad(mat theta, List opts) {
     weightPtr2 weight_func = *as<wptr2>(opts["weight_func"]);
     // iterate over the columns of theta
     int m = theta.n_cols;
-
     // special case for linear weights
     if(as<bool>(opts["linear"])) {
       return (Xc.t() * Xc) * theta - Xt;
