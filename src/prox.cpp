@@ -131,3 +131,62 @@ mat prox_nuc(mat x, double lam, List opts) {
 pptr make_prox_nuc() {
   return pptr(new proxPtr(prox_nuc));
 }
+
+
+
+//' Group L1 + L1 Prox
+//'
+//' @param x Input matrix (two sets of parameters x = U + V)
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return soft thresholded U + group-thresholded V
+// [[Rcpp::export]]
+mat prox_l1_grp_l1(mat x, double lam, List opts) {
+
+  // split matrix in half
+  int d = x.n_rows / 2;
+
+  mat x1 = x.rows(0, d-1);
+  mat x2 = x.rows(d, 2 * d - 1);
+
+  x1 = prox_l1(x1, lam, as<List>(opts["lam1"]));
+  x2 = prox_l1_grp(x2, lam, as<List>(opts["lam2"]));
+
+  return join_vert(x1, x2);
+  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_l1_grp_l1() {
+  return pptr(new proxPtr(prox_l1_grp_l1));
+}
+
+
+//' Nuclear norm + L1 Prox
+//'
+//' @param x Input matrix (two sets of parameters x = U + V)
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return svd soft thresholded U + soft-thresholded V
+// [[Rcpp::export]]
+mat prox_nuc_l1(mat x, double lam, List opts) {
+
+  // split matrix in half
+  int d = x.n_rows / 2;
+
+  mat x1 = x.rows(0, d-1);
+  mat x2 = x.rows(d, 2 * d - 1);
+
+  x1 = prox_l1(x1, lam, as<List>(opts["lam1"]));
+  x2 = prox_nuc(x2, lam, as<List>(opts["lam2"]));
+
+  return join_vert(x1, x2);
+  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_nuc_l1() {
+  return pptr(new proxPtr(prox_nuc_l1));
+}

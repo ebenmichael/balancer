@@ -5,7 +5,7 @@
 \title{Balancing weights for missing outcomes}
 \usage{
 balancer_missing(X, trt, R, weightfunc, weightfunc_ptr, proxfunc, hyperparam,
-  opts = list())
+  ridge, Q, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -21,6 +21,11 @@ balancer_missing(X, trt, R, weightfunc, weightfunc_ptr, proxfunc, hyperparam,
 \item{proxfunc}{Prox operator of regularization function}
 
 \item{hyperparam}{Regularization hyper parameter}
+
+\item{ridge}{Whether to use L2 penalty in dual}
+
+\item{Q}{m x m matrix to tie together ridge penalty, default: NULL,
+if TRUE, use covariance of treated groups}
 
 \item{opts}{Optimization options
 \itemize{

@@ -20,3 +20,8 @@ typedef XPtr<weightPtr2> wptr2;
 
 typedef mat (*fullWeightPtr)(mat Xc, mat theta, wptr weight_func, List opts);
 typedef XPtr<fullWeightPtr> fwptr;
+
+
+
+typedef double (*kernelPtr)(mat x, mat y, double p);
+typedef XPtr<kernelPtr> kptr;

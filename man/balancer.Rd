@@ -10,7 +10,8 @@
 balancer(X, trt, Z = NULL, type = c("att", "subgrp", "missing", "hte"),
   link = c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
   regularizer = c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc"),
-  hyperparam, normalized = TRUE, opts = list())
+  hyperparam, Q = NULL, kernel = NULL, kern_param = 1,
+  normalized = TRUE, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -27,6 +28,13 @@ ATT with missing outcomes, and heterogeneouts effects}
 \item{regularizer}{Dual of balance criterion}
 
 \item{hyperparam}{Regularization hyperparameter}
+
+\item{Q}{m x m matrix to tie together ridge penalty, default: NULL,
+if TRUE, use covariance of treated groups}
+
+\item{kernel}{What kernel to use, default NULL}
+
+\item{kern_param}{Hyperparameter for kernel}
 
 \item{normalized}{Whether to normalize the weights}
 

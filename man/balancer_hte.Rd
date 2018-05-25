@@ -4,7 +4,7 @@
 \alias{balancer_hte}
 \title{Balancing weights for heterogeneous treatment effects}
 \usage{
-balancer_hte(X, trt, weightfunc, weightfunc_ptr, proxfunc, hyperparam,
+balancer_hte(X, trt, weightfunc, weightfunc_ptr, proxfunc, hyperparam, ridge, Q,
   opts = list())
 }
 \arguments{
@@ -19,6 +19,11 @@ balancer_hte(X, trt, weightfunc, weightfunc_ptr, proxfunc, hyperparam,
 \item{proxfunc}{Prox operator of regularization function}
 
 \item{hyperparam}{Regularization hyper parameter}
+
+\item{ridge}{Whether to use L2 penalty in dual}
+
+\item{Q}{m x m matrix to tie together ridge penalty, default: NULL,
+if TRUE, use covariance of treated groups}
 
 \item{opts}{Optimization options
 \itemize{

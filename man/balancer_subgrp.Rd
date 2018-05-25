@@ -5,7 +5,7 @@
 \title{Balancing weights for ATT (in subgroups)}
 \usage{
 balancer_subgrp(X, trt, Z = NULL, weightfunc, weightfunc_ptr, proxfunc,
-  hyperparam, opts = list())
+  hyperparam, ridge, Q = NULL, kernel, kern_param = 1, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -18,9 +18,18 @@ balancer_subgrp(X, trt, Z = NULL, weightfunc, weightfunc_ptr, proxfunc,
 
 \item{weightfunc_ptr}{Pointer to weightfunc}
 
-\item{proxfunc}{Prox operator of regularization function}
+\item{proxfunc}{Prox operator of regularization function, or "ridge"}
 
 \item{hyperparam}{Regularization hyper parameter}
+
+\item{ridge}{Whether to use L2 penalty in dual}
+
+\item{Q}{m x m matrix to tie together ridge penalty, default: NULL,
+if TRUE, use covariance of treated groups}
+
+\item{kernel}{What kernel to use, default NULL}
+
+\item{kern_param}{Hyperparameter for kernel}
 
 \item{opts}{Optimization options
 \itemize{
