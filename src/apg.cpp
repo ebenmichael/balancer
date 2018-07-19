@@ -70,7 +70,7 @@ mat apg(gptr grad_ptr,
     // Rcout << t << "\n";
     oldx = mat(x);
     oldy = mat(y);
-    
+
     x = prox_h(y - t * grad, t, prox_opts);
 
     // Rcout << accu(pow(y - x,2)) << "\n";
@@ -100,7 +100,6 @@ mat apg(gptr grad_ptr,
     
     t_hat = 0.5 * accu(pow(y - oldy, 2)) /
       fabs(accu((y - oldy) % (oldg - grad)));
-
     double maxval = (t_hat > beta * t) ? t_hat : beta * t;
     t = (alpha * t < maxval) ? alpha * t : maxval;
 
@@ -109,6 +108,7 @@ mat apg(gptr grad_ptr,
       Rcout << t << "\n";
       Rcpp::checkUserInterrupt();
     }
+    
   }
 
   return(x);

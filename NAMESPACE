@@ -2,6 +2,7 @@
 
 export(apg)
 export(balancer)
+export(balancer_boot)
 export(balancer_old)
 importFrom(Rcpp,sourceCpp)
 useDynLib(balancer)

@@ -217,7 +217,7 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
             if(Q) {
                 loss_opts$Q <- t(x_t)
             } else {
-                loass_opts$Q <- Q
+                loss_opts$Q <- Q
             }
         } else {
             loss_opts$hasQ <- FALSE

@@ -27,6 +27,15 @@ make_balancing_grad <- function() {
     .Call('_balancer_make_balancing_grad', PACKAGE = 'balancer')
 }
 
+#' Generic balancing loss gradient
+multilevel_grad <- function(theta, opts) {
+    .Call('_balancer_multilevel_grad', PACKAGE = 'balancer', theta, opts)
+}
+
+make_multilevel_grad <- function() {
+    .Call('_balancer_make_multilevel_grad', PACKAGE = 'balancer')
+}
+
 #' Generic balancing loss gradient with kernels
 balancing_grad_kern <- function(theta, opts) {
     .Call('_balancer_balancing_grad_kern', PACKAGE = 'balancer', theta, opts)

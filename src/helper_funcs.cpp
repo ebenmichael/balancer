@@ -94,6 +94,37 @@ mat balancing_grad(mat theta, List opts) {
       mat eta = Xc * theta;
       grad = Xc.t() * weight_func(eta);
     }
+  } else if(as<string>(opts["weight_type"])=="multilevel"){
+
+
+    int n_groups = as<int>(opts["n_groups"]);
+    int dim = as<int>(opts["dim"]);
+
+
+    // compute weights and get gradient
+    weightPtr weight_func = *as<wptr>(opts["weight_func"]);
+    grad = Xc.t() * weight_func(Xc, theta);
+
+    // multi level structure with ridge penalties (Normal hyper priors)
+
+    // global intercept
+    vec global_int = as<vec>(opts["global_int"]);
+
+    // group-level intercepts
+    vec group_int = vec();
+    group_int.fill(as<double>(opts["group_int"]));
+
+    // global parameters
+    vec global_param = vec(dim);
+    global_param.fill(as<double>(opts["global_param"]));
+
+    // group parameters
+    vec group_param = vec(dim * n_groups);
+    group_param.fill(as<double>(opts["group_param"]));
+
+    vec hyper = join_cols(join_cols(join_cols(global_int, group_int), global_int), group_param);
+    grad += hyper % theta;    
+    
   } else {
     throw runtime_error("weight_type must be one of 'base', 'subgroup'");
   }
@@ -105,20 +136,81 @@ mat balancing_grad(mat theta, List opts) {
       grad += as<double>(opts["hyper"]) * theta * Q * Q.t();
     }
     else {
-      grad += as<double>(opts["hyper"]) * theta;
+      // grad += as<double>(opts["hyper"]) * theta;
+        grad += as<double>(opts["hyper"])  * theta;
     }
   }
+  
   //combine to get gradient
   return grad - Xt;
     
 }
 
 
-
 // [[Rcpp::export]]
 gptr make_balancing_grad() {
   return gptr(new gradPtr(balancing_grad));
 }
+
+
+
+
+//' Generic balancing loss gradient
+// [[Rcpp::export]]
+mat multilevel_grad(mat theta, List opts) {
+
+  // control data
+  mat Xc = as<mat>(opts["Xc"]);
+  mat Xt = as<mat>(opts["Xt"]);
+
+  int n_groups = as<int>(opts["n_groups"]);
+  int dim = as<int>(opts["dim"]);
+  
+
+  mat grad;
+
+  
+  // compute weights and get gradient
+  weightPtr weight_func = *as<wptr>(opts["weight_func"]);
+  grad = Xc.t() * weight_func(Xc, theta);
+
+  // multi level structure with ridge penalties (Normal hyper priors)
+
+  // global intercept
+  vec global_int = as<vec>(opts["global_int"]);
+
+  // group-level intercepts
+  vec group_int = vec(n_groups);
+  group_int.fill(as<double>(opts["group_int"]));
+
+  // global parameters
+  vec global_param = vec(dim);
+  global_param.fill(as<double>(opts["global_param"]));
+
+  // group parameters
+  vec group_param = vec(dim * n_groups);
+  group_param.fill(as<double>(opts["group_param"]));
+
+  mat hyper = join_cols(join_cols(join_cols(global_int, group_int), global_param), group_param);
+
+  grad += hyper % theta;
+  //combine to get gradient
+  return grad - Xt;
+                 
+    
+  
+    
+}
+
+
+
+// [[Rcpp::export]]
+gptr make_multilevel_grad() {
+  return gptr(new gradPtr(multilevel_grad));
+}
+
+
+
 
 
 //' Generic balancing loss gradient with kernels
