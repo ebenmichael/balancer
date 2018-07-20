@@ -18,6 +18,7 @@ using namespace Rcpp;
 //' @param max_it Maximum number of iterations
 //' @param eps Convergence tolerance
 //' @param beta Backtracking line search parameter
+//' @param verbose How much information to print
 //'
 //' @return Optimal value
 //' @export
@@ -29,7 +30,7 @@ mat apg(gptr grad_ptr,
         mat x,
         int max_it,
         double eps, double alpha,
-        double beta, bool accel) {
+        double beta, bool accel, bool verbose) {
 
   int dim1 = x.n_rows;
   int dim2 = x.n_cols;
@@ -104,8 +105,10 @@ mat apg(gptr grad_ptr,
     t = (alpha * t < maxval) ? alpha * t : maxval;
 
     if((i % 100) == 0) {
-      Rcout << i << "\n";
-      Rcout << t << "\n";
+      if(verbose) {
+        Rcout << i << "\n";
+        Rcout << t << "\n";
+      }
       Rcpp::checkUserInterrupt();
     }
     

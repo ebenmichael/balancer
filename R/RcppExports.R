@@ -11,11 +11,12 @@
 #' @param max_it Maximum number of iterations
 #' @param eps Convergence tolerance
 #' @param beta Backtracking line search parameter
+#' @param verbose How much information to print
 #'
 #' @return Optimal value
 #' @export
-apg <- function(grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta, accel) {
-    .Call('_balancer_apg', PACKAGE = 'balancer', grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta, accel)
+apg <- function(grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta, accel, verbose) {
+    .Call('_balancer_apg', PACKAGE = 'balancer', grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta, accel, verbose)
 }
 
 #' Generic balancing loss gradient

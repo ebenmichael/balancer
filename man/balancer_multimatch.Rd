@@ -4,11 +4,13 @@
 \alias{balancer_multimatch}
 \title{Balancing weights for ATT with multilevel treatment assignment}
 \usage{
-balancer_multimatch(X, trt, Z, weightfunc, weightfunc_ptr, proxfunc, hyperparam,
-  opts = list())
+balancer_multimatch(X, V = NULL, trt, Z, weightfunc, weightfunc_ptr, proxfunc,
+  hyperparam, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
+
+\item{V}{n x k matrix of group level covariates}
 
 \item{trt}{Vector of treatment status indicators}
 

@@ -167,10 +167,13 @@ mat multilevel_grad(mat theta, List opts) {
 
   int n_groups = as<int>(opts["n_groups"]);
   int dim = as<int>(opts["dim"]);
-  
-  
-  mat grad;
-  
+
+  // group level predictors
+  int grp_cov_dim = as<int>(opts["grp_cov_dim"]);
+
+  // initialize gradient as zero
+  mat grad = zeros(Xc.n_cols, n_groups + 1);
+
   if(as<string>(opts["weight_type"])=="subgroup") {
     
     weightPtr weight_func = *as<wptr>(opts["weight_func"]);
@@ -179,9 +182,6 @@ mat multilevel_grad(mat theta, List opts) {
     vec z = as<vec>(opts["z"]);
     vec uni_z = unique(z);
     List z_ind = as<List>(opts["z_ind"]);
-    
-    // initialize gradient as zero
-    grad = zeros(Xc.n_cols, uni_z.size() + 1);
 
 
     mat Xz;
@@ -211,10 +211,6 @@ mat multilevel_grad(mat theta, List opts) {
 
     weightPtr weight_func = *as<wptr>(opts["weight_func"]);
     
-    // initialize gradient as zero
-    grad = zeros(Xc.n_cols, n_groups + 1);
-
-    mat Xz;
     // iterate over subgroups and compute gradient
     mat weights = mat(size(Xc)[0], n_groups);
     
@@ -233,13 +229,7 @@ mat multilevel_grad(mat theta, List opts) {
     
   }
 
-  
-  // // compute weights and get gradient
-  // weightPtr weight_func = *as<wptr>(opts["weight_func"]);
-  // grad = Xc.t() * weight_func(Xc, theta);
-
   // multi level structure with ridge penalties (Normal hyper priors)
-
   // global intercept
   vec global_int = as<vec>(opts["global_int"]);
 
@@ -248,19 +238,27 @@ mat multilevel_grad(mat theta, List opts) {
   group_int.fill(as<double>(opts["group_int"]));
 
   // global parameters
-  mat global_param = mat(dim, 1);
+  mat global_param = mat(dim + grp_cov_dim, 1);
   global_param.fill(as<double>(opts["global_param"]));
 
 
   // group parameters
-  mat group_param = mat(dim, n_groups);
+  mat group_param = mat(dim + grp_cov_dim, n_groups);
   group_param.fill(as<double>(opts["group_param"]));
-
   mat hyper = join_cols(join_cols(global_int, group_int).t(), join_rows(global_param, group_param));
 
   grad += hyper % theta;
   //combine to get gradient
-  return grad - Xt;
+  grad -= Xt;
+
+
+
+  // zero out group parameters for group level predictors
+  if(grp_cov_dim > 0) {
+    grad.submat(dim+1, 1, dim + grp_cov_dim, n_groups) = zeros(grp_cov_dim, n_groups); 
+  }
+  
+  return grad;
                  
     
   

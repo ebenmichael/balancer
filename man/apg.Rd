@@ -5,7 +5,7 @@
 \title{Accelerated proximal gradient method}
 \usage{
 apg(grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta,
-  accel)
+  accel, verbose)
 }
 \arguments{
 \item{grad_ptr}{Pointer to gradient function}
@@ -23,6 +23,8 @@ apg(grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta,
 \item{eps}{Convergence tolerance}
 
 \item{beta}{Backtracking line search parameter}
+
+\item{verbose}{How much information to print}
 }
 \value{
 Optimal value

@@ -8,8 +8,8 @@
 using namespace Rcpp;
 
 // apg
-mat apg(gptr grad_ptr, pptr prox_ptr, List loss_opts, List prox_opts, mat x, int max_it, double eps, double alpha, double beta, bool accel);
-RcppExport SEXP _balancer_apg(SEXP grad_ptrSEXP, SEXP prox_ptrSEXP, SEXP loss_optsSEXP, SEXP prox_optsSEXP, SEXP xSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP accelSEXP) {
+mat apg(gptr grad_ptr, pptr prox_ptr, List loss_opts, List prox_opts, mat x, int max_it, double eps, double alpha, double beta, bool accel, bool verbose);
+RcppExport SEXP _balancer_apg(SEXP grad_ptrSEXP, SEXP prox_ptrSEXP, SEXP loss_optsSEXP, SEXP prox_optsSEXP, SEXP xSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP accelSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -23,7 +23,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
     Rcpp::traits::input_parameter< bool >::type accel(accelSEXP);
-    rcpp_result_gen = Rcpp::wrap(apg(grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta, accel));
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(apg(grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta, accel, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -455,7 +456,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_balancer_apg", (DL_FUNC) &_balancer_apg, 10},
+    {"_balancer_apg", (DL_FUNC) &_balancer_apg, 11},
     {"_balancer_balancing_grad", (DL_FUNC) &_balancer_balancing_grad, 2},
     {"_balancer_make_balancing_grad", (DL_FUNC) &_balancer_make_balancing_grad, 0},
     {"_balancer_multilevel_grad", (DL_FUNC) &_balancer_multilevel_grad, 2},
