@@ -27,8 +27,11 @@ balancer_multi  <- function(X, trt, Z, weightfunc, weightfunc_ptr, proxfunc,
 
     ## if no subgroups, put everything into one group
     if(is.null(Z)) {
-        Z <- rep(1, length(trt))
+        Z <- rep(0, length(trt))
     }
+
+
+    
     ## get the distinct group labels
     grps <- sort(unique(Z))
     m <- length(grps)
@@ -38,22 +41,29 @@ balancer_multi  <- function(X, trt, Z, weightfunc, weightfunc_ptr, proxfunc,
     d <- dim(X)[2]
 
 
-    ## add indicators and interaction terms
-    X_fac <- matrix(model.matrix(~as.factor(Z)-1, data.frame(X)),
-                    nrow=nrow(X))
-    X_interact <- matrix(model.matrix(~.:as.factor(Z) -1, data.frame(X)),
-                nrow=nrow(X))    
-    X <- cbind(1,X_fac, X, X_interact)
+    ## ## add indicators and interaction terms
+    ## X_fac <- matrix(model.matrix(~as.factor(Z)-1, data.frame(X)),
+    ##                 nrow=nrow(X))
+    ## X_interact <- matrix(model.matrix(~.:as.factor(Z) -1, data.frame(X)),
+    ##             nrow=nrow(X))    
+    ## X <- cbind(1,X_fac, X, X_interact)
 
+    X <- cbind(1, X)
 
-    
-    full_d <- dim(X)[2]
-    
-    x_t <- colMeans(X[(trt ==1), , drop=FALSE])
+    x_t <- sapply(grps,
+                  function(k) colSums(X[(trt ==1) & (Z==k), , drop=FALSE]))
     x_t <- as.matrix(x_t)
+    x_t <- cbind(colSums(X[trt==1,]), x_t) / sum(trt==1)
+    
+    ## full_d <- dim(X)[2]
+    
+    ## x_t <- colMeans(X[(trt ==1), , drop=FALSE])
+    ## x_t <- as.matrix(x_t)
     
     Xc <- X[trt==0,,drop=FALSE]
 
+    ## indices of subgroups
+    ctrl_z = Z[trt==0]    
 
     loss_opts = list(Xc=Xc,
                      Xt=x_t,
@@ -64,10 +74,14 @@ balancer_multi  <- function(X, trt, Z, weightfunc, weightfunc_ptr, proxfunc,
                      group_int=hyperparam[2],
                      global_param=hyperparam[3],
                      group_param=hyperparam[4],
-                     weight_type="multilevel"
+                     weight_type="subgroup",
+                     z=Z[trt==0],
+                     z_ind = lapply(grps, function(k) which(ctrl_z==k)-1)
                      )
+
+    
     ## initialize at 0
-    init = matrix(0, nrow=full_d, ncol=1)
+    init = matrix(0, nrow=(d+1), ncol=(m+1))
 
 
 
@@ -91,14 +105,132 @@ balancer_multi  <- function(X, trt, Z, weightfunc, weightfunc_ptr, proxfunc,
     theta <- apgout
     out$theta <- theta
     ## weights
-    weights <- numeric(n)
-    weights[(trt == 0)] <-
-            weightfunc(X[(trt == 0), , drop=FALSE], theta)
+    weights <- matrix(0, nrow=n, ncol=m)
+    for(i in 1:m) {
+        k = grps[i]
+        weights[(trt == 0) & (Z == k), i] <-
+            weightfunc(X[(trt == 0) & (Z == k), , drop=FALSE], theta[,1,drop=FALSE] + theta[,i+1,drop=FALSE])
+    }
     
 
     out$weights <- weights
 
     ## The final imbalance
+
+    loss_opts = list(Xc=Xc,
+                     Xt=x_t,
+                     weight_func=weightfunc_ptr,
+                     n_groups=m,
+                     dim=d,
+                     global_int=0,
+                     group_int=0,
+                     global_param=0,
+                     group_param=0,
+                     weight_type="subgroup",
+                     z=Z[trt==0],
+                     z_ind = lapply(grps, function(k) which(ctrl_z==k)-1)
+                     )
+    
+    out$imbalance <- multilevel_grad(theta, loss_opts)
+    return(out)
+}
+
+
+balancer_multimatch  <- function(X, trt, Z, weightfunc, weightfunc_ptr, proxfunc,
+                            hyperparam, opts=list()) {
+    #' Balancing weights for ATT with multilevel treatment assignment
+    #' @param X n x d matrix of covariates
+    #' @param trt Vector of treatment status indicators
+    #' @param Z Vector of hierarchical group indicators
+    #' @param weightfunc Derivative of convex conjugate of dispersion function (possibly normalized)
+    #' @param weightfunc_ptr Pointer to weightfunc
+    #' @param hyperparam Regularization hyper parameter
+    #' @param opts Optimization options
+    #'        \itemize{
+    #'          \item{MAX_ITERS }{Maximum number of iterations to run}
+    #'          \item{EPS }{Error rolerance}}
+    #'
+    #' @return \itemize{
+    #'          \item{theta }{Estimated dual propensity score parameters}
+    #'          \item{weights }{Estimated primal weights}
+    #'          \item{imbalance }{Imbalance in covariates}}
+
+
+    ## get treated group labels
+    grps <- sort(unique(Z[trt==1]))
+    m <- length(grps)
+    
+    n <- dim(X)[1]
+    d <- dim(X)[2]
+
+    X <- cbind(1, X)
+
+    ## get treated means in treated groups
+    x_t <- sapply(grps,
+                  function(k) colSums(X[(trt ==1) & (Z==k), , drop=FALSE]))
+    x_t <- as.matrix(x_t)
+    x_t <- cbind(colSums(X[trt==1,]), x_t) / sum(trt==1)
+        
+    Xc <- X[trt==0,,drop=FALSE]
+
+    loss_opts = list(Xc=Xc,
+                     Xt=x_t,
+                     weight_func=weightfunc_ptr,
+                     n_groups=m,
+                     dim=d,
+                     global_int=hyperparam[1],
+                     group_int=hyperparam[2],
+                     global_param=hyperparam[3],
+                     group_param=hyperparam[4],
+                     weight_type="multimatch"
+                     )
+    
+    ## initialize at 0
+    init = matrix(0, nrow=(d+1), ncol=(m+1))
+    
+    ## combine opts with defauls
+    opts <- c(opts,
+              list(max_it=5000,
+                   eps=1e-8,
+                   alpha=1.01, beta=.9,
+                   accel=T,
+                   x=init))
+
+    prox_opts = list(lam=hyperparam)
+    apgout <- apg(make_multilevel_grad(), proxfunc, loss_opts, prox_opts,
+                  opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel)                      
+
+    ## collect results
+    out <- list()
+
+    ## theta
+    theta <- apgout
+    out$theta <- theta
+    ## weights
+    weights <- matrix(0, nrow=n, ncol=m)
+    for(i in 1:m) {
+        k = grps[i]
+        weights[(trt == 0), i] <-
+            weightfunc(X[(trt == 0), , drop=FALSE], theta[,1,drop=FALSE] + theta[,i+1,drop=FALSE])
+    }
+    
+
+    out$weights <- weights
+
+    ## The final imbalance
+
+    loss_opts = list(Xc=Xc,
+                     Xt=x_t,
+                     weight_func=weightfunc_ptr,
+                     n_groups=m,
+                     dim=d,
+                     global_int=0,
+                     group_int=0,
+                     global_param=0,
+                     group_param=0,
+                     weight_type="multimatch"
+                     )
+    
     out$imbalance <- multilevel_grad(theta, loss_opts)
     return(out)
 }

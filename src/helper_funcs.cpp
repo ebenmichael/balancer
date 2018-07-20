@@ -159,6 +159,8 @@ gptr make_balancing_grad() {
 // [[Rcpp::export]]
 mat multilevel_grad(mat theta, List opts) {
 
+
+  
   // control data
   mat Xc = as<mat>(opts["Xc"]);
   mat Xt = as<mat>(opts["Xt"]);
@@ -166,13 +168,75 @@ mat multilevel_grad(mat theta, List opts) {
   int n_groups = as<int>(opts["n_groups"]);
   int dim = as<int>(opts["dim"]);
   
-
+  
   mat grad;
+  
+  if(as<string>(opts["weight_type"])=="subgroup") {
+    
+    weightPtr weight_func = *as<wptr>(opts["weight_func"]);
+    
+    // subgroup indicators
+    vec z = as<vec>(opts["z"]);
+    vec uni_z = unique(z);
+    List z_ind = as<List>(opts["z_ind"]);
+    
+    // initialize gradient as zero
+    grad = zeros(Xc.n_cols, uni_z.size() + 1);
+
+
+    mat Xz;
+    // iterate over subgroups and compute gradient
+    vec weights = vec(size(Xc)[0]);
+    for(int i=0; i < uni_z.size(); i++) {
+      int k = uni_z(i);
+
+
+      // get indices for subgroups, passed in through opts
+   
+      uvec idxs = as<uvec>(z_ind[k]);
+      uvec col(1);
+      col.fill(i);
+      // get gradient for subgroup
+      Xz = Xc.rows(idxs);
+      weights.rows(idxs) = weight_func(Xz, theta.col(0) + theta.col(i+1));
+      grad.col(i+1) = Xz.t() * weight_func(Xz, theta.col(0) + theta.col(i+1));
+
+      // global parameters
+      // grad.col(0) += grad.col(i+1);
+    }
+    
+    grad.col(0) = Xc.t() * weights;
+    
+  } else if(as<string>(opts["weight_type"])=="multimatch") {
+
+    weightPtr weight_func = *as<wptr>(opts["weight_func"]);
+    
+    // initialize gradient as zero
+    grad = zeros(Xc.n_cols, n_groups + 1);
+
+    mat Xz;
+    // iterate over subgroups and compute gradient
+    mat weights = mat(size(Xc)[0], n_groups);
+    
+    for(int i=0; i < n_groups; i++) {
+
+      weights.col(i) = weight_func(Xc, theta.col(0) + theta.col(i+1));
+
+      grad.col(i+1) = Xc.t() * weights.col(i);
+
+      // global parameters
+      // grad.col(0) += grad.col(i+1);
+    }
+    
+    grad.col(0) = Xc.t() * sum(weights, 1);
+
+    
+  }
 
   
-  // compute weights and get gradient
-  weightPtr weight_func = *as<wptr>(opts["weight_func"]);
-  grad = Xc.t() * weight_func(Xc, theta);
+  // // compute weights and get gradient
+  // weightPtr weight_func = *as<wptr>(opts["weight_func"]);
+  // grad = Xc.t() * weight_func(Xc, theta);
 
   // multi level structure with ridge penalties (Normal hyper priors)
 
@@ -184,14 +248,15 @@ mat multilevel_grad(mat theta, List opts) {
   group_int.fill(as<double>(opts["group_int"]));
 
   // global parameters
-  vec global_param = vec(dim);
+  mat global_param = mat(dim, 1);
   global_param.fill(as<double>(opts["global_param"]));
 
+
   // group parameters
-  vec group_param = vec(dim * n_groups);
+  mat group_param = mat(dim, n_groups);
   group_param.fill(as<double>(opts["group_param"]));
 
-  mat hyper = join_cols(join_cols(join_cols(global_int, group_int), global_param), group_param);
+  mat hyper = join_cols(join_cols(global_int, group_int).t(), join_rows(global_param, group_param));
 
   grad += hyper % theta;
   //combine to get gradient
