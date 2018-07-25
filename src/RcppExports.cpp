@@ -282,6 +282,52 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// prox_l1_all
+mat prox_l1_all(mat x, double lam, List opts);
+RcppExport SEXP _balancer_prox_l1_all(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type lam(lamSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(prox_l1_all(x, lam, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_prox_l1_all
+pptr make_prox_l1_all();
+RcppExport SEXP _balancer_make_prox_l1_all() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_prox_l1_all());
+    return rcpp_result_gen;
+END_RCPP
+}
+// prox_l1_nuc
+mat prox_l1_nuc(mat x, double lam, List opts);
+RcppExport SEXP _balancer_prox_l1_nuc(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type lam(lamSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(prox_l1_nuc(x, lam, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_prox_l1_nuc
+pptr make_prox_l1_nuc();
+RcppExport SEXP _balancer_make_prox_l1_nuc() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_prox_l1_nuc());
+    return rcpp_result_gen;
+END_RCPP
+}
 // lin_weights
 mat lin_weights(mat Xc, mat theta);
 RcppExport SEXP _balancer_lin_weights(SEXP XcSEXP, SEXP thetaSEXP) {
@@ -479,6 +525,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_balancer_make_prox_l1_grp_l1", (DL_FUNC) &_balancer_make_prox_l1_grp_l1, 0},
     {"_balancer_prox_nuc_l1", (DL_FUNC) &_balancer_prox_nuc_l1, 3},
     {"_balancer_make_prox_nuc_l1", (DL_FUNC) &_balancer_make_prox_nuc_l1, 0},
+    {"_balancer_prox_l1_all", (DL_FUNC) &_balancer_prox_l1_all, 3},
+    {"_balancer_make_prox_l1_all", (DL_FUNC) &_balancer_make_prox_l1_all, 0},
+    {"_balancer_prox_l1_nuc", (DL_FUNC) &_balancer_prox_l1_nuc, 3},
+    {"_balancer_make_prox_l1_nuc", (DL_FUNC) &_balancer_make_prox_l1_nuc, 0},
     {"_balancer_lin_weights", (DL_FUNC) &_balancer_lin_weights, 2},
     {"_balancer_lin_weights2", (DL_FUNC) &_balancer_lin_weights2, 1},
     {"_balancer_make_lin_weights", (DL_FUNC) &_balancer_make_lin_weights, 0},

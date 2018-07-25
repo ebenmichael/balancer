@@ -190,3 +190,92 @@ mat prox_nuc_l1(mat x, double lam, List opts) {
 pptr make_prox_nuc_l1() {
   return pptr(new proxPtr(prox_nuc_l1));
 }
+
+
+
+//' L1 Prox for multilevel model, separate for global/local params + intercepts
+//'
+//' @param x Input matrix (two sets of parameters x = U + V)
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return soft thresholded parameters with different soft thresholds
+// [[Rcpp::export]]
+mat prox_l1_all(mat x, double lam, List opts) {
+
+  int n_groups = as<int>(opts["n_groups"]);
+
+  // global intercept
+  mat global_int = x.submat(0,0,0,0);
+
+  // group intercepts
+  mat group_int = x.submat(0, 1, 0, x.n_cols - 1);
+
+  // global parameters
+  mat global_param = x.submat(1, 0, x.n_rows-1, 0);
+  
+  // group parameters
+  mat group_param = x.submat(1, 1, x.n_rows-1, x.n_cols-1);
+
+  global_int = prox_l1(global_int, lam, as<List>(opts["lam1"]));
+
+  group_int = prox_l1(group_int, lam, as<List>(opts["lam2"]));
+
+  global_param = prox_l1(global_param, lam, as<List>(opts["lam3"]));
+
+
+  group_param = prox_l1(group_param, lam, as<List>(opts["lam4"]));  
+
+
+  return join_cols(join_rows(global_int, group_int), join_rows(global_param, group_param));
+  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_l1_all() {
+  return pptr(new proxPtr(prox_l1_all));
+}
+
+
+//' L1 Prox for multilevel model, separate for global/local params + intercepts
+//'
+//' @param x Input matrix (two sets of parameters x = U + V)
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return soft thresholded parameters with different soft thresholds
+// [[Rcpp::export]]
+mat prox_l1_nuc(mat x, double lam, List opts) {
+
+  int n_groups = as<int>(opts["n_groups"]);
+
+  // global intercept
+  mat global_int = x.submat(0,0,0,0);
+
+  // group intercepts
+  mat group_int = x.submat(0, 1, 0, x.n_cols - 1);
+
+  // global parameters
+  mat global_param = x.submat(1, 0, x.n_rows-1, 0);
+  
+  // group parameters
+  mat group_param = x.submat(1, 1, x.n_rows-1, x.n_cols-1);
+
+  global_int = prox_l1(global_int, lam, as<List>(opts["lam1"]));
+
+  group_int = prox_l1(group_int, lam, as<List>(opts["lam2"]));
+
+  global_param = prox_l1(global_param, lam, as<List>(opts["lam3"]));
+
+
+  group_param = prox_nuc(group_param, lam, as<List>(opts["lam4"]));  
+
+
+  return join_cols(join_rows(global_int, group_int), join_rows(global_param, group_param));
+  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_l1_nuc() {
+  return pptr(new proxPtr(prox_l1_nuc));
+}

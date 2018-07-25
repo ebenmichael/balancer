@@ -169,6 +169,36 @@ make_prox_nuc_l1 <- function() {
     .Call('_balancer_make_prox_nuc_l1', PACKAGE = 'balancer')
 }
 
+#' L1 Prox for multilevel model, separate for global/local params + intercepts
+#'
+#' @param x Input matrix (two sets of parameters x = U + V)
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return soft thresholded parameters with different soft thresholds
+prox_l1_all <- function(x, lam, opts) {
+    .Call('_balancer_prox_l1_all', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_l1_all <- function() {
+    .Call('_balancer_make_prox_l1_all', PACKAGE = 'balancer')
+}
+
+#' L1 Prox for multilevel model, separate for global/local params + intercepts
+#'
+#' @param x Input matrix (two sets of parameters x = U + V)
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return soft thresholded parameters with different soft thresholds
+prox_l1_nuc <- function(x, lam, opts) {
+    .Call('_balancer_prox_l1_nuc', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_l1_nuc <- function() {
+    .Call('_balancer_make_prox_l1_nuc', PACKAGE = 'balancer')
+}
+
 #' Linear weights
 lin_weights <- function(Xc, theta) {
     .Call('_balancer_lin_weights', PACKAGE = 'balancer', Xc, theta)

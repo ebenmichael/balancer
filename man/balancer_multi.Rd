@@ -5,7 +5,7 @@
 \title{Balancing weights for ATT (with hierarchical structure)}
 \usage{
 balancer_multi(X, V = NULL, trt, Z, weightfunc, weightfunc_ptr, proxfunc,
-  hyperparam, opts = list())
+  hyperparam, ridge = F, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -21,6 +21,8 @@ balancer_multi(X, V = NULL, trt, Z, weightfunc, weightfunc_ptr, proxfunc,
 \item{weightfunc_ptr}{Pointer to weightfunc}
 
 \item{hyperparam}{Regularization hyper parameter}
+
+\item{ridge}{Whether to use ridge penalty in dual}
 
 \item{opts}{Optimization options
 \itemize{

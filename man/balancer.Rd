@@ -7,11 +7,11 @@
 \alias{balancer}
 \title{balancer: A package for treatment effect heterogeneity and missing data in observational studies through matrix-constrained balancing weights}
 \usage{
-balancer(X, trt, Z = NULL, type = c("att", "subgrp", "missing", "hte"),
-  link = c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
-  regularizer = c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc"),
-  hyperparam, Q = NULL, kernel = NULL, kern_param = 1,
-  normalized = TRUE, opts = list())
+balancer(X, trt, Z = NULL, V = NULL, type = c("att", "subgrp",
+  "subgrp_multi", "multimatch", "missing", "hte"), link = c("logit", "linear",
+  "pos-linear", "pos-enet", "posenet"), regularizer = c(NULL, "l1", "grpl1",
+  "l2", "ridge", "linf", "nuc", "l1_all", "l1_nuc"), hyperparam, Q = NULL,
+  kernel = NULL, kern_param = 1, normalized = TRUE, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -20,8 +20,11 @@ balancer(X, trt, Z = NULL, type = c("att", "subgrp", "missing", "hte"),
 
 \item{Z}{Vector of subgroup indicators or observed indicators}
 
+\item{V}{Group level covariates}
+
 \item{type}{Find balancing weights for ATT, subgroup ATTs,
-ATT with missing outcomes, and heterogeneouts effects}
+subgroup ATTs with multilevel p-score, multilevel observational studies,
+ATT with missing outcomes, and heterogeneous effects}
 
 \item{link}{Link function for weights}
 

@@ -1,15 +1,20 @@
 
 
-balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
+balancer <- function(X, trt, Z=NULL, V=NULL,
+                     type=c("att", "subgrp", "subgrp_multi",
+                            "multimatch", "missing", "hte"),
                      link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
-                     regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc"),
+                     regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc",
+                                   "l1_all", "l1_nuc"),
                      hyperparam, Q=NULL, kernel=NULL, kern_param=1, normalized=TRUE, opts=list()) {
     #' Find Balancing weights by solving the dual optimization problem
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
     #' @param Z Vector of subgroup indicators or observed indicators
+    #' @param V Group level covariates
     #' @param type Find balancing weights for ATT, subgroup ATTs,
-    #'             ATT with missing outcomes, and heterogeneouts effects
+    #'             subgroup ATTs with multilevel p-score, multilevel observational studies,
+    #'             ATT with missing outcomes, and heterogeneous effects
     #' @param link Link function for weights
     #' @param regularizer Dual of balance criterion
     #' @param hyperparam Regularization hyperparameter
@@ -34,12 +39,18 @@ balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
 
     if(type != "hte") {
         if(link == "logit") {
-            if(normalized) {
-                weightfunc <- softmax_weights
-                weightptr <- make_softmax_weights()
-            } else {
-                weightfunc <- softmax_weights
-                weightptr <- make_softmax_weights()
+            if(type %in% c("subgrp_multi", "multi_match")) {
+                weightfunc <- exp_weights
+                weightptr <- make_exp_weights()
+            }
+            else {
+                if(normalized) {
+                    weightfunc <- softmax_weights2
+                    weightptr <- make_softmax_weights2()
+                } else {
+                    weightfunc <- softmax_weights2
+                    weightptr <- make_softmax_weights2()
+                }
             }
         } else if(link == "linear") {
             if(normalized) {
@@ -67,12 +78,18 @@ balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
     } else {
         linear <- FALSE
         if(link == "logit") {
-            if(normalized) {
-                weightfunc <- softmax_weights2
-                weightptr <- make_softmax_weights2()
-            } else {
-                weightfunc <- softmax_weights2
-                weightptr <- make_softmax_weights2()
+            if(type %in% c("subgrp_multi", "multi_match")) {
+                weightfunc <- exp_weights
+                weightptr <- make_exp_weights()
+            }
+            else {
+                if(normalized) {
+                    weightfunc <- softmax_weights2
+                    weightptr <- make_softmax_weights2()
+                } else {
+                    weightfunc <- softmax_weights2
+                    weightptr <- make_softmax_weights2()
+                }
             }
         } else if(link == "linear") {
             if(normalized) {
@@ -124,9 +141,14 @@ balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
         proxfunc <- make_prox_nuc_l1()
         ## double the covariate matrix to include two sets of parameters
         X <- cbind(X,X)
+    } else if(regularizer == "l1_all") {
+        proxfunc <- make_prox_l1_all()
+    } else if(regularizer == "l1_nuc") {
+        proxfunc <- make_prox_l1_nuc()
     } else {
         stop("regularizer must be one of (NULL, 'l1', 'grpl1', 'l1grpl1', 'ridge', 'linf', 'nuc', 'nucl1')")
     }
+    
     if(type == "att") {
         out <- balancer_subgrp(X, trt, NULL, weightfunc, weightptr,
                                proxfunc, hyperparam, ridge, Q, kernel,
@@ -134,6 +156,12 @@ balancer <- function(X, trt, Z=NULL, type=c("att", "subgrp", "missing", "hte"),
     } else if(type == "subgrp") {
         out <- balancer_subgrp(X, trt, Z, weightfunc, weightptr,
                                 proxfunc, hyperparam, ridge, Q, NULL, NULL, opts)
+    } else if(type == "subgrp_multi") {
+        out <- balancer_multi(X, V, trt, Z, weightfunc, weightptr,
+                              proxfunc, hyperparam, ridge, opts)
+    } else if(type == "multimatch") {
+        out <- balancer_multimatch(X, V, trt, Z, weightfunc, weightptr,
+                              proxfunc, hyperparam, ridge, opts)
     } else if(type == "missing") {
         out <- balancer_missing(X, trt, Z, weightfunc, weightptr,
                                 proxfunc, hyperparam, ridge, Q, opts)
@@ -250,13 +278,14 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
                    eps=1e-8,
                    alpha=1.01, beta=.9,
                    accel=T,
-                   x=init))
+                   x=init,
+                   verbose=F))
     if(is.null(kernel)) {
         apgout <- apg(make_balancing_grad(), proxfunc, loss_opts, prox_opts,
-                      opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel)
+                      opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel, opts$verbose)
     } else {
         apgout <- apg(make_balancing_grad_kern(), proxfunc, loss_opts, prox_opts,
-                      opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel)
+                      opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel, opts$verbose)
     }
                   
 
@@ -277,6 +306,7 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
     out$weights <- weights
 
     ## The final imbalance
+    loss_opts$ridge <- F
     out$imbalance <- balancing_grad(theta, loss_opts)
     return(out)
 }
@@ -365,11 +395,12 @@ balancer_missing <- function(X, trt, R, weightfunc, weightfunc_ptr,
                    eps=1e-8,
                    alpha=1.01, beta=.9,
                    accel=T,
-                   x=init))
+                   x=init,
+                   verbose=F))
     
 
     apgout <- apg(make_balancing_grad(), proxfunc, loss_opts, prox_opts,
-                  opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel)
+                  opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel, opts$verbose)
                   
 
     ## collect results
@@ -442,7 +473,8 @@ balancer_hte <- function(X, trt, weightfunc, weightfunc_ptr,
                    eps=1e-8,
                    alpha=1.01, beta=.9,
                    accel=T,
-                   x=init))
+                   x=init,
+                   verbose=F))
     
     loss_opts = list(Xc=X[trt==0,,drop=FALSE],
                      Xt=x_t,
@@ -478,7 +510,7 @@ balancer_hte <- function(X, trt, weightfunc, weightfunc_ptr,
     }
 
     apgout <- apg(make_balancing_grad(), proxfunc, loss_opts, prox_opts,
-                  opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel)
+                  opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel, opts$verbose)
                   
 
     ## collect results

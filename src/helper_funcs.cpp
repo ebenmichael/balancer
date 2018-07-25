@@ -94,37 +94,6 @@ mat balancing_grad(mat theta, List opts) {
       mat eta = Xc * theta;
       grad = Xc.t() * weight_func(eta);
     }
-  } else if(as<string>(opts["weight_type"])=="multilevel"){
-
-
-    int n_groups = as<int>(opts["n_groups"]);
-    int dim = as<int>(opts["dim"]);
-
-
-    // compute weights and get gradient
-    weightPtr weight_func = *as<wptr>(opts["weight_func"]);
-    grad = Xc.t() * weight_func(Xc, theta);
-
-    // multi level structure with ridge penalties (Normal hyper priors)
-
-    // global intercept
-    vec global_int = as<vec>(opts["global_int"]);
-
-    // group-level intercepts
-    vec group_int = vec();
-    group_int.fill(as<double>(opts["group_int"]));
-
-    // global parameters
-    vec global_param = vec(dim);
-    global_param.fill(as<double>(opts["global_param"]));
-
-    // group parameters
-    vec group_param = vec(dim * n_groups);
-    group_param.fill(as<double>(opts["group_param"]));
-
-    vec hyper = join_cols(join_cols(join_cols(global_int, group_int), global_int), group_param);
-    grad += hyper % theta;    
-    
   } else {
     throw runtime_error("weight_type must be one of 'base', 'subgroup'");
   }
@@ -229,35 +198,37 @@ mat multilevel_grad(mat theta, List opts) {
     
   }
 
-  // multi level structure with ridge penalties (Normal hyper priors)
-  // global intercept
-  vec global_int = as<vec>(opts["global_int"]);
+  if(as<bool>(opts["ridge"])) {
+    // multi level structure with ridge penalties (Normal hyper priors)
+    // global intercept
+    vec global_int = as<vec>(opts["global_int"]);
 
-  // group-level intercepts
-  vec group_int = vec(n_groups);
-  group_int.fill(as<double>(opts["group_int"]));
+    // group-level intercepts
+    vec group_int = vec(n_groups);
+    group_int.fill(as<double>(opts["group_int"]));
 
-  // global parameters
-  mat global_param = mat(dim + grp_cov_dim, 1);
-  global_param.fill(as<double>(opts["global_param"]));
+    // global parameters
+    mat global_param = mat(dim + grp_cov_dim, 1);
+    global_param.fill(as<double>(opts["global_param"]));
 
 
-  // group parameters
-  mat group_param = mat(dim + grp_cov_dim, n_groups);
-  group_param.fill(as<double>(opts["group_param"]));
-  mat hyper = join_cols(join_cols(global_int, group_int).t(), join_rows(global_param, group_param));
+    // group parameters
+    mat group_param = mat(dim + grp_cov_dim, n_groups);
+    group_param.fill(as<double>(opts["group_param"]));
+    mat hyper = join_cols(join_cols(global_int, group_int).t(), join_rows(global_param, group_param));
 
-  grad += hyper % theta;
+    grad += hyper % theta;
+  }
+
+
   //combine to get gradient
   grad -= Xt;
-
-
-
+  
   // zero out group parameters for group level predictors
   if(grp_cov_dim > 0) {
     grad.submat(dim+1, 1, dim + grp_cov_dim, n_groups) = zeros(grp_cov_dim, n_groups); 
   }
-  
+
   return grad;
                  
     
