@@ -59,6 +59,7 @@ mat apg(gptr grad_ptr,
 
   // step size initialization
   grad = grad_f(y, loss_opts);
+
   t = 1 / sqrt(accu(pow(grad,2)));
   mat x_hat = x - t * grad;
   mat g_hat = grad_f(x_hat, loss_opts);

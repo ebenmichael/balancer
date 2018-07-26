@@ -45,11 +45,11 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
             }
             else {
                 if(normalized) {
-                    weightfunc <- softmax_weights2
-                    weightptr <- make_softmax_weights2()
+                    weightfunc <- softmax_weights
+                    weightptr <- make_softmax_weights()
                 } else {
-                    weightfunc <- softmax_weights2
-                    weightptr <- make_softmax_weights2()
+                    weightfunc <- softmax_weights
+                    weightptr <- make_softmax_weights()
                 }
             }
         } else if(link == "linear") {
@@ -79,8 +79,8 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
         linear <- FALSE
         if(link == "logit") {
             if(type %in% c("subgrp_multi", "multi_match")) {
-                weightfunc <- exp_weights
-                weightptr <- make_exp_weights()
+                weightfunc <- exp_weights2
+                weightptr <- make_exp_weights2()
             }
             else {
                 if(normalized) {
@@ -228,7 +228,7 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
     x_t <- as.matrix(x_t)
     
     Xc <- X[trt==0,,drop=FALSE]
-    
+
     loss_opts = list(Xc=Xc,
                      Xt=x_t,
                      weight_func=weightfunc_ptr,
@@ -271,7 +271,7 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
 
     ## initialize at 0
     init = matrix(0, nrow=d, ncol=m)
-    
+
     ## combine opts with defauls
     opts <- c(opts,
               list(max_it=5000,
