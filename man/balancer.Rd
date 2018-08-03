@@ -10,8 +10,9 @@
 balancer(X, trt, Z = NULL, V = NULL, type = c("att", "subgrp",
   "subgrp_multi", "multimatch", "missing", "hte"), link = c("logit", "linear",
   "pos-linear", "pos-enet", "posenet"), regularizer = c(NULL, "l1", "grpl1",
-  "l2", "ridge", "linf", "nuc", "l1_all", "l1_nuc"), hyperparam, Q = NULL,
-  kernel = NULL, kern_param = 1, normalized = TRUE, opts = list())
+  "l2", "ridge", "linf", "nuc", "l1_all", "l1_nuc"), hyperparam, interact = F,
+  Q = NULL, kernel = NULL, kern_param = 1, normalized = TRUE,
+  opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -31,6 +32,8 @@ ATT with missing outcomes, and heterogeneous effects}
 \item{regularizer}{Dual of balance criterion}
 
 \item{hyperparam}{Regularization hyperparameter}
+
+\item{interact}{Whether to interact group and individual level covariates}
 
 \item{Q}{m x m matrix to tie together ridge penalty, default: NULL,
 if TRUE, use covariance of treated groups}

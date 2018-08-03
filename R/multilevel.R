@@ -5,7 +5,7 @@
 
 
 balancer_multi  <- function(X, V=NULL, trt, Z, weightfunc, weightfunc_ptr, proxfunc,
-                            hyperparam, ridge=F, opts=list()) {
+                            hyperparam, ridge=F, interact=F, opts=list()) {
     #' Balancing weights for ATT (with hierarchical structure)
     #' @param X n x d matrix of covariates
     #' @param V n x k matrix of group level covariates
@@ -15,6 +15,7 @@ balancer_multi  <- function(X, V=NULL, trt, Z, weightfunc, weightfunc_ptr, proxf
     #' @param weightfunc_ptr Pointer to weightfunc
     #' @param hyperparam Regularization hyper parameter
     #' @param ridge Whether to use ridge penalty in dual
+    #' @param interact Whether to interact group and individual level characterisitics
     #' @param opts Optimization options
     #'        \itemize{
     #'          \item{MAX_ITERS }{Maximum number of iterations to run}
@@ -53,6 +54,12 @@ balancer_multi  <- function(X, V=NULL, trt, Z, weightfunc, weightfunc_ptr, proxf
 
     ## append the group level covariates
     if(!is.null(V)) {
+
+        if(interact) {
+            ## add in group and individual level interactions
+            interacts <- matrix(model.matrix(~X:V), nrow=nrow(X))
+            V <- cbind(V, interacts)
+        }
         X <- cbind(X, V)
     }
     

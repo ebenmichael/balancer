@@ -6,7 +6,7 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
                      link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
                      regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc",
                                    "l1_all", "l1_nuc"),
-                     hyperparam, Q=NULL, kernel=NULL, kern_param=1, normalized=TRUE, opts=list()) {
+                     hyperparam, interact=F, Q=NULL, kernel=NULL, kern_param=1, normalized=TRUE, opts=list()) {
     #' Find Balancing weights by solving the dual optimization problem
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
@@ -18,6 +18,7 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
     #' @param link Link function for weights
     #' @param regularizer Dual of balance criterion
     #' @param hyperparam Regularization hyperparameter
+    #' @param interact Whether to interact group and individual level covariates
     #' @param Q m x m matrix to tie together ridge penalty, default: NULL,
     #'          if TRUE, use covariance of treated groups
     #' @param kernel What kernel to use, default NULL
@@ -158,7 +159,7 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
                                 proxfunc, hyperparam, ridge, Q, NULL, NULL, opts)
     } else if(type == "subgrp_multi") {
         out <- balancer_multi(X, V, trt, Z, weightfunc, weightptr,
-                              proxfunc, hyperparam, ridge, opts)
+                              proxfunc, hyperparam, ridge, interact, opts)
     } else if(type == "multimatch") {
         out <- balancer_multimatch(X, V, trt, Z, weightfunc, weightptr,
                               proxfunc, hyperparam, ridge, opts)
