@@ -4,10 +4,10 @@
 \alias{balancer_old}
 \title{Find Balancing weights by solving the dual optimization problem}
 \usage{
-balancer_old(X, trt, Z = NULL, type = c("att", "subgrp", "missing", "hte"),
-  link = c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
-  regularizer = c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc"),
-  hyperparam, normalized = TRUE, opts = list())
+balancer_old(X, trt, Z = NULL, type = c("att", "subgrp", "missing",
+  "hte"), link = c("logit", "linear", "pos-linear", "pos-enet",
+  "posenet"), regularizer = c(NULL, "l1", "grpl1", "l2", "ridge", "linf",
+  "nuc"), hyperparam, normalized = TRUE, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}

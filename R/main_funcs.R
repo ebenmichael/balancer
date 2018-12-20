@@ -6,7 +6,8 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
                      link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
                      regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc",
                                    "l1_all", "l1_nuc"),
-                     hyperparam, interact=F, Q=NULL, kernel=NULL, kern_param=1, normalized=TRUE, opts=list()) {
+                     hyperparam, interact=F, Q=NULL, kernel=NULL, kern_param=1, normalized=TRUE,
+                     ipw_weights=NULL, opts=list()) {
     #' Find Balancing weights by solving the dual optimization problem
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
@@ -24,6 +25,7 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
     #' @param kernel What kernel to use, default NULL
     #' @param kern_param Hyperparameter for kernel
     #' @param normalized Whether to normalize the weights
+    #' @param ipw_weights Separately estimated IPW weights to measure dispersion against, default is NULL
     #' @param opts Optimization options
     #'        \itemize{
     #'          \item{MAX_ITERS }{Maximum number of iterations to run}
@@ -36,13 +38,24 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
     #'          \item{imbalance }{Imbalance in covariates}}
     #' @export
 
-
-
+    if(is.null(ipw_weights)) {
+        if(link == "linear" | link == "pos-linear") {
+            ipw_weights = matrix(0, sum(trt==0), 1)
+        } else if(link == "logit") {
+            ipw_weights = matrix(1, sum(trt==0), 1)
+        }
+    } else{
+        ipw_weights = matrix(ipw_weights, ncol=1)
+    }
+    
     if(type != "hte") {
         if(link == "logit") {
             if(type %in% c("subgrp_multi", "multi_match")) {
                 weightfunc <- exp_weights
                 weightptr <- make_exp_weights()
+            } else if(type == "att") {
+                    weightfunc <- softmax_weights_ipw
+                    weightptr <- make_softmax_weights_ipw()
             }
             else {
                 if(normalized) {
@@ -54,12 +67,18 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
                 }
             }
         } else if(link == "linear") {
-            if(normalized) {
-                weightfunc <- lin_weights
-                weightptr <- make_lin_weights()
+            if(type == "att") {
+                weightfunc <- lin_weights_ipw
+                weightptr <- make_lin_weights_ipw()
             } else {
-                weightfunc <- lin_weights
-                weightptr <- make_lin_weights()
+                
+                if(normalized) {
+                    weightfunc <- lin_weights
+                    weightptr <- make_lin_weights()
+                } else {
+                    weightfunc <- lin_weights
+                    weightptr <- make_lin_weights()
+                }
             }
         } else if(link == "pos-linear") {
             if(normalized) {
@@ -153,7 +172,7 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
     if(type == "att") {
         out <- balancer_subgrp(X, trt, NULL, weightfunc, weightptr,
                                proxfunc, hyperparam, ridge, Q, kernel,
-                               kern_param, opts)
+                               kern_param, ipw_weights, opts)
     } else if(type == "subgrp") {
         out <- balancer_subgrp(X, trt, Z, weightfunc, weightptr,
                                 proxfunc, hyperparam, ridge, Q, NULL, NULL, opts)
@@ -180,7 +199,8 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
 
 
 balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
-                             proxfunc, hyperparam, ridge, Q=NULL, kernel, kern_param=1, opts=list()) {
+                            proxfunc, hyperparam, ridge, Q=NULL, kernel, kern_param=1,
+                            ipw_weights=NULL, opts=list()) {
     #' Balancing weights for ATT (in subgroups)
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
@@ -194,6 +214,7 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
     #'          if TRUE, use covariance of treated groups
     #' @param kernel What kernel to use, default NULL
     #' @param kern_param Hyperparameter for kernel
+    #' @param ipw_weights Separately estimated IPW weights to measure dispersion against, default is NULL
     #' @param opts Optimization options
     #'        \itemize{
     #'          \item{MAX_ITERS }{Maximum number of iterations to run}
@@ -235,7 +256,8 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
                      weight_func=weightfunc_ptr,
                      weight_type="subgroup",
                      z=Z[trt==0],
-                     ridge=ridge
+                     ridge=ridge,
+                     ipw_weights=ipw_weights
                      )
 
     ## if ridge, make the identity matrix
@@ -298,17 +320,21 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
     out$theta <- theta
     ## weights
     weights <- numeric(n)
-    for(i in 1:m) {
-        k = grps[i]
-        weights[(trt == 0) & (Z == k)] <-
-            weightfunc(X[(trt == 0) & (Z == k), , drop=FALSE], theta[,i,drop=FALSE])
+    if(m == 1) {
+        weights[trt==0] <- weightfunc(X[trt==0,,drop=F], theta, ipw_weights)
+    } else {
+        for(i in 1:m) {
+            k = grps[i]
+            weights[(trt == 0) & (Z == k)] <-
+                weightfunc(X[(trt == 0) & (Z == k), , drop=FALSE], theta[,i,drop=FALSE])
+        }
     }
-
     out$weights <- weights
 
     ## The final imbalance
     loss_opts$ridge <- F
     out$imbalance <- balancing_grad(theta, loss_opts)
+    out$weightfunc <- weightfunc
     return(out)
 }
 

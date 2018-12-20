@@ -4,8 +4,8 @@
 \alias{balancer_hte}
 \title{Balancing weights for heterogeneous treatment effects}
 \usage{
-balancer_hte(X, trt, weightfunc, weightfunc_ptr, proxfunc, hyperparam, ridge, Q,
-  opts = list())
+balancer_hte(X, trt, weightfunc, weightfunc_ptr, proxfunc, hyperparam,
+  ridge, Q, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}

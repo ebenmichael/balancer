@@ -34,8 +34,9 @@ mat balancing_grad(mat theta, List opts) {
   bool doridge = 1;  
   //compute weights in different ways
   if(as<string>(opts["weight_type"]) == "base") {
-    weightPtr weight_func = *as<wptr>(opts["weight_func"]);
-    grad = Xc.t() * weight_func(Xc, theta);
+    weightPtrIPW weight_func = *as<wptripw>(opts["weight_func"]);
+    mat ipw_weights = as<mat>(opts["ipw_weights"]);
+    grad = Xc.t() * weight_func(Xc, theta, ipw_weights);
     
   } else if(as<string>(opts["weight_type"])=="subgroup") {
     weightPtr weight_func = *as<wptr>(opts["weight_func"]);

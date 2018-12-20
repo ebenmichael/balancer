@@ -351,6 +351,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// lin_weights_ipw
+mat lin_weights_ipw(mat Xc, mat theta, mat q);
+RcppExport SEXP _balancer_lin_weights_ipw(SEXP XcSEXP, SEXP thetaSEXP, SEXP qSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type Xc(XcSEXP);
+    Rcpp::traits::input_parameter< mat >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< mat >::type q(qSEXP);
+    rcpp_result_gen = Rcpp::wrap(lin_weights_ipw(Xc, theta, q));
+    return rcpp_result_gen;
+END_RCPP
+}
 // make_lin_weights
 wptr make_lin_weights();
 RcppExport SEXP _balancer_make_lin_weights() {
@@ -368,6 +381,16 @@ BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(make_lin_weights2());
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_lin_weights_ipw
+wptripw make_lin_weights_ipw();
+RcppExport SEXP _balancer_make_lin_weights_ipw() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_lin_weights_ipw());
     return rcpp_result_gen;
 END_RCPP
 }
@@ -394,6 +417,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// softmax_weights_ipw
+mat softmax_weights_ipw(mat Xc, mat theta, mat q);
+RcppExport SEXP _balancer_softmax_weights_ipw(SEXP XcSEXP, SEXP thetaSEXP, SEXP qSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type Xc(XcSEXP);
+    Rcpp::traits::input_parameter< mat >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< mat >::type q(qSEXP);
+    rcpp_result_gen = Rcpp::wrap(softmax_weights_ipw(Xc, theta, q));
+    return rcpp_result_gen;
+END_RCPP
+}
 // make_softmax_weights
 wptr make_softmax_weights();
 RcppExport SEXP _balancer_make_softmax_weights() {
@@ -411,6 +447,16 @@ BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(make_softmax_weights2());
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_softmax_weights_ipw
+wptripw make_softmax_weights_ipw();
+RcppExport SEXP _balancer_make_softmax_weights_ipw() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_softmax_weights_ipw());
     return rcpp_result_gen;
 END_RCPP
 }
@@ -531,12 +577,16 @@ static const R_CallMethodDef CallEntries[] = {
     {"_balancer_make_prox_l1_nuc", (DL_FUNC) &_balancer_make_prox_l1_nuc, 0},
     {"_balancer_lin_weights", (DL_FUNC) &_balancer_lin_weights, 2},
     {"_balancer_lin_weights2", (DL_FUNC) &_balancer_lin_weights2, 1},
+    {"_balancer_lin_weights_ipw", (DL_FUNC) &_balancer_lin_weights_ipw, 3},
     {"_balancer_make_lin_weights", (DL_FUNC) &_balancer_make_lin_weights, 0},
     {"_balancer_make_lin_weights2", (DL_FUNC) &_balancer_make_lin_weights2, 0},
+    {"_balancer_make_lin_weights_ipw", (DL_FUNC) &_balancer_make_lin_weights_ipw, 0},
     {"_balancer_softmax_weights", (DL_FUNC) &_balancer_softmax_weights, 2},
     {"_balancer_softmax_weights2", (DL_FUNC) &_balancer_softmax_weights2, 1},
+    {"_balancer_softmax_weights_ipw", (DL_FUNC) &_balancer_softmax_weights_ipw, 3},
     {"_balancer_make_softmax_weights", (DL_FUNC) &_balancer_make_softmax_weights, 0},
     {"_balancer_make_softmax_weights2", (DL_FUNC) &_balancer_make_softmax_weights2, 0},
+    {"_balancer_make_softmax_weights_ipw", (DL_FUNC) &_balancer_make_softmax_weights_ipw, 0},
     {"_balancer_exp_weights", (DL_FUNC) &_balancer_exp_weights, 2},
     {"_balancer_exp_weights2", (DL_FUNC) &_balancer_exp_weights2, 1},
     {"_balancer_make_exp_weights", (DL_FUNC) &_balancer_make_exp_weights, 0},

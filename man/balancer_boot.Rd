@@ -4,11 +4,12 @@
 \alias{balancer_boot}
 \title{Get point estimate and bootstraped standard errors}
 \usage{
-balancer_boot(nboot, X, trt, Z = NULL, type = c("att", "subgrp", "missing",
-  "hte"), link = c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
-  regularizer = c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc"),
-  hyperparam, Q = NULL, kernel = NULL, kern_param = 1,
-  normalized = TRUE, sample_trt = FALSE, opts = list())
+balancer_boot(nboot, X, trt, Z = NULL, type = c("att", "subgrp",
+  "missing", "hte"), link = c("logit", "linear", "pos-linear",
+  "pos-enet", "posenet"), regularizer = c(NULL, "l1", "grpl1", "l2",
+  "ridge", "linf", "nuc"), hyperparam, Q = NULL, kernel = NULL,
+  kern_param = 1, normalized = TRUE, sample_trt = FALSE,
+  opts = list())
 }
 \arguments{
 \item{nboot}{Number of bootstrap samples}

@@ -4,14 +4,14 @@
 \name{balancer}
 \alias{balancer}
 \alias{balancer-package}
-\alias{balancer}
 \title{balancer: A package for treatment effect heterogeneity and missing data in observational studies through matrix-constrained balancing weights}
 \usage{
 balancer(X, trt, Z = NULL, V = NULL, type = c("att", "subgrp",
-  "subgrp_multi", "multimatch", "missing", "hte"), link = c("logit", "linear",
-  "pos-linear", "pos-enet", "posenet"), regularizer = c(NULL, "l1", "grpl1",
-  "l2", "ridge", "linf", "nuc", "l1_all", "l1_nuc"), hyperparam, interact = F,
-  Q = NULL, kernel = NULL, kern_param = 1, normalized = TRUE,
+  "subgrp_multi", "multimatch", "missing", "hte"), link = c("logit",
+  "linear", "pos-linear", "pos-enet", "posenet"), regularizer = c(NULL,
+  "l1", "grpl1", "l2", "ridge", "linf", "nuc", "l1_all", "l1_nuc"),
+  hyperparam, interact = F, Q = NULL, kernel = NULL,
+  kern_param = 1, normalized = TRUE, ipw_weights = NULL,
   opts = list())
 }
 \arguments{
@@ -43,6 +43,8 @@ if TRUE, use covariance of treated groups}
 \item{kern_param}{Hyperparameter for kernel}
 
 \item{normalized}{Whether to normalize the weights}
+
+\item{ipw_weights}{Separately estimated IPW weights to measure dispersion against, default is NULL}
 
 \item{opts}{Optimization options
 \itemize{

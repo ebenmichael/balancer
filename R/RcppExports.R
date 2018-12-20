@@ -209,12 +209,21 @@ lin_weights2 <- function(eta) {
     .Call('_balancer_lin_weights2', PACKAGE = 'balancer', eta)
 }
 
+#' Linear weights
+lin_weights_ipw <- function(Xc, theta, q) {
+    .Call('_balancer_lin_weights_ipw', PACKAGE = 'balancer', Xc, theta, q)
+}
+
 make_lin_weights <- function() {
     .Call('_balancer_make_lin_weights', PACKAGE = 'balancer')
 }
 
 make_lin_weights2 <- function() {
     .Call('_balancer_make_lin_weights2', PACKAGE = 'balancer')
+}
+
+make_lin_weights_ipw <- function() {
+    .Call('_balancer_make_lin_weights_ipw', PACKAGE = 'balancer')
 }
 
 #' normalized logit weights, numerically stable
@@ -227,12 +236,21 @@ softmax_weights2 <- function(eta) {
     .Call('_balancer_softmax_weights2', PACKAGE = 'balancer', eta)
 }
 
+#' normalized logit weights, numerically stable
+softmax_weights_ipw <- function(Xc, theta, q) {
+    .Call('_balancer_softmax_weights_ipw', PACKAGE = 'balancer', Xc, theta, q)
+}
+
 make_softmax_weights <- function() {
     .Call('_balancer_make_softmax_weights', PACKAGE = 'balancer')
 }
 
 make_softmax_weights2 <- function() {
     .Call('_balancer_make_softmax_weights2', PACKAGE = 'balancer')
+}
+
+make_softmax_weights_ipw <- function() {
+    .Call('_balancer_make_softmax_weights_ipw', PACKAGE = 'balancer')
 }
 
 #' un-normalized logit weights

@@ -5,7 +5,8 @@
 \title{Balancing weights for ATT (in subgroups)}
 \usage{
 balancer_subgrp(X, trt, Z = NULL, weightfunc, weightfunc_ptr, proxfunc,
-  hyperparam, ridge, Q = NULL, kernel, kern_param = 1, opts = list())
+  hyperparam, ridge, Q = NULL, kernel, kern_param = 1,
+  ipw_weights = NULL, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -30,6 +31,8 @@ if TRUE, use covariance of treated groups}
 \item{kernel}{What kernel to use, default NULL}
 
 \item{kern_param}{Hyperparameter for kernel}
+
+\item{ipw_weights}{Separately estimated IPW weights to measure dispersion against, default is NULL}
 
 \item{opts}{Optimization options
 \itemize{
