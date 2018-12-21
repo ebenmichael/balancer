@@ -152,6 +152,21 @@ make_prox_l2 <- function() {
     .Call('_balancer_make_prox_l2', PACKAGE = 'balancer')
 }
 
+#' Squared L2 Prox
+#'
+#' @param x Input matrix
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return Column soft thresholded X
+prox_l2_sq <- function(x, lam, opts) {
+    .Call('_balancer_prox_l2_sq', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_l2_sq <- function() {
+    .Call('_balancer_make_prox_l2_sq', PACKAGE = 'balancer')
+}
+
 #' Nuclear norm prox
 #'
 #' @param x Input matrix

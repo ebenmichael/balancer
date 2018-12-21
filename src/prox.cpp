@@ -91,6 +91,26 @@ pptr make_prox_l2() {
 }
 
 
+//' Squared L2 Prox
+//'
+//' @param x Input matrix
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return Column soft thresholded X
+// [[Rcpp::export]]
+mat prox_l2_sq(mat x, double lam, List opts) {
+  lam = lam * as<double>(opts["lam"]);
+  
+  return x / (1 + lam);
+}
+
+// [[Rcpp::export]]
+pptr make_prox_l2_sq() {
+  return pptr(new proxPtr(prox_l2_sq));
+}
+
+
 
 //' Nuclear norm prox
 //'

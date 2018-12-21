@@ -257,6 +257,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// prox_l2_sq
+mat prox_l2_sq(mat x, double lam, List opts);
+RcppExport SEXP _balancer_prox_l2_sq(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type lam(lamSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(prox_l2_sq(x, lam, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_prox_l2_sq
+pptr make_prox_l2_sq();
+RcppExport SEXP _balancer_make_prox_l2_sq() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_prox_l2_sq());
+    return rcpp_result_gen;
+END_RCPP
+}
 // prox_nuc
 mat prox_nuc(mat x, double lam, List opts);
 RcppExport SEXP _balancer_prox_nuc(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
@@ -658,6 +681,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_balancer_make_prox_l1_grp", (DL_FUNC) &_balancer_make_prox_l1_grp, 0},
     {"_balancer_prox_l2", (DL_FUNC) &_balancer_prox_l2, 3},
     {"_balancer_make_prox_l2", (DL_FUNC) &_balancer_make_prox_l2, 0},
+    {"_balancer_prox_l2_sq", (DL_FUNC) &_balancer_prox_l2_sq, 3},
+    {"_balancer_make_prox_l2_sq", (DL_FUNC) &_balancer_make_prox_l2_sq, 0},
     {"_balancer_prox_nuc", (DL_FUNC) &_balancer_prox_nuc, 3},
     {"_balancer_make_prox_nuc", (DL_FUNC) &_balancer_make_prox_nuc, 0},
     {"_balancer_prox_l1_grp_l1", (DL_FUNC) &_balancer_prox_l1_grp_l1, 3},

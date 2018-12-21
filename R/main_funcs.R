@@ -82,8 +82,11 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
         proxfunc <- make_prox_l2()
         balancefunc <- l2
     } else if(regularizer == "ridge") {
-        proxfunc <- make_no_prox()
-        ridge <- TRUE
+        ## proxfunc <- make_no_prox()
+        ## ridge <- TRUE
+
+        proxfunc <- make_prox_l2_sq()
+        balancefunc <- l2sq
     } else if(regularizer == "linf") {
         stop("L infinity regularization not implemented")
     } else if(regularizer == "nuc") {
