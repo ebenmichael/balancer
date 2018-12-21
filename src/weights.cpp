@@ -27,7 +27,7 @@ mat lin_weights2(mat eta) {
 //' Linear weights
 // [[Rcpp::export]]
 mat lin_weights_ipw(mat Xc, mat theta, mat q) {
-  return Xc * theta + q;
+  return q % (Xc * theta -1);
 }
 
 
@@ -103,8 +103,6 @@ wptripw make_softmax_weights_ipw() {
 // [[Rcpp::export]]
 mat exp_weights(mat Xc, mat theta) {
   mat eta = Xc * theta;
-  double m = arma::max(arma::max(eta));
-
   return arma::exp(eta-1);
 }
 
@@ -130,6 +128,23 @@ wptr2 make_exp_weights2() {
 
 
 
+
+//' un-normalized logit weights
+// [[Rcpp::export]]
+mat exp_weights_ipw(mat Xc, mat theta, mat q) {
+  mat eta = Xc * theta;
+
+  return q % arma::exp(eta-1);
+}
+
+
+
+// [[Rcpp::export]]
+wptripw make_exp_weights_ipw() {
+  return wptripw(new weightPtrIPW(exp_weights_ipw));
+}
+
+
 //' Linear weights
 // [[Rcpp::export]]
 mat pos_lin_weights(mat Xc, mat theta) {
@@ -153,4 +168,19 @@ wptr make_pos_lin_weights() {
 // [[Rcpp::export]]
 wptr2 make_pos_lin_weights2() {
   return wptr2(new weightPtr2(pos_lin_weights2));
+}
+
+
+
+//' Linear weights
+// [[Rcpp::export]]
+mat pos_lin_weights_ipw(mat Xc, mat theta, mat q) {
+  mat eta = Xc * theta;
+  return q % (eta-1) % ((eta-1) > 0);
+}
+
+
+// [[Rcpp::export]]
+wptripw make_pos_lin_weights_ipw() {
+  return wptripw(new weightPtrIPW(pos_lin_weights_ipw));
 }

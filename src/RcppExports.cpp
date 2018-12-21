@@ -28,6 +28,50 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// apg_warmstart
+List apg_warmstart(gptr grad_ptr, pptr prox_ptr, List loss_opts, List prox_opts, vec lams, mat x, int max_it, double eps, double alpha, double beta, bool accel, bool verbose);
+RcppExport SEXP _balancer_apg_warmstart(SEXP grad_ptrSEXP, SEXP prox_ptrSEXP, SEXP loss_optsSEXP, SEXP prox_optsSEXP, SEXP lamsSEXP, SEXP xSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP accelSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< gptr >::type grad_ptr(grad_ptrSEXP);
+    Rcpp::traits::input_parameter< pptr >::type prox_ptr(prox_ptrSEXP);
+    Rcpp::traits::input_parameter< List >::type loss_opts(loss_optsSEXP);
+    Rcpp::traits::input_parameter< List >::type prox_opts(prox_optsSEXP);
+    Rcpp::traits::input_parameter< vec >::type lams(lamsSEXP);
+    Rcpp::traits::input_parameter< mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type max_it(max_itSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< bool >::type accel(accelSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(apg_warmstart(grad_ptr, prox_ptr, loss_opts, prox_opts, lams, x, max_it, eps, alpha, beta, accel, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// balancing_grad_att
+mat balancing_grad_att(mat theta, List opts);
+RcppExport SEXP _balancer_balancing_grad_att(SEXP thetaSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(balancing_grad_att(theta, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_balancing_grad_att
+gptr make_balancing_grad_att();
+RcppExport SEXP _balancer_make_balancing_grad_att() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_balancing_grad_att());
+    return rcpp_result_gen;
+END_RCPP
+}
 // balancing_grad
 mat balancing_grad(mat theta, List opts);
 RcppExport SEXP _balancer_balancing_grad(SEXP thetaSEXP, SEXP optsSEXP) {
@@ -503,6 +547,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// exp_weights_ipw
+mat exp_weights_ipw(mat Xc, mat theta, mat q);
+RcppExport SEXP _balancer_exp_weights_ipw(SEXP XcSEXP, SEXP thetaSEXP, SEXP qSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type Xc(XcSEXP);
+    Rcpp::traits::input_parameter< mat >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< mat >::type q(qSEXP);
+    rcpp_result_gen = Rcpp::wrap(exp_weights_ipw(Xc, theta, q));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_exp_weights_ipw
+wptripw make_exp_weights_ipw();
+RcppExport SEXP _balancer_make_exp_weights_ipw() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_exp_weights_ipw());
+    return rcpp_result_gen;
+END_RCPP
+}
 // pos_lin_weights
 mat pos_lin_weights(mat Xc, mat theta);
 RcppExport SEXP _balancer_pos_lin_weights(SEXP XcSEXP, SEXP thetaSEXP) {
@@ -546,9 +613,35 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// pos_lin_weights_ipw
+mat pos_lin_weights_ipw(mat Xc, mat theta, mat q);
+RcppExport SEXP _balancer_pos_lin_weights_ipw(SEXP XcSEXP, SEXP thetaSEXP, SEXP qSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type Xc(XcSEXP);
+    Rcpp::traits::input_parameter< mat >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< mat >::type q(qSEXP);
+    rcpp_result_gen = Rcpp::wrap(pos_lin_weights_ipw(Xc, theta, q));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_pos_lin_weights_ipw
+wptripw make_pos_lin_weights_ipw();
+RcppExport SEXP _balancer_make_pos_lin_weights_ipw() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_pos_lin_weights_ipw());
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_balancer_apg", (DL_FUNC) &_balancer_apg, 11},
+    {"_balancer_apg_warmstart", (DL_FUNC) &_balancer_apg_warmstart, 12},
+    {"_balancer_balancing_grad_att", (DL_FUNC) &_balancer_balancing_grad_att, 2},
+    {"_balancer_make_balancing_grad_att", (DL_FUNC) &_balancer_make_balancing_grad_att, 0},
     {"_balancer_balancing_grad", (DL_FUNC) &_balancer_balancing_grad, 2},
     {"_balancer_make_balancing_grad", (DL_FUNC) &_balancer_make_balancing_grad, 0},
     {"_balancer_multilevel_grad", (DL_FUNC) &_balancer_multilevel_grad, 2},
@@ -591,10 +684,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_balancer_exp_weights2", (DL_FUNC) &_balancer_exp_weights2, 1},
     {"_balancer_make_exp_weights", (DL_FUNC) &_balancer_make_exp_weights, 0},
     {"_balancer_make_exp_weights2", (DL_FUNC) &_balancer_make_exp_weights2, 0},
+    {"_balancer_exp_weights_ipw", (DL_FUNC) &_balancer_exp_weights_ipw, 3},
+    {"_balancer_make_exp_weights_ipw", (DL_FUNC) &_balancer_make_exp_weights_ipw, 0},
     {"_balancer_pos_lin_weights", (DL_FUNC) &_balancer_pos_lin_weights, 2},
     {"_balancer_pos_lin_weights2", (DL_FUNC) &_balancer_pos_lin_weights2, 1},
     {"_balancer_make_pos_lin_weights", (DL_FUNC) &_balancer_make_pos_lin_weights, 0},
     {"_balancer_make_pos_lin_weights2", (DL_FUNC) &_balancer_make_pos_lin_weights2, 0},
+    {"_balancer_pos_lin_weights_ipw", (DL_FUNC) &_balancer_pos_lin_weights_ipw, 3},
+    {"_balancer_make_pos_lin_weights_ipw", (DL_FUNC) &_balancer_make_pos_lin_weights_ipw, 0},
     {NULL, NULL, 0}
 };
 

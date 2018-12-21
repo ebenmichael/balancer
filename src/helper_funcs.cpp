@@ -15,6 +15,45 @@ using namespace std;
 
 //' Generic balancing loss gradient
 // [[Rcpp::export]]
+mat balancing_grad_att(mat theta, List opts) {
+
+  // control and treated data
+  mat Xc = as<mat>(opts["Xc"]);
+  mat Xt = as<mat>(opts["Xt"]);
+  
+  mat grad;
+  bool doridge = 1;  
+  
+  weightPtrIPW weight_func = *as<wptripw>(opts["weight_func"]);
+  mat ipw_weights = as<mat>(opts["ipw_weights"]);
+  grad = Xc.t() * weight_func(Xc, theta, ipw_weights);
+
+  // include (generalized) ridge penalty
+  if(as<bool>(opts["ridge"])) {
+    if(as<bool>(opts["hasQ"])) {
+      mat Q = as<mat>(opts["Q"]);
+      grad += as<double>(opts["hyper"]) * theta * Q * Q.t();
+    }
+    else {
+      // grad += as<double>(opts["hyper"]) * theta;
+        grad += as<double>(opts["hyper"])  * theta;
+    }
+  }
+  
+  //combine to get gradient
+  return grad - Xt;
+    
+}
+
+
+// [[Rcpp::export]]
+gptr make_balancing_grad_att() {
+  return gptr(new gradPtr(balancing_grad_att));
+}
+
+
+//' Generic balancing loss gradient
+// [[Rcpp::export]]
 mat balancing_grad(mat theta, List opts) {
 
   // control data

@@ -117,3 +117,47 @@ mat apg(gptr grad_ptr,
 
   return(x);
 }
+
+
+
+//' Accelerated proximal gradient method
+//'
+//' @param grad_ptr Pointer to gradient function
+//' @param prox_ptr Pointer to prox function
+//' @param loss_opts List of options for loss (input data, tuning params, etc.)
+//' @param prox_opts List of options for prox (regularization parameter)
+//' @param lams Vector of hyperparameters to use
+//' @param x Initial value
+//' @param max_it Maximum number of iterations
+//' @param eps Convergence tolerance
+//' @param beta Backtracking line search parameter
+//' @param verbose How much information to print
+//'
+//' @return Optimal value
+//' @export
+// [[Rcpp::export]]
+List apg_warmstart(gptr grad_ptr,
+                  pptr prox_ptr,
+                  List loss_opts,
+                  List prox_opts,
+                  vec lams,
+                  mat x,
+                  int max_it,
+                  double eps, double alpha,
+                  double beta, bool accel, bool verbose) {
+
+  // keep different fitted values in a list
+  int nlam = lams.n_elem;
+  List output(nlam);
+  // iterate over values of lambda
+  for(int j = 0; j < nlam; j++) {
+    prox_opts["lam"] = lams[j];
+
+    // use previous optimizer as warm start
+    x = apg(grad_ptr, prox_ptr, loss_opts, prox_opts,
+            x, max_it, eps, alpha, beta, accel, verbose);
+    output[j] = x;
+  }
+
+  return(output);
+}

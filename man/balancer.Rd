@@ -7,12 +7,11 @@
 \title{balancer: A package for treatment effect heterogeneity and missing data in observational studies through matrix-constrained balancing weights}
 \usage{
 balancer(X, trt, Z = NULL, V = NULL, type = c("att", "subgrp",
-  "subgrp_multi", "multimatch", "missing", "hte"), link = c("logit",
-  "linear", "pos-linear", "pos-enet", "posenet"), regularizer = c(NULL,
-  "l1", "grpl1", "l2", "ridge", "linf", "nuc", "l1_all", "l1_nuc"),
-  hyperparam, interact = F, Q = NULL, kernel = NULL,
-  kern_param = 1, normalized = TRUE, ipw_weights = NULL,
-  opts = list())
+  "subgrp_multi"), link = c("logit", "linear", "pos-linear", "pos-enet",
+  "posenet"), regularizer = c(NULL, "l1", "grpl1", "l2", "ridge", "linf",
+  "nuc", "l1_all", "l1_nuc"), hyperparam = NULL, nlambda = 20,
+  lambda.min.ratio = 0.001, interact = F, Q = NULL,
+  normalized = TRUE, ipw_weights = NULL, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -33,14 +32,15 @@ ATT with missing outcomes, and heterogeneous effects}
 
 \item{hyperparam}{Regularization hyperparameter}
 
+\item{nlambda}{Number of hyperparameters to consider}
+
+\item{lambda.min.ratio}{Smallest value of hyperparam to consider, as proportion of smallest
+value that gives the reference weights}
+
 \item{interact}{Whether to interact group and individual level covariates}
 
 \item{Q}{m x m matrix to tie together ridge penalty, default: NULL,
 if TRUE, use covariance of treated groups}
-
-\item{kernel}{What kernel to use, default NULL}
-
-\item{kern_param}{Hyperparameter for kernel}
 
 \item{normalized}{Whether to normalize the weights}
 

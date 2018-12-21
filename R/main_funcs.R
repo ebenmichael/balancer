@@ -1,12 +1,12 @@
 
 
 balancer <- function(X, trt, Z=NULL, V=NULL,
-                     type=c("att", "subgrp", "subgrp_multi",
-                            "multimatch", "missing", "hte"),
+                     type=c("att", "subgrp", "subgrp_multi"),
                      link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
                      regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc",
                                    "l1_all", "l1_nuc"),
-                     hyperparam, interact=F, Q=NULL, kernel=NULL, kern_param=1, normalized=TRUE,
+                     hyperparam=NULL, nlambda=20, lambda.min.ratio=1e-3,
+                     interact=F, Q=NULL, normalized=TRUE,
                      ipw_weights=NULL, opts=list()) {
     #' Find Balancing weights by solving the dual optimization problem
     #' @param X n x d matrix of covariates
@@ -19,11 +19,12 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
     #' @param link Link function for weights
     #' @param regularizer Dual of balance criterion
     #' @param hyperparam Regularization hyperparameter
+    #' @param nlambda Number of hyperparameters to consider
+    #' @param lambda.min.ratio Smallest value of hyperparam to consider, as proportion of smallest
+    #'                         value that gives the reference weights
     #' @param interact Whether to interact group and individual level covariates
     #' @param Q m x m matrix to tie together ridge penalty, default: NULL,
     #'          if TRUE, use covariance of treated groups
-    #' @param kernel What kernel to use, default NULL
-    #' @param kern_param Hyperparameter for kernel
     #' @param normalized Whether to normalize the weights
     #' @param ipw_weights Separately estimated IPW weights to measure dispersion against, default is NULL
     #' @param opts Optimization options
@@ -39,102 +40,30 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
     #' @export
 
     if(is.null(ipw_weights)) {
-        if(link == "linear" | link == "pos-linear") {
-            ipw_weights = matrix(0, sum(trt==0), 1)
-        } else if(link == "logit") {
-            ipw_weights = matrix(1, sum(trt==0), 1)
-        }
-    } else{
-        ipw_weights = matrix(ipw_weights, ncol=1)
-    }
-    
-    if(type != "hte") {
-        if(link == "logit") {
-            if(type %in% c("subgrp_multi", "multi_match")) {
-                weightfunc <- exp_weights
-                weightptr <- make_exp_weights()
-            } else if(type == "att") {
-                    weightfunc <- softmax_weights_ipw
-                    weightptr <- make_softmax_weights_ipw()
-            }
-            else {
-                if(normalized) {
-                    weightfunc <- softmax_weights
-                    weightptr <- make_softmax_weights()
-                } else {
-                    weightfunc <- softmax_weights
-                    weightptr <- make_softmax_weights()
-                }
-            }
-        } else if(link == "linear") {
-            if(type == "att") {
-                weightfunc <- lin_weights_ipw
-                weightptr <- make_lin_weights_ipw()
-            } else {
-                
-                if(normalized) {
-                    weightfunc <- lin_weights
-                    weightptr <- make_lin_weights()
-                } else {
-                    weightfunc <- lin_weights
-                    weightptr <- make_lin_weights()
-                }
-            }
-        } else if(link == "pos-linear") {
-            if(normalized) {
-                weightfunc <- pos_lin_weights
-                weightptr <- make_pos_lin_weights()
-            } else {
-                weightfunc <- pos_lin_weights
-                weightptr <- make_pos_lin_weights()
-            }
-        } else if(link == "enet") {
-            stop("Elastic Net not impleneted")
-        } else if(link == "pos-enet") {
-            stop("Elastic Net not impleneted")
-        } else {
-            stop("link must be one of ('logit', 'linear', 'pos-linear')")
-        }
+        ipw_weights = matrix(1, sum(trt==0), 1)    
     } else {
-        linear <- FALSE
-        if(link == "logit") {
-            if(type %in% c("subgrp_multi", "multi_match")) {
-                weightfunc <- exp_weights2
-                weightptr <- make_exp_weights2()
-            }
-            else {
-                if(normalized) {
-                    weightfunc <- softmax_weights2
-                    weightptr <- make_softmax_weights2()
-                } else {
-                    weightfunc <- softmax_weights2
-                    weightptr <- make_softmax_weights2()
-                }
-            }
-        } else if(link == "linear") {
+        ipw_weights = matrix(ipw_weights, sum(trt==0), 1)    
+    }
+    if(link == "logit") {
             if(normalized) {
-                weightfunc <- lin_weights2
-                weightptr <- make_lin_weights2()
+                weightfunc <- exp_weights_ipw
+                weightptr <- make_exp_weights_ipw()
             } else {
-                weightfunc <- lin_weights2
-                weightptr <- make_lin_weights2()
+                weightfunc <- softmax_weights_ipw
+                weightptr <- make_softmax_weights_ipw()
             }
-            linear <- TRUE
-        } else if(link == "pos-linear") {
-            if(normalized) {
-                weightfunc <- pos_lin_weights2
-                weightptr <- make_pos_lin_weights2()
-            } else {
-                weightfunc <- pos_lin_weights2
-                weightptr <- make_pos_lin_weights2()
-            }
-        } else if(link == "enet") {
-            stop("Elastic Net not impleneted")
-        } else if(link == "pos-enet") {
-            stop("Elastic Net not impleneted")
-        } else {
-            stop("link must be one of ('logit', 'linear', 'pos-linear')")
-        }        
+    } else if(link == "linear") {
+        weightfunc <- lin_weights_ipw
+        weightptr <- make_lin_weights_ipw()
+    } else if(link == "pos-linear") {
+        weightfunc <- pos_lin_weights_ipw
+        weightptr <- make_pos_lin_weights_ipw()        
+    } else if(link == "enet") {
+        stop("Elastic Net not impleneted")
+    } else if(link == "pos-enet") {
+        stop("Elastic Net not impleneted")
+    } else {
+        stop("link must be one of ('logit', 'linear', 'pos-linear')")
     }
 
     ridge <- FALSE
@@ -142,6 +71,7 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
         proxfunc <- make_no_prox()
     } else if(regularizer == "l1") {
         proxfunc <- make_prox_l1()
+        balancefunc <- linf
     } else if(regularizer == "grpl1") {
         proxfunc <- make_prox_l1_grp()
     } else if(regularizer == "l1grpl1") {
@@ -150,6 +80,7 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
         X <- cbind(X,X)
     } else if(regularizer == "l2") {
         proxfunc <- make_prox_l2()
+        balancefunc <- l2
     } else if(regularizer == "ridge") {
         proxfunc <- make_no_prox()
         ridge <- TRUE
@@ -170,32 +101,174 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
     }
     
     if(type == "att") {
-        out <- balancer_subgrp(X, trt, NULL, weightfunc, weightptr,
-                               proxfunc, hyperparam, ridge, Q, kernel,
-                               kern_param, ipw_weights, opts)
+        out <- balancer_att(X, trt, weightfunc, weightptr,
+                            proxfunc, balancefunc, hyperparam,
+                            nlambda, lambda.min.ratio,
+                            ridge, Q,
+                            ipw_weights, opts)
     } else if(type == "subgrp") {
         out <- balancer_subgrp(X, trt, Z, weightfunc, weightptr,
                                 proxfunc, hyperparam, ridge, Q, NULL, NULL, opts)
     } else if(type == "subgrp_multi") {
         out <- balancer_multi(X, V, trt, Z, weightfunc, weightptr,
                               proxfunc, hyperparam, ridge, interact, opts)
-    } else if(type == "multimatch") {
-        out <- balancer_multimatch(X, V, trt, Z, weightfunc, weightptr,
-                              proxfunc, hyperparam, ridge, opts)
-    } else if(type == "missing") {
-        out <- balancer_missing(X, trt, Z, weightfunc, weightptr,
-                                proxfunc, hyperparam, ridge, Q, opts)
-    } else if(type == "hte") {
-        opts$linear <- linear
-        out <- balancer_hte(X, trt,weightfunc, weightptr,
-                            proxfunc, hyperparam, ridge, Q, opts)
     } else {
-        stop("type must be one of ('att', 'subgrp', 'missing', 'hte')")
+        stop("type must be one of ('att', 'subgrp', 'subgrp_multi')")
     }
 
     return(out)
 }
 
+
+balancer_att <- function(X, trt, weightfunc, weightfunc_ptr,
+                         proxfunc, balancefunc, hyperparam=NULL,
+                         nlambda=20, lambda.min.ratio=1e-3,
+                         ridge=F, Q=NULL,
+                         ipw_weights=NULL, opts=list()) {
+    #' Balancing weights for ATT (in subgroups)
+    #' @param X n x d matrix of covariates
+    #' @param trt Vector of treatment status indicators
+    #' @param weightfunc Derivative of convex conjugate of dispersion function (possibly normalized)
+    #' @param weightfunc_ptr Pointer to weightfunc
+    #' @param proxfunc Prox operator of regularization function
+    #' @param balancefunc Balance criterion measure
+    #' @param hyperparam Regularization hyper parameter
+    #' @param nlambda Number of hyperparameters to consider
+    #' @param lambda.min.ratio Smallest value of hyperparam to consider, as proportion of smallest
+    #'                         value that gives the reference weights
+    #' @param ridge Whether to use L2 penalty in dual
+    #' @param Q m x m matrix to tie together ridge penalty, default: NULL,
+    #'          if TRUE, use covariance of treated groups
+    #' @param kernel What kernel to use, default NULL
+    #' @param kern_param Hyperparameter for kernel
+    #' @param ipw_weights Separately estimated IPW weights to measure dispersion against, default is NULL
+    #' @param opts Optimization options
+    #'        \itemize{
+    #'          \item{MAX_ITERS }{Maximum number of iterations to run}
+    #'          \item{EPS }{Error rolerance}}
+    #'
+    #' @return \itemize{
+    #'          \item{theta }{Estimated dual propensity score parameters}
+    #'          \item{weights }{Estimated primal weights}
+    #'          \item{imbalance }{Imbalance in covariates}}
+
+    n <- dim(X)[1]
+
+    d <- dim(X)[2]
+
+    x_t <- matrix(colSums(X[trt==1,,drop=FALSE]), nrow=d)
+
+    Xc <- X[trt==0,,drop=FALSE]
+
+    loss_opts = list(Xc=Xc,
+                     Xt=x_t,
+                     weight_func=weightfunc_ptr,
+                     ridge=ridge,
+                     ipw_weights=ipw_weights
+                     )
+
+    ## if ridge, add whether there's a scaling matrix Q
+    if(ridge) {
+        loss_opts$hyper <- hyperparam
+        if(!is.null(Q)) { 
+            loss_opts$hasQ <- TRUE
+            if(Q) {
+                loss_opts$Q <- t(x_t)
+            } else {
+                loss_opts$Q <- Q
+            }
+        } else {
+            loss_opts$hasQ <- FALSE
+        }
+    }
+    
+    ## if(length(hyperparam) == 1) {
+    ##     prox_opts = list(lam=hyperparam)
+    ## } else if(length(hyperparam) == 2) {
+    ##     prox_opts = list(lam1=list(lam=hyperparam[1]),
+    ##                      lam2=list(lam=hyperparam[2]))
+    ## } else {
+    ##     stop("hyperparam must be length 1 or 2")
+    ## }
+
+    ## initialize at 0
+    init = matrix(0, nrow=d, ncol=1)
+    ## combine opts with defauls
+    opts <- c(opts,
+              list(max_it=5000,
+                   eps=1e-8,
+                   alpha=1.01, beta=.9,
+                   accel=T,
+                   x=init,
+                   verbose=F))
+    
+    
+    ## if hyperparam is NULL, start from reference weights and decrease
+    if(is.null(hyperparam)) {
+        lam0 <- balancefunc(balancing_grad_att(init, loss_opts))
+        lam1 <- lam0 * lambda.min.ratio
+        ## decrease on log scale
+        hyperparam <- exp(seq(log(lam0), log(lam1), length.out=nlambda))
+    }
+
+
+    ## collect results
+    out <- list()
+    out$theta <- matrix(,nrow=d, ncol=length(hyperparam))
+    out$imbalance <- matrix(,nrow=d, ncol=length(hyperparam))    
+    out$weights <- matrix(0, nrow=n, ncol=length(hyperparam))
+    out$weightfunc <- weightfunc
+
+
+    ## with multiple hyperparameters do warm starts        
+
+    ## if(length(hyperparam) > 1) {
+
+        prox_opts = list(lam=1)
+        
+        apgout <- apg_warmstart(make_balancing_grad_att(),
+                                proxfunc, loss_opts, prox_opts,
+                                hyperparam,
+                                opts$x, opts$max_it, opts$eps,
+                                opts$alpha, opts$beta, opts$accel, opts$verbose)
+
+        ## weights and theta
+        out$theta <- do.call(cbind, apgout)
+        out$weights[trt==0,] <- apply(out$theta, 2,
+                                      function(th) weightfunc(X[trt==0,,drop=F], as.matrix(th), ipw_weights))
+        loss_opts$ridge <- F
+        out$imbalance <- apply(out$theta, 2,
+                               function(th) balancing_grad_att(as.matrix(th), loss_opts))
+        
+    ## } else {
+        ## for(i in 1:length(hyperparam)) {
+            
+        ##     lam <- hyperparam[i]
+        ##     prox_opts = list(lam=lam)
+            
+        ##     apgout <- apg(make_balancing_grad_att(), proxfunc, loss_opts, prox_opts,
+        ##                   opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel, opts$verbose)
+
+        ##     ## collect results for each hyper param
+        ##     out$theta[,i] <- apgout
+
+        ##     out$weights[trt==0,i] <- weightfunc(X[trt==0,,drop=F], apgout, ipw_weights)
+
+        ##     ## The final imbalance
+        ##     loss_opts$ridge <- F
+        ##     out$imbalance[,i] <- balancing_grad_att(apgout, loss_opts)
+
+        ##     ## update starting point with warm start
+        ##     opts$x <- apgout
+        ## }
+
+    ## }
+
+    out$lams <- hyperparam
+
+    return(out)
+
+}
 
 
 balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
@@ -335,224 +408,5 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
     loss_opts$ridge <- F
     out$imbalance <- balancing_grad(theta, loss_opts)
     out$weightfunc <- weightfunc
-    return(out)
-}
-
-
-
-balancer_missing <- function(X, trt, R, weightfunc, weightfunc_ptr,
-                             proxfunc, hyperparam, ridge, Q, opts=list()) {
-    #' Balancing weights for missing outcomes
-    #' @param X n x d matrix of covariates
-    #' @param trt Vector of treatment status indicators
-    #' @param R vector of missingness indicators
-    #' @param weightfunc Derivative of convex conjugate of dispersion function (possibly normalized)
-    #' @param weightfunc_ptr Pointer to weightfunc
-    #' @param proxfunc Prox operator of regularization function
-    #' @param hyperparam Regularization hyper parameter
-    #' @param ridge Whether to use L2 penalty in dual
-    #' @param Q m x m matrix to tie together ridge penalty, default: NULL,
-    #'          if TRUE, use covariance of treated groups
-    #' @param opts Optimization options
-    #'        \itemize{
-    #'          \item{MAX_ITERS }{Maximum number of iterations to run}
-    #'          \item{EPS }{Error rolerance}}
-    #'
-    #' @return \itemize{
-    #'          \item{theta }{Estimated dual propensity score parameters}
-    #'          \item{weights }{Estimated primal weights}
-    #'          \item{imbalance }{Imbalance in covariates}}
-
-    m <- 2
-
-    n <- dim(X)[1]
-
-    d <- dim(X)[2]
-
-    ## get the moments for treated units twice
-    x_t <- cbind(colMeans(X[trt==1,, drop=FALSE]),
-                 colMeans(X[trt==1,, drop=FALSE]))
-
-    obs_trt <- trt[R==1]
-    loss_opts = list(Xc=X[R==1,,drop=FALSE],
-                     Xt=x_t,
-                     weight_func=weightfunc_ptr,
-                     weight_type="missing",
-                     trt=obs_trt,
-                     ridge=ridge
-                     )
-
-    loss_opts$idx_ctrl = which(obs_trt == 0) - 1
-    loss_opts$idx_trt = which(obs_trt == 1) - 1
-
-    ## if ridge, make the identity matrix
-    if(ridge) {
-        loss_opts$hyper <- hyperparam
-        if(!is.null(Q)) { 
-            loss_opts$hasQ <- TRUE
-            if(Q) {
-                loss_opts$Q <- t(x_t)
-            } else {
-                loass_opts$Q <- Q
-            }
-        } else {
-            loss_opts$hasQ <- FALSE
-        }
-        
-    }
-
-    
-    if(length(hyperparam) == 1) {
-        prox_opts = list(lam=hyperparam)
-    } else if(length(hyperparam) == 2) {
-        prox_opts = list(lam1=list(lam=hyperparam[1]),
-                         lam2=list(lam=hyperparam[2]))
-    } else {
-        stop("hyperparam must be length 1 or 2")
-    }
-
-
-
-    ## initialize at 0
-    init = matrix(0, nrow=dim(X)[2], ncol=m)
-    
-    ## combine opts with defauls
-    opts <- c(opts,
-              list(max_it=5000,
-                   eps=1e-8,
-                   alpha=1.01, beta=.9,
-                   accel=T,
-                   x=init,
-                   verbose=F))
-    
-
-    apgout <- apg(make_balancing_grad(), proxfunc, loss_opts, prox_opts,
-                  opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel, opts$verbose)
-                  
-
-    ## collect results
-    out <- list()
-
-    ## theta
-    theta <- apgout
-    out$theta <- theta
-
-    ## weights    
-    ## weights for R=1 T=0 to T=1
-    weights1 <- numeric(n)
-    weights1[trt == 0 & R == 1] <-
-        weightfunc(X[trt == 0 & R == 1,,drop=FALSE], theta[,1, drop=FALSE])
-    
-    ## weights for R=1 T=1 to T=1
-    weights2 <- numeric(n)
-    weights2[trt == 1 & R == 1] <-
-        weightfunc(X[trt == 1 & R == 1,,drop=FALSE], theta[,2, drop=FALSE])
-    weights <- cbind(weights1, weights2)
-
-    out$weights <- weights
-
-    ## The final imbalance
-    out$imbalance <- balancing_grad(theta, loss_opts)
-    return(out)
-}
-
-
-
-
-balancer_hte <- function(X, trt, weightfunc, weightfunc_ptr,
-                          proxfunc, hyperparam, ridge, Q, opts=list()) {
-    #' Balancing weights for heterogeneous treatment effects
-    #' @param X n x d matrix of covariates
-    #' @param trt Vector of treatment status indicators
-    #' @param weightfunc Derivative of convex conjugate of dispersion function (possibly normalized)
-    #' @param weightfunc_ptr Pointer to weightfunc
-    #' @param proxfunc Prox operator of regularization function
-    #' @param hyperparam Regularization hyper parameter
-    #' @param ridge Whether to use L2 penalty in dual
-    #' @param Q m x m matrix to tie together ridge penalty, default: NULL,
-    #'          if TRUE, use covariance of treated groups
-    #' @param opts Optimization options
-    #'        \itemize{
-    #'          \item{MAX_ITERS }{Maximum number of iterations to run}
-    #'          \item{EPS }{Error rolerance}}
-    #'
-    #' @return \itemize{
-    #'          \item{theta }{Estimated dual propensity score parameters}
-    #'          \item{weights }{Estimated primal weights}
-    #'          \item{imbalance }{Imbalance in covariates}}
-    
-    ## one set of weights for each treated unit
-    m <- sum(trt)
-
-    n <- dim(X)[1]
-    
-    d <- dim(X)[2]
-    
-    ## keep the covariates for the treated units
-    x_t <- t(X[trt==1,, drop=FALSE])
-
-    ## initialize at 0
-    init = matrix(0, nrow=dim(X)[2], ncol=m)
-
-    ## combine opts with defauls
-    opts <- c(opts,
-              list(max_it=5000,
-                   eps=1e-8,
-                   alpha=1.01, beta=.9,
-                   accel=T,
-                   x=init,
-                   verbose=F))
-    
-    loss_opts = list(Xc=X[trt==0,,drop=FALSE],
-                     Xt=x_t,
-                     weight_func=weightfunc_ptr,
-                     weight_type="hte",
-                     linear=opts$linear,
-                     ridge=ridge
-                     )
-
-    ## if ridge, make the identity matrix
-    if(ridge) {
-        loss_opts$hyper <- hyperparam
-        if(!is.null(Q)) { 
-            loss_opts$hasQ <- TRUE
-            if(Q) {
-                loss_opts$Q <- X[trt==1,,drop=FALSE]
-            } else {
-                loass_opts$Q <- Q
-            }
-        } else {
-            loss_opts$hasQ <- FALSE
-        }
-    }
-
-    
-    if(length(hyperparam) == 1) {
-        prox_opts = list(lam=hyperparam)
-    } else if(length(hyperparam) == 2) {
-        prox_opts = list(lam1=list(lam=hyperparam[1]),
-                         lam2=list(lam=hyperparam[2]))
-    } else {
-        stop("hyperparam must be length 1 or 2")
-    }
-
-    apgout <- apg(make_balancing_grad(), proxfunc, loss_opts, prox_opts,
-                  opts$x, opts$max_it, opts$eps, opts$alpha, opts$beta, opts$accel, opts$verbose)
-                  
-
-    ## collect results
-    out <- list()
-
-    ## theta
-    theta <- apgout
-    out$theta <- theta
-    ## weights
-    eta <- X %*% theta
-    eta[trt==1,] <- 0
-    weights <- weightfunc(eta)
-    out$weights <- weights
-
-    ## The final imbalance
-    out$imbalance <- balancing_grad(theta, loss_opts)
     return(out)
 }

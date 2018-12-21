@@ -19,6 +19,34 @@ apg <- function(grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha,
     .Call('_balancer_apg', PACKAGE = 'balancer', grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta, accel, verbose)
 }
 
+#' Accelerated proximal gradient method
+#'
+#' @param grad_ptr Pointer to gradient function
+#' @param prox_ptr Pointer to prox function
+#' @param loss_opts List of options for loss (input data, tuning params, etc.)
+#' @param prox_opts List of options for prox (regularization parameter)
+#' @param lams Vector of hyperparameters to use
+#' @param x Initial value
+#' @param max_it Maximum number of iterations
+#' @param eps Convergence tolerance
+#' @param beta Backtracking line search parameter
+#' @param verbose How much information to print
+#'
+#' @return Optimal value
+#' @export
+apg_warmstart <- function(grad_ptr, prox_ptr, loss_opts, prox_opts, lams, x, max_it, eps, alpha, beta, accel, verbose) {
+    .Call('_balancer_apg_warmstart', PACKAGE = 'balancer', grad_ptr, prox_ptr, loss_opts, prox_opts, lams, x, max_it, eps, alpha, beta, accel, verbose)
+}
+
+#' Generic balancing loss gradient
+balancing_grad_att <- function(theta, opts) {
+    .Call('_balancer_balancing_grad_att', PACKAGE = 'balancer', theta, opts)
+}
+
+make_balancing_grad_att <- function() {
+    .Call('_balancer_make_balancing_grad_att', PACKAGE = 'balancer')
+}
+
 #' Generic balancing loss gradient
 balancing_grad <- function(theta, opts) {
     .Call('_balancer_balancing_grad', PACKAGE = 'balancer', theta, opts)
@@ -271,6 +299,15 @@ make_exp_weights2 <- function() {
     .Call('_balancer_make_exp_weights2', PACKAGE = 'balancer')
 }
 
+#' un-normalized logit weights
+exp_weights_ipw <- function(Xc, theta, q) {
+    .Call('_balancer_exp_weights_ipw', PACKAGE = 'balancer', Xc, theta, q)
+}
+
+make_exp_weights_ipw <- function() {
+    .Call('_balancer_make_exp_weights_ipw', PACKAGE = 'balancer')
+}
+
 #' Linear weights
 pos_lin_weights <- function(Xc, theta) {
     .Call('_balancer_pos_lin_weights', PACKAGE = 'balancer', Xc, theta)
@@ -287,5 +324,14 @@ make_pos_lin_weights <- function() {
 
 make_pos_lin_weights2 <- function() {
     .Call('_balancer_make_pos_lin_weights2', PACKAGE = 'balancer')
+}
+
+#' Linear weights
+pos_lin_weights_ipw <- function(Xc, theta, q) {
+    .Call('_balancer_pos_lin_weights_ipw', PACKAGE = 'balancer', Xc, theta, q)
+}
+
+make_pos_lin_weights_ipw <- function() {
+    .Call('_balancer_make_pos_lin_weights_ipw', PACKAGE = 'balancer')
 }
 
