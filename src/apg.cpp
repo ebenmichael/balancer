@@ -57,16 +57,19 @@ mat apg(gptr grad_ptr,
   bool backcond;
   int j;
 
+  // if fail more than once, stop
+  bool fail = 0;
+  
   // step size initialization
   grad = grad_f(y, loss_opts);
-
+  // Rcout << grad << "\n";
   t = 1 / sqrt(accu(pow(grad,2)));
   mat x_hat = x - t * grad;
   mat g_hat = grad_f(x_hat, loss_opts);
   double num = accu((x - x_hat) % (grad - g_hat));
   double denom = accu(pow(grad - g_hat,2));
   t = fabs(num / denom);
-
+  // Rcout << num << ", " << denom << ", " << t << "\n";
   for(int i = 1; i <= max_it; i++) {
     // Rcout << i << "\n";
     // Rcout << t << "\n";
@@ -112,6 +115,30 @@ mat apg(gptr grad_ptr,
       }
       Rcpp::checkUserInterrupt();
     }
+
+    // if x has any non-finite element, restart from zero
+    // if it happens again, quit
+    // TODO: figure out what is up with this and fix this hack
+    // This probably has to do with the step size initialization
+    if(!x.is_finite() & !fail) {
+      Rcpp::warning("One or more parameters are non-finite. Restarting from zero");
+      x.zeros();
+      y = x;
+      fail = 1;
+
+      // restart step size
+      grad = grad_f(y, loss_opts);
+      t = 1 / sqrt(accu(pow(grad,2)));
+      mat x_hat = x - t * grad;
+      mat g_hat = grad_f(x_hat, loss_opts);
+      double num = accu((x - x_hat) % (grad - g_hat));
+      double denom = accu(pow(grad - g_hat,2));
+      t = fabs(num / denom);
+      
+    } else if(!x.is_finite() & fail) {
+      Rcpp::warning("One or more parameters are non-finite for the second time. Passing NaN.");
+      break;
+    }
     
   }
 
@@ -152,7 +179,8 @@ List apg_warmstart(gptr grad_ptr,
   // iterate over values of lambda
   for(int j = 0; j < nlam; j++) {
     prox_opts["lam"] = lams[j];
-
+    // Rcout << lams[j] << "\n";
+    // Rcout << x << "\n";
     // use previous optimizer as warm start
     x = apg(grad_ptr, prox_ptr, loss_opts, prox_opts,
             x, max_it, eps, alpha, beta, accel, verbose);
