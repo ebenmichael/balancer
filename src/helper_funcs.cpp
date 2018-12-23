@@ -27,18 +27,6 @@ mat balancing_grad_att(mat theta, List opts) {
   weightPtrIPW weight_func = *as<wptripw>(opts["weight_func"]);
   mat ipw_weights = as<mat>(opts["ipw_weights"]);
   grad = Xc.t() * weight_func(Xc, theta, ipw_weights);
-
-  // include (generalized) ridge penalty
-  if(as<bool>(opts["ridge"])) {
-    if(as<bool>(opts["hasQ"])) {
-      mat Q = as<mat>(opts["Q"]);
-      grad += as<double>(opts["hyper"]) * theta * Q * Q.t();
-    }
-    else {
-      // grad += as<double>(opts["hyper"]) * theta;
-        grad += as<double>(opts["hyper"])  * theta;
-    }
-  }
   
   //combine to get gradient
   return grad - Xt;

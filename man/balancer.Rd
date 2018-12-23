@@ -10,8 +10,8 @@ balancer(X, trt, Z = NULL, V = NULL, type = c("att", "subgrp",
   "subgrp_multi"), link = c("logit", "linear", "pos-linear", "pos-enet",
   "posenet"), regularizer = c(NULL, "l1", "grpl1", "l2", "ridge", "linf",
   "nuc", "l1_all", "l1_nuc"), hyperparam = NULL, nlambda = 20,
-  lambda.min.ratio = 0.001, interact = F, Q = NULL,
-  normalized = TRUE, ipw_weights = NULL, opts = list())
+  lambda.min.ratio = 0.001, interact = F, normalized = TRUE,
+  ipw_weights = NULL, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -39,9 +39,6 @@ value that gives the reference weights}
 
 \item{interact}{Whether to interact group and individual level covariates}
 
-\item{Q}{m x m matrix to tie together ridge penalty, default: NULL,
-if TRUE, use covariance of treated groups}
-
 \item{normalized}{Whether to normalize the weights}
 
 \item{ipw_weights}{Separately estimated IPW weights to measure dispersion against, default is NULL}
@@ -51,6 +48,9 @@ if TRUE, use covariance of treated groups}
   \item{MAX_ITERS }{Maximum number of iterations to run}
   \item{EPS }{Error rolerance}
   \item{alpha }{Elastic net parameter}}}
+
+\item{Q}{m x m matrix to tie together ridge penalty, default: NULL,
+if TRUE, use covariance of treated groups}
 }
 \value{
 \itemize{

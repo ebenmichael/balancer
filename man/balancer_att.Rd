@@ -6,7 +6,7 @@
 \usage{
 balancer_att(X, trt, weightfunc, weightfunc_ptr, proxfunc, balancefunc,
   hyperparam = NULL, nlambda = 20, lambda.min.ratio = 0.001,
-  ridge = F, Q = NULL, ipw_weights = NULL, opts = list())
+  ipw_weights = NULL, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -28,17 +28,17 @@ balancer_att(X, trt, weightfunc, weightfunc_ptr, proxfunc, balancefunc,
 \item{lambda.min.ratio}{Smallest value of hyperparam to consider, as proportion of smallest
 value that gives the reference weights}
 
-\item{ridge}{Whether to use L2 penalty in dual}
-
-\item{Q}{m x m matrix to tie together ridge penalty, default: NULL,
-if TRUE, use covariance of treated groups}
-
 \item{ipw_weights}{Separately estimated IPW weights to measure dispersion against, default is NULL}
 
 \item{opts}{Optimization options
 \itemize{
   \item{MAX_ITERS }{Maximum number of iterations to run}
   \item{EPS }{Error rolerance}}}
+
+\item{ridge}{Whether to use L2 penalty in dual}
+
+\item{Q}{m x m matrix to tie together ridge penalty, default: NULL,
+if TRUE, use covariance of treated groups}
 
 \item{kernel}{What kernel to use, default NULL}
 
