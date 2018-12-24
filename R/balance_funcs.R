@@ -10,7 +10,7 @@ linf <- function(x) norm(matrix(x), "I")
 l2 <- function(x) norm(matrix(x), "2")
 
 #' Two norm squares
-l2sq <- function(x) norm(matrix(x), "2")^2
+l2sq <- function(x) norm(matrix(x), "2")^2/2
 
 #' One norm
 l1 <- function(x) norm(matrix(x), "O") 

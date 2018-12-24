@@ -5,7 +5,7 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
                      link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
                      regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc",
                                    "l1_all", "l1_nuc"),
-                     hyperparam=NULL, nlambda=20, lambda.min.ratio=1e-3,
+                     lambda=NULL, nlambda=20, lambda.min.ratio=1e-3,
                      interact=F, normalized=TRUE,
                      ipw_weights=NULL, opts=list()) {
     #' Find Balancing weights by solving the dual optimization problem
@@ -18,7 +18,7 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
     #'             ATT with missing outcomes, and heterogeneous effects
     #' @param link Link function for weights
     #' @param regularizer Dual of balance criterion
-    #' @param hyperparam Regularization hyperparameter
+    #' @param lambda Regularization hyperparameter
     #' @param nlambda Number of hyperparameters to consider
     #' @param lambda.min.ratio Smallest value of hyperparam to consider, as proportion of smallest
     #'                         value that gives the reference weights
@@ -48,15 +48,15 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
     ipw_weights <- params[[5]]
     if(type == "att") {
         out <- balancer_att(X, trt, weightfunc, weightptr,
-                            proxfunc, balancefunc, hyperparam,
+                            proxfunc, balancefunc, lambda,
                             nlambda, lambda.min.ratio,
                             ipw_weights, opts)
     } else if(type == "subgrp") {
         out <- balancer_subgrp(X, trt, Z, weightfunc, weightptr,
-                                proxfunc, hyperparam, ridge, Q, NULL, NULL, opts)
+                                proxfunc, lambda, ridge, Q, NULL, NULL, opts)
     } else if(type == "subgrp_multi") {
         out <- balancer_multi(X, V, trt, Z, weightfunc, weightptr,
-                              proxfunc, hyperparam, ridge, interact, opts)
+                              proxfunc, lambda, ridge, interact, opts)
     } else {
         stop("type must be one of ('att', 'subgrp', 'subgrp_multi')")
     }
@@ -66,7 +66,7 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
 
 
 balancer_att <- function(X, trt, weightfunc, weightfunc_ptr,
-                         proxfunc, balancefunc, hyperparam=NULL,
+                         proxfunc, balancefunc, lambda=NULL,
                          nlambda=20, lambda.min.ratio=1e-3,
                          ipw_weights=NULL, opts=list()) {
     #' Balancing weights for ATT (in subgroups)
@@ -76,7 +76,7 @@ balancer_att <- function(X, trt, weightfunc, weightfunc_ptr,
     #' @param weightfunc_ptr Pointer to weightfunc
     #' @param proxfunc Prox operator of regularization function
     #' @param balancefunc Balance criterion measure
-    #' @param hyperparam Regularization hyper parameter
+    #' @param lambda Regularization hyper parameter
     #' @param nlambda Number of hyperparameters to consider
     #' @param lambda.min.ratio Smallest value of hyperparam to consider, as proportion of smallest
     #'                         value that gives the reference weights
@@ -104,6 +104,8 @@ balancer_att <- function(X, trt, weightfunc, weightfunc_ptr,
 
     Xc <- X[trt==0,,drop=FALSE]
 
+    ipw_weights <- ipw_weights[trt==0,,drop=F]
+    
     loss_opts = list(Xc=Xc,
                      Xt=x_t,
                      weight_func=weightfunc_ptr,
@@ -124,31 +126,28 @@ balancer_att <- function(X, trt, weightfunc, weightfunc_ptr,
     
     
     ## if hyperparam is NULL, start from reference weights and decrease
-    if(is.null(hyperparam)) {
+    if(is.null(lambda)) {
         lam0 <- balancefunc(balancing_grad_att(init, loss_opts))
         lam1 <- lam0 * lambda.min.ratio
         ## decrease on log scale
-        hyperparam <- exp(seq(log(lam0), log(lam1), length.out=nlambda))
+        lambda <- exp(seq(log(lam0), log(lam1), length.out=nlambda))
     }
 
 
     ## collect results
     out <- list()
-    out$theta <- matrix(,nrow=d, ncol=length(hyperparam))
-    out$imbalance <- matrix(,nrow=d, ncol=length(hyperparam))    
-    out$weights <- matrix(0, nrow=n, ncol=length(hyperparam))
+    out$theta <- matrix(,nrow=d, ncol=length(lambda))
+    out$imbalance <- matrix(,nrow=d, ncol=length(lambda))    
+    out$weights <- matrix(0, nrow=n, ncol=length(lambda))
     out$weightfunc <- weightfunc
 
 
     ## with multiple hyperparameters do warm starts        
-
-    ## if(length(hyperparam) > 1) {
-
     prox_opts = list(lam=1)
     
     apgout <- apg_warmstart(make_balancing_grad_att(),
                             proxfunc, loss_opts, prox_opts,
-                            hyperparam,
+                            lambda,
                             opts$x, opts$max_it, opts$eps,
                             opts$alpha, opts$beta, opts$accel, opts$verbose)
 
@@ -160,7 +159,7 @@ balancer_att <- function(X, trt, weightfunc, weightfunc_ptr,
     out$imbalance <- apply(out$theta, 2,
                            function(th) balancing_grad_att(as.matrix(th), loss_opts))
 
-    out$lams <- hyperparam
+    out$lambda <- lambda
 
     return(out)
 
@@ -226,7 +225,7 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
                      weight_type="subgroup",
                      z=Z[trt==0],
                      ridge=ridge,
-                     ipw_weights=ipw_weights
+                     ipw_weights=ipw_weights[trt==0,,drop=F]
                      )
 
     ## if ridge, make the identity matrix
@@ -327,9 +326,9 @@ map_to_param <- function(link=c("logit", "linear", "pos-linear", "pos-enet", "po
     #' @return Parameters for balancer
 
     if(is.null(ipw_weights)) {
-        ipw_weights = matrix(1, sum(trt==0), 1)    
+        ipw_weights = matrix(1, length(trt), 1)    
     } else {
-        ipw_weights = matrix(ipw_weights, sum(trt==0), 1)    
+        ipw_weights = matrix(ipw_weights, length(trt), 1)    
     }
     if(link == "logit") {
             if(normalized) {
@@ -369,7 +368,7 @@ map_to_param <- function(link=c("logit", "linear", "pos-linear", "pos-enet", "po
         balancefunc <- l2
     } else if(regularizer == "ridge") {
         proxfunc <- make_prox_l2_sq()
-        balancefunc <- l2sq
+        balancefunc <- l2
     } else if(regularizer == "linf") {
         stop("L infinity regularization not implemented")
     } else if(regularizer == "nuc") {
