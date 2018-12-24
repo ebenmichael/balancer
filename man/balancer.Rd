@@ -6,17 +6,19 @@
 \alias{balancer-package}
 \title{balancer: A package for treatment effect heterogeneity and missing data in observational studies through matrix-constrained balancing weights}
 \usage{
-balancer(X, trt, Z = NULL, V = NULL, type = c("att", "subgrp",
-  "subgrp_multi"), link = c("logit", "linear", "pos-linear", "pos-enet",
-  "posenet"), regularizer = c(NULL, "l1", "grpl1", "l2", "ridge", "linf",
-  "nuc", "l1_all", "l1_nuc"), lambda = NULL, nlambda = 20,
-  lambda.min.ratio = 0.001, interact = F, normalized = TRUE,
-  ipw_weights = NULL, opts = list())
+balancer(X, trt, y = NULL, Z = NULL, V = NULL, type = c("att",
+  "subgrp", "subgrp_multi"), link = c("logit", "linear", "pos-linear",
+  "pos-enet", "posenet"), regularizer = c(NULL, "l1", "grpl1", "l2",
+  "ridge", "linf", "nuc", "l1_all", "l1_nuc"), lambda = NULL,
+  nlambda = 20, lambda.min.ratio = 0.001, interact = F,
+  normalized = TRUE, ipw_weights = NULL, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
 
 \item{trt}{Vector of treatment status indicators}
+
+\item{y}{Vector of outcomes to estimate effect(s). If NULL then only return weights}
 
 \item{Z}{Vector of subgroup indicators or observed indicators}
 

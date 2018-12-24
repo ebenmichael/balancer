@@ -4,14 +4,16 @@
 \alias{balancer_att}
 \title{Balancing weights for ATT (in subgroups)}
 \usage{
-balancer_att(X, trt, weightfunc, weightfunc_ptr, proxfunc, balancefunc,
-  lambda = NULL, nlambda = 20, lambda.min.ratio = 0.001,
+balancer_att(X, trt, y = NULL, weightfunc, weightfunc_ptr, proxfunc,
+  balancefunc, lambda = NULL, nlambda = 20, lambda.min.ratio = 0.001,
   ipw_weights = NULL, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
 
 \item{trt}{Vector of treatment status indicators}
+
+\item{y}{Vector of outcomes to estimate effect(s). If NULL then only return weights}
 
 \item{weightfunc}{Derivative of convex conjugate of dispersion function (possibly normalized)}
 

@@ -16,7 +16,7 @@ create_folds <- function(n, k) {
 }
 
 
-balancer_cv <- function(X, trt, k=5, Z=NULL, V=NULL,
+balancer_cv <- function(X, trt, y=NULL, k=10, Z=NULL, V=NULL,
                         type=c("att", "subgrp", "subgrp_multi"),
                         link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
                         regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc",
@@ -27,6 +27,7 @@ balancer_cv <- function(X, trt, k=5, Z=NULL, V=NULL,
     #' Find Balancing weights by solving the dual optimization problem
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
+    #' @param y Vector of outcomes to estimate effect(s). If NULL then only return weights
     #' @param k Number of folds
     #' @param Z Vector of subgroup indicators or observed indicators
     #' @param V Group level covariates
@@ -63,7 +64,7 @@ balancer_cv <- function(X, trt, k=5, Z=NULL, V=NULL,
     balancefunc <- params[[4]]
     ipw_weights <- params[[5]]
     if(type == "att") {
-        out <- balancer_att_cv(X, trt, k, weightfunc, weightptr,
+        out <- balancer_att_cv(X, trt, k, y, weightfunc, weightptr,
                             proxfunc, balancefunc, lambda,
                             nlambda, lambda.min.ratio,
                             ipw_weights, opts)
@@ -75,7 +76,7 @@ balancer_cv <- function(X, trt, k=5, Z=NULL, V=NULL,
 }
 
 
-balancer_att_cv <- function(X, trt, k, weightfunc, weightfunc_ptr,
+balancer_att_cv <- function(X, trt, k, y=NULL, weightfunc, weightfunc_ptr,
                             proxfunc, balancefunc, lambda=NULL,
                             nlambda=20, lambda.min.ratio=1e-3,
                             ipw_weights=NULL, opts=list()) {
@@ -83,6 +84,7 @@ balancer_att_cv <- function(X, trt, k, weightfunc, weightfunc_ptr,
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
     #' @param k Number of folds
+    #' @param y Vector of outcomes to estimate effect(s). If NULL then only return weights    
     #' @param weightfunc Derivative of convex conjugate of dispersion function (possibly normalized)
     #' @param weightfunc_ptr Pointer to weightfunc
     #' @param proxfunc Prox operator of regularization function
@@ -212,6 +214,11 @@ balancer_att_cv <- function(X, trt, k, weightfunc, weightfunc_ptr,
     out$cvm <- rowMeans(bals)
     out$cvsd <- apply(bals, 1, sd)
     out$cv <- bals
+
+    ## estimate treatment effect(s)
+    out$att <- mean(y[trt==1]) - t(y) %*% out$weights / sum(trt==1)
+
+    
     return(out)
 
 }

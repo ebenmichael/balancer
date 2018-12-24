@@ -1,6 +1,7 @@
 
 
-balancer <- function(X, trt, Z=NULL, V=NULL,
+balancer <- function(X, trt, y=NULL,
+                     Z=NULL, V=NULL,
                      type=c("att", "subgrp", "subgrp_multi"),
                      link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
                      regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc",
@@ -11,6 +12,7 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
     #' Find Balancing weights by solving the dual optimization problem
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
+    #' @param y Vector of outcomes to estimate effect(s). If NULL then only return weights
     #' @param Z Vector of subgroup indicators or observed indicators
     #' @param V Group level covariates
     #' @param type Find balancing weights for ATT, subgroup ATTs,
@@ -47,7 +49,7 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
     balancefunc <- params[[4]]
     ipw_weights <- params[[5]]
     if(type == "att") {
-        out <- balancer_att(X, trt, weightfunc, weightptr,
+        out <- balancer_att(X, trt, y, weightfunc, weightptr,
                             proxfunc, balancefunc, lambda,
                             nlambda, lambda.min.ratio,
                             ipw_weights, opts)
@@ -65,13 +67,14 @@ balancer <- function(X, trt, Z=NULL, V=NULL,
 }
 
 
-balancer_att <- function(X, trt, weightfunc, weightfunc_ptr,
+balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
                          proxfunc, balancefunc, lambda=NULL,
                          nlambda=20, lambda.min.ratio=1e-3,
                          ipw_weights=NULL, opts=list()) {
     #' Balancing weights for ATT (in subgroups)
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
+    #' @param y Vector of outcomes to estimate effect(s). If NULL then only return weights    
     #' @param weightfunc Derivative of convex conjugate of dispersion function (possibly normalized)
     #' @param weightfunc_ptr Pointer to weightfunc
     #' @param proxfunc Prox operator of regularization function
@@ -161,6 +164,9 @@ balancer_att <- function(X, trt, weightfunc, weightfunc_ptr,
 
     out$lambda <- lambda
 
+    ## estimate treatment effect(s)
+    out$att <- mean(y[trt==1]) - t(y) %*% out$weights / sum(trt==1)
+    
     return(out)
 
 }
