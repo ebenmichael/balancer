@@ -43,6 +43,36 @@ pptr make_prox_l1() {
 
 
 
+//' L1 Prox ignoring intercept
+//'
+//' @param x Input matrix ([intercept, coefs])
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return soft thresholded U + group-thresholded V
+// [[Rcpp::export]]
+mat prox_l1_normalized(mat x, double lam, List opts) {
+
+  // separate out the intercept
+  int d = x.n_rows;
+
+  mat alpha = x.row(0);
+  mat beta = x.rows(1,d-1);
+
+  // prox on beta
+  beta = prox_l1(beta, lam, opts);
+
+  return join_vert(alpha, beta);
+  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_l1_normalized() {
+  return pptr(new proxPtr(prox_l1_normalized));
+}
+
+
+
 //' Group L1 Prox
 //'
 //' @param x Input matrix
@@ -91,6 +121,36 @@ pptr make_prox_l2() {
 }
 
 
+
+//' L2 Prox ignoring intercept
+//'
+//' @param x Input matrix ([intercept, coefs])
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return soft thresholded U + group-thresholded V
+// [[Rcpp::export]]
+mat prox_l2_normalized(mat x, double lam, List opts) {
+
+  // separate out the intercept
+  int d = x.n_rows;
+
+  mat alpha = x.row(0);
+  mat beta = x.rows(1,d-1);
+
+  // prox on beta
+  beta = prox_l2(beta, lam, opts);
+
+  return join_vert(alpha, beta);
+  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_l2_normalized() {
+  return pptr(new proxPtr(prox_l2_normalized));
+}
+
+
 //' Squared L2 Prox
 //'
 //' @param x Input matrix
@@ -110,6 +170,36 @@ pptr make_prox_l2_sq() {
   return pptr(new proxPtr(prox_l2_sq));
 }
 
+
+
+
+//' Squared L2 Prox ignoring intercept
+//'
+//' @param x Input matrix ([intercept, coefs])
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return soft thresholded U + group-thresholded V
+// [[Rcpp::export]]
+mat prox_l2_sq_normalized(mat x, double lam, List opts) {
+
+  // separate out the intercept
+  int d = x.n_rows;
+
+  mat alpha = x.row(0);
+  mat beta = x.rows(1,d-1);
+
+  // prox on beta
+  beta = prox_l2_sq(beta, lam, opts);
+
+  return join_vert(alpha, beta);
+  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_l2_sq_normalized() {
+  return pptr(new proxPtr(prox_l2_sq_normalized));
+}
 
 
 //' Nuclear norm prox

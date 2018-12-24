@@ -56,6 +56,8 @@ balancer_cv <- function(X, trt, y=NULL, k=10, Z=NULL, V=NULL,
     #'          \item{imbalance }{Imbalance in covariates}}
     #' @export
 
+    X <- preprocess(X, trt, type, normalized)
+    
     ## map string args to actual params
     params <- map_to_param(link, regularizer, ipw_weights, normalized)
     weightfunc <- params[[1]]

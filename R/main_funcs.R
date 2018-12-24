@@ -41,6 +41,10 @@ balancer <- function(X, trt, y=NULL,
     #'          \item{imbalance }{Imbalance in covariates}}
     #' @export
 
+    prep <- preprocess(X, trt, type, link, normalized)
+    X <- prep$X
+    init <- prep$init
+    
     ## map string args to actual params
     params <- map_to_param(link, regularizer, ipw_weights, normalized)
     weightfunc <- params[[1]]
@@ -52,7 +56,7 @@ balancer <- function(X, trt, y=NULL,
         out <- balancer_att(X, trt, y, weightfunc, weightptr,
                             proxfunc, balancefunc, lambda,
                             nlambda, lambda.min.ratio,
-                            ipw_weights, opts)
+                            ipw_weights, init, opts)
     } else if(type == "subgrp") {
         out <- balancer_subgrp(X, trt, Z, weightfunc, weightptr,
                                 proxfunc, lambda, ridge, Q, NULL, NULL, opts)
@@ -70,7 +74,7 @@ balancer <- function(X, trt, y=NULL,
 balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
                          proxfunc, balancefunc, lambda=NULL,
                          nlambda=20, lambda.min.ratio=1e-3,
-                         ipw_weights=NULL, opts=list()) {
+                         ipw_weights=NULL, init=NULL, opts=list()) {
     #' Balancing weights for ATT (in subgroups)
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
@@ -84,11 +88,8 @@ balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
     #' @param lambda.min.ratio Smallest value of hyperparam to consider, as proportion of smallest
     #'                         value that gives the reference weights
     #' @param ridge Whether to use L2 penalty in dual
-    #' @param Q m x m matrix to tie together ridge penalty, default: NULL,
-    #'          if TRUE, use covariance of treated groups
-    #' @param kernel What kernel to use, default NULL
-    #' @param kern_param Hyperparameter for kernel
     #' @param ipw_weights Separately estimated IPW weights to measure dispersion against, default is NULL
+    #' @param init Vector of initial values for dual variable
     #' @param opts Optimization options
     #'        \itemize{
     #'          \item{MAX_ITERS }{Maximum number of iterations to run}
@@ -116,9 +117,13 @@ balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
                      )
     
 
-    ## initialize at 0
-    init = matrix(0, nrow=d, ncol=1)
-    ## combine opts with defauls
+    ## initialize at 0 if no initialization is passed
+
+    if(is.null(init)){
+        init <- matrix(0, nrow=d, ncol=1)
+    }
+
+    ## combine opts with defaults
     opts <- c(opts,
               list(max_it=5000,
                    eps=1e-8,
@@ -165,8 +170,8 @@ balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
     out$lambda <- lambda
 
     ## estimate treatment effect(s)
-    out$att <- mean(y[trt==1]) - t(y) %*% out$weights / sum(trt==1)
-    
+    ## divide by sum of weights for stability
+    out$att <- mean(y[trt==1]) - as.vector(t(y) %*% out$weights) / colSums(out$weights)
     return(out)
 
 }
@@ -336,14 +341,15 @@ map_to_param <- function(link=c("logit", "linear", "pos-linear", "pos-enet", "po
     } else {
         ipw_weights = matrix(ipw_weights, length(trt), 1)    
     }
+    
     if(link == "logit") {
-            if(normalized) {
-                weightfunc <- exp_weights_ipw
-                weightptr <- make_exp_weights_ipw()
-            } else {
-                weightfunc <- softmax_weights_ipw
-                weightptr <- make_softmax_weights_ipw()
-            }
+        if(normalized) {
+            weightfunc <- softmax_weights_ipw
+        weightptr <- make_softmax_weights_ipw()
+        } else {
+            weightfunc <- exp_weights_ipw
+            weightptr <- make_exp_weights_ipw()
+        }
     } else if(link == "linear") {
         weightfunc <- lin_weights_ipw
         weightptr <- make_lin_weights_ipw()
@@ -361,7 +367,7 @@ map_to_param <- function(link=c("logit", "linear", "pos-linear", "pos-enet", "po
     if(is.null(regularizer)) {
         proxfunc <- make_no_prox()
     } else if(regularizer == "l1") {
-        proxfunc <- make_prox_l1()
+        proxfunc <- if(normalized) make_prox_l1_normalized() else make_prox_l1()
         balancefunc <- linf
     } else if(regularizer == "grpl1") {
         proxfunc <- make_prox_l1_grp()
@@ -370,10 +376,10 @@ map_to_param <- function(link=c("logit", "linear", "pos-linear", "pos-enet", "po
         ## double the covariate matrix to include two sets of parameters
         X <- cbind(X,X)
     } else if(regularizer == "l2") {
-        proxfunc <- make_prox_l2()
+        proxfunc <- if(normalized) make_prox_l2_normalized() else make_prox_l2()
         balancefunc <- l2
     } else if(regularizer == "ridge") {
-        proxfunc <- make_prox_l2_sq()
+        proxfunc <- if(normalized) make_prox_l2_sq_normalized() else make_prox_l2_sq()
         balancefunc <- l2
     } else if(regularizer == "linf") {
         stop("L infinity regularization not implemented")
@@ -393,4 +399,32 @@ map_to_param <- function(link=c("logit", "linear", "pos-linear", "pos-enet", "po
 
 
     return(list(weightfunc, weightptr, proxfunc, balancefunc, ipw_weights))
+}
+
+#' Preprocess covariates
+#' 
+#' @param X n x d matrix of covariates
+#' @param trt Vector of treatment status indicators
+#' @param type Find balancing weights for ATT, subgroup ATTs,
+#'             subgroup ATTs with multilevel p-score, multilevel observational studies,
+#'             ATT with missing outcomes, and heterogeneous effects#'
+#' @param link Link function for weights
+#' @param normalized Whether to normalize the weights
+#'
+#' @return Processed covariate matrix
+preprocess <- function(X, trt, type, link, normalized) {
+
+    ## ## center covariates by control means
+    ## if(type == "att") {
+    ##     X <- apply(X, 2, function(x) x - mean(x[trt==0]))
+    ## }
+
+    init <- NULL
+    
+    ## add intercept
+    if(normalized) {
+        X <- cbind(sum(trt)/sum(1-trt), X)
+    }
+    return(list(X=X, init=init))
+    
 }

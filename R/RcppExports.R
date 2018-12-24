@@ -122,6 +122,21 @@ make_prox_l1 <- function() {
     .Call('_balancer_make_prox_l1', PACKAGE = 'balancer')
 }
 
+#' L1 Prox ignoring intercept
+#'
+#' @param x Input matrix ([intercept, coefs])
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return soft thresholded U + group-thresholded V
+prox_l1_normalized <- function(x, lam, opts) {
+    .Call('_balancer_prox_l1_normalized', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_l1_normalized <- function() {
+    .Call('_balancer_make_prox_l1_normalized', PACKAGE = 'balancer')
+}
+
 #' Group L1 Prox
 #'
 #' @param x Input matrix
@@ -152,6 +167,21 @@ make_prox_l2 <- function() {
     .Call('_balancer_make_prox_l2', PACKAGE = 'balancer')
 }
 
+#' L2 Prox ignoring intercept
+#'
+#' @param x Input matrix ([intercept, coefs])
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return soft thresholded U + group-thresholded V
+prox_l2_normalized <- function(x, lam, opts) {
+    .Call('_balancer_prox_l2_normalized', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_l2_normalized <- function() {
+    .Call('_balancer_make_prox_l2_normalized', PACKAGE = 'balancer')
+}
+
 #' Squared L2 Prox
 #'
 #' @param x Input matrix
@@ -165,6 +195,21 @@ prox_l2_sq <- function(x, lam, opts) {
 
 make_prox_l2_sq <- function() {
     .Call('_balancer_make_prox_l2_sq', PACKAGE = 'balancer')
+}
+
+#' Squared L2 Prox ignoring intercept
+#'
+#' @param x Input matrix ([intercept, coefs])
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return soft thresholded U + group-thresholded V
+prox_l2_sq_normalized <- function(x, lam, opts) {
+    .Call('_balancer_prox_l2_sq_normalized', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_l2_sq_normalized <- function() {
+    .Call('_balancer_make_prox_l2_sq_normalized', PACKAGE = 'balancer')
 }
 
 #' Nuclear norm prox

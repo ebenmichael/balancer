@@ -27,7 +27,7 @@ mat lin_weights2(mat eta) {
 //' Linear weights
 // [[Rcpp::export]]
 mat lin_weights_ipw(mat Xc, mat theta, mat q) {
-  return q % (Xc * theta -1);
+  return q % (Xc * theta +1);
 }
 
 
@@ -75,7 +75,7 @@ mat softmax_weights_ipw(mat Xc, mat theta, mat q) {
   mat eta = Xc * theta;
   double m = arma::max(arma::max(eta));
 
-  return q % arma::exp(eta-m) / accu(q % exp(eta-m));
+  return q % arma::exp(eta-m) / accu(q % exp(eta-m)) * accu(Xc.col(0));
 }
 
 
@@ -176,7 +176,7 @@ wptr2 make_pos_lin_weights2() {
 // [[Rcpp::export]]
 mat pos_lin_weights_ipw(mat Xc, mat theta, mat q) {
   mat eta = Xc * theta;
-  return q % (eta-1) % ((eta-1) > 0);
+  return q % (eta+1) % ((eta+1) > 0);
 }
 
 
