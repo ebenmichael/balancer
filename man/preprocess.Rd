@@ -4,12 +4,14 @@
 \alias{preprocess}
 \title{Preprocess covariates}
 \usage{
-preprocess(X, trt, type, link, normalized)
+preprocess(X, trt, ipw_weights, type, link, normalized)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
 
 \item{trt}{Vector of treatment status indicators}
+
+\item{ipw_weights}{Optional ipw weights to measure dispersion against}
 
 \item{type}{Find balancing weights for ATT, subgroup ATTs,
 subgroup ATTs with multilevel p-score, multilevel observational studies,

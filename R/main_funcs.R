@@ -41,17 +41,17 @@ balancer <- function(X, trt, y=NULL,
     #'          \item{imbalance }{Imbalance in covariates}}
     #' @export
 
-    prep <- preprocess(X, trt, type, link, normalized)
+    prep <- preprocess(X, trt, ipw_weights, type, link, normalized)
     X <- prep$X
     init <- prep$init
-    
+    ipw_weights <- prep$ipw_weights
+
     ## map string args to actual params
     params <- map_to_param(link, regularizer, ipw_weights, normalized)
     weightfunc <- params[[1]]
     weightptr <- params[[2]]
     proxfunc <- params[[3]]
     balancefunc <- params[[4]]
-    ipw_weights <- params[[5]]
     if(type == "att") {
         out <- balancer_att(X, trt, y, weightfunc, weightptr,
                             proxfunc, balancefunc, lambda,
@@ -336,11 +336,6 @@ map_to_param <- function(link=c("logit", "linear", "pos-linear", "pos-enet", "po
     #'
     #' @return Parameters for balancer
 
-    if(is.null(ipw_weights)) {
-        ipw_weights = matrix(1, length(trt), 1)    
-    } else {
-        ipw_weights = matrix(ipw_weights, length(trt), 1)    
-    }
     
     if(link == "logit") {
         if(normalized) {
@@ -405,6 +400,7 @@ map_to_param <- function(link=c("logit", "linear", "pos-linear", "pos-enet", "po
 #' 
 #' @param X n x d matrix of covariates
 #' @param trt Vector of treatment status indicators
+#' @param ipw_weights Optional ipw weights to measure dispersion against
 #' @param type Find balancing weights for ATT, subgroup ATTs,
 #'             subgroup ATTs with multilevel p-score, multilevel observational studies,
 #'             ATT with missing outcomes, and heterogeneous effects#'
@@ -412,19 +408,27 @@ map_to_param <- function(link=c("logit", "linear", "pos-linear", "pos-enet", "po
 #' @param normalized Whether to normalize the weights
 #'
 #' @return Processed covariate matrix
-preprocess <- function(X, trt, type, link, normalized) {
+preprocess <- function(X, trt, ipw_weights, type, link, normalized) {
 
     ## ## center covariates by control means
     ## if(type == "att") {
     ##     X <- apply(X, 2, function(x) x - mean(x[trt==0]))
     ## }
 
+    if(is.null(ipw_weights)) {
+        ipw_weights = matrix(1, length(trt), 1)    
+    } else {
+        ipw_weights = matrix(ipw_weights, length(trt), 1)    
+    }
+
+
+    
     init <- NULL
     
     ## add intercept
     if(normalized) {
         X <- cbind(sum(trt)/sum(1-trt), X)
     }
-    return(list(X=X, init=init))
+    return(list(X=X, init=init, ipw_weights=ipw_weights))
     
 }

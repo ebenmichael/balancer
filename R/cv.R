@@ -56,15 +56,18 @@ balancer_cv <- function(X, trt, y=NULL, k=10, Z=NULL, V=NULL,
     #'          \item{imbalance }{Imbalance in covariates}}
     #' @export
 
-    X <- preprocess(X, trt, type, normalized)
-    
+    prep <- preprocess(X, trt, ipw_weights, type, link, normalized)
+    X <- prep$X
+    init <- prep$init
+    ipw_weights <- prep$ipw_weights
+
     ## map string args to actual params
     params <- map_to_param(link, regularizer, ipw_weights, normalized)
     weightfunc <- params[[1]]
     weightptr <- params[[2]]
     proxfunc <- params[[3]]
     balancefunc <- params[[4]]
-    ipw_weights <- params[[5]]
+
     if(type == "att") {
         out <- balancer_att_cv(X, trt, k, y, weightfunc, weightptr,
                             proxfunc, balancefunc, lambda,
