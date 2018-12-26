@@ -116,7 +116,7 @@ balancer_att_cv <- function(X, trt, k, y=NULL, weightfunc, weightfunc_ptr,
 
     d <- dim(X)[2]
 
-    x_t <- matrix(colSums(X[trt==1,,drop=FALSE]), nrow=d)
+    x_t <- matrix(colMeans(X[trt==1,,drop=FALSE]), nrow=d)
     Xc <- X[trt==0,,drop=FALSE]
     
     loss_opts = list(Xc=Xc,
@@ -156,8 +156,8 @@ balancer_att_cv <- function(X, trt, k, y=NULL, weightfunc, weightfunc_ptr,
         ## subset data 
         idx <- folds[[i]]
         
-        loss_opts$Xc <- X[-idx,][trt[-idx]==0,,drop=FALSE]
-        loss_opts$Xt <- matrix(colSums(X[-idx,][trt[-idx]==1,,drop=FALSE]), nrow=d)
+        loss_opts$Xc <- X[-idx,,drop=FALSE][trt[-idx]==0,,drop=FALSE]
+        loss_opts$Xt <- matrix(colMeans(X[-idx,,drop=FALSE][trt[-idx]==1,,drop=FALSE]), nrow=d)
         loss_opts$ipw_weights <- ipw_weights[-idx,,drop=F][trt[-idx]==0,,drop=F]
 
         ## fit balancing weights
@@ -168,8 +168,8 @@ balancer_att_cv <- function(X, trt, k, y=NULL, weightfunc, weightfunc_ptr,
                                 opts$alpha, opts$beta, opts$accel, opts$verbose)
 
         ## evaluate imbalance on held out data
-        loss_opts$Xc <- X[idx,][trt[idx]==0,,drop=FALSE]
-        loss_opts$Xt <- matrix(colSums(X[idx,][trt[idx]==1,,drop=FALSE]), nrow=d)
+        loss_opts$Xc <- X[idx,,drop=FALSE][trt[idx]==0,,drop=FALSE]
+        loss_opts$Xt <- matrix(colMeans(X[idx,,drop=FALSE][trt[idx]==1,,drop=FALSE]), nrow=d)
         loss_opts$ipw_weights <- ipw_weights[idx,,drop=F][trt[idx]==0,,drop=F]
 
         vapply(1:length(lambda),

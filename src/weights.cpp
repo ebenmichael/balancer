@@ -75,7 +75,7 @@ mat softmax_weights_ipw(mat Xc, mat theta, mat q) {
   mat eta = Xc * theta;
   double m = arma::max(arma::max(eta));
 
-  return q % arma::exp(eta-m) / accu(q % exp(eta-m)) * accu(Xc.col(0));
+  return q % arma::exp(eta-m) / accu(q % exp(eta-m));
 }
 
 

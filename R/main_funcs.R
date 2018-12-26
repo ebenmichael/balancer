@@ -103,7 +103,7 @@ balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
 
     d <- dim(X)[2]
 
-    x_t <- matrix(colSums(X[trt==1,,drop=FALSE]), nrow=d)
+    x_t <- matrix(colMeans(X[trt==1,,drop=FALSE]), nrow=d)
 
     Xc <- X[trt==0,,drop=FALSE]
 
@@ -423,14 +423,15 @@ preprocess <- function(X, trt, ipw_weights, type, link, normalized) {
     ## }
 
     if(is.null(ipw_weights)) {
-        ipw_weights = matrix(1, length(trt), 1)    
+        ipw_weights = matrix(1/sum(trt==0), length(trt), 1)    
     } else {
         ipw_weights = matrix(ipw_weights, length(trt), 1)    
     }
     
     ## add intercept
     if(normalized) {
-        X <- cbind(sum(trt)/sum(1-trt), X)
+        ## X <- cbind(sum(trt)/sum(1-trt), X)
+        X <- cbind(1, X)
     }
     return(list(X=X, ipw_weights=ipw_weights))
     
