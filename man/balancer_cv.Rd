@@ -9,7 +9,7 @@ balancer_cv(X, trt, y = NULL, k = 10, Z = NULL, V = NULL,
   "linear", "pos-linear", "pos-enet", "posenet"), regularizer = c(NULL,
   "l1", "grpl1", "l2", "ridge", "linf", "nuc", "l1_all", "l1_nuc"),
   lambda = NULL, nlambda = 20, lambda.min.ratio = 0.001,
-  interact = F, normalized = TRUE, ipw_weights = NULL,
+  interact = F, normalized = TRUE, ipw_weights = NULL, mu0 = NULL,
   opts = list())
 }
 \arguments{
@@ -46,6 +46,8 @@ value that gives the reference weights}
 \item{normalized}{Whether to normalize the weights}
 
 \item{ipw_weights}{Separately estimated IPW weights to measure dispersion against, default is NULL}
+
+\item{mu0}{Optional estimates of the potential outcome under control, default is NULL}
 
 \item{opts}{Optimization options
 \itemize{

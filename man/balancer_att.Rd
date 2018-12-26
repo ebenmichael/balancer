@@ -6,7 +6,7 @@
 \usage{
 balancer_att(X, trt, y = NULL, weightfunc, weightfunc_ptr, proxfunc,
   balancefunc, lambda = NULL, nlambda = 20, lambda.min.ratio = 0.001,
-  ipw_weights = NULL, init = NULL, opts = list())
+  ipw_weights = NULL, mu0 = NULL, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -32,7 +32,7 @@ value that gives the reference weights}
 
 \item{ipw_weights}{Separately estimated IPW weights to measure dispersion against, default is NULL}
 
-\item{init}{Vector of initial values for dual variable}
+\item{mu0}{Optional estimates of the potential outcome under control, default is NULL}
 
 \item{opts}{Optimization options
 \itemize{

@@ -23,7 +23,7 @@ balancer_cv <- function(X, trt, y=NULL, k=10, Z=NULL, V=NULL,
                                       "l1_all", "l1_nuc"),
                         lambda=NULL, nlambda=20, lambda.min.ratio=1e-3,
                         interact=F, normalized=TRUE,
-                        ipw_weights=NULL, opts=list()) {
+                        ipw_weights=NULL, mu0=NULL, opts=list()) {
     #' Find Balancing weights by solving the dual optimization problem
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
@@ -44,6 +44,7 @@ balancer_cv <- function(X, trt, y=NULL, k=10, Z=NULL, V=NULL,
     #' @param interact Whether to interact group and individual level covariates
     #' @param normalized Whether to normalize the weights
     #' @param ipw_weights Separately estimated IPW weights to measure dispersion against, default is NULL
+    #' @param mu0 Optional estimates of the potential outcome under control, default is NULL
     #' @param opts Optimization options
     #'        \itemize{
     #'          \item{MAX_ITERS }{Maximum number of iterations to run}
@@ -72,7 +73,7 @@ balancer_cv <- function(X, trt, y=NULL, k=10, Z=NULL, V=NULL,
         out <- balancer_att_cv(X, trt, k, y, weightfunc, weightptr,
                             proxfunc, balancefunc, lambda,
                             nlambda, lambda.min.ratio,
-                            ipw_weights, opts)
+                            ipw_weights, mu0, opts)
     } else {
         stop("type must be one of ('att')")
     }
@@ -84,7 +85,7 @@ balancer_cv <- function(X, trt, y=NULL, k=10, Z=NULL, V=NULL,
 balancer_att_cv <- function(X, trt, k, y=NULL, weightfunc, weightfunc_ptr,
                             proxfunc, balancefunc, lambda=NULL,
                             nlambda=20, lambda.min.ratio=1e-3,
-                            ipw_weights=NULL, opts=list()) {
+                            ipw_weights=NULL, mu0=NULL, opts=list()) {
     #' Balancing weights for ATT (in subgroups)
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
@@ -99,12 +100,8 @@ balancer_att_cv <- function(X, trt, k, y=NULL, weightfunc, weightfunc_ptr,
     #' @param nlambda Number of hyperparameters to consider
     #' @param lambda.min.ratio Smallest value of hyperparam to consider, as proportion of smallest
     #'                         value that gives the reference weights
-    #' @param ridge Whether to use L2 penalty in dual
-    #' @param Q m x m matrix to tie together ridge penalty, default: NULL,
-    #'          if TRUE, use covariance of treated groups
-    #' @param kernel What kernel to use, default NULL
-    #' @param kern_param Hyperparameter for kernel
     #' @param ipw_weights Separately estimated IPW weights to measure dispersion against, default is NULL
+    #' @param mu0 Optional estimates of the potential outcome under control, default is NULL    
     #' @param opts Optimization options
     #'        \itemize{
     #'          \item{MAX_ITERS }{Maximum number of iterations to run}
@@ -184,44 +181,14 @@ balancer_att_cv <- function(X, trt, k, y=NULL, weightfunc, weightfunc_ptr,
     bals <- vapply(1:k, fit_fold, numeric(length(lambda)))
 
     ## fit on whole data
-    ipw_weights <- ipw_weights[trt==0,,drop=F]
-    loss_opts$Xc <- X[trt==0,,drop=FALSE]
-    loss_opts$Xt <- matrix(colSums(X[trt==1,,drop=FALSE]), nrow=d)
-    loss_opts$ipw_weights <- ipw_weights
+    out <- balancer_att(X, trt, y, weightfunc, weightfunc_ptr, proxfunc, balancefunc,
+                        lambda, nlambda, lambda.min.ratio,
+                         ipw_weights, mu0, opts)
 
-    ## fit balancing weights
-    apgout <- apg_warmstart(make_balancing_grad_att(),
-                            proxfunc, loss_opts, prox_opts,
-                            lambda,
-                            opts$x, opts$max_it, opts$eps,
-                            opts$alpha, opts$beta, opts$accel, opts$verbose)
     
-    
-    ## collect results
-    out <- list()
-    out$theta <- matrix(,nrow=d, ncol=length(lambda))
-    out$imbalance <- matrix(,nrow=d, ncol=length(lambda))    
-    out$weights <- matrix(0, nrow=n, ncol=length(lambda))
-    out$weightfunc <- weightfunc
-
-
-
-    ## weights and theta
-    out$theta <- do.call(cbind, apgout)
-    out$weights[trt==0,] <- apply(out$theta, 2,
-                                  function(th) weightfunc(X[trt==0,,drop=F], as.matrix(th), ipw_weights))
-    
-    out$imbalance <- apply(out$theta, 2,
-                           function(th) balancing_grad_att(as.matrix(th), loss_opts))
-
-    out$lambda <- lambda
-
     out$cvm <- rowMeans(bals)
     out$cvsd <- apply(bals, 1, sd)
     out$cv <- bals
-
-    ## estimate treatment effect(s)
-    out$att <- mean(y[trt==1]) - t(y) %*% out$weights / sum(trt==1)
 
     
     return(out)

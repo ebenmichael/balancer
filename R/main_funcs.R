@@ -8,7 +8,8 @@ balancer <- function(X, trt, y=NULL,
                                    "l1_all", "l1_nuc"),
                      lambda=NULL, nlambda=20, lambda.min.ratio=1e-3,
                      interact=F, normalized=TRUE,
-                     ipw_weights=NULL, opts=list()) {
+                     ipw_weights=NULL, mu0=NULL,
+                     opts=list()) {
     #' Find Balancing weights by solving the dual optimization problem
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
@@ -25,10 +26,9 @@ balancer <- function(X, trt, y=NULL,
     #' @param lambda.min.ratio Smallest value of hyperparam to consider, as proportion of smallest
     #'                         value that gives the reference weights
     #' @param interact Whether to interact group and individual level covariates
-    #' @param Q m x m matrix to tie together ridge penalty, default: NULL,
-    #'          if TRUE, use covariance of treated groups
     #' @param normalized Whether to normalize the weights
     #' @param ipw_weights Separately estimated IPW weights to measure dispersion against, default is NULL
+    #' @param mu0 Optional estimates of the potential outcome under control, default is NULL
     #' @param opts Optimization options
     #'        \itemize{
     #'          \item{MAX_ITERS }{Maximum number of iterations to run}
@@ -43,7 +43,6 @@ balancer <- function(X, trt, y=NULL,
 
     prep <- preprocess(X, trt, ipw_weights, type, link, normalized)
     X <- prep$X
-    init <- prep$init
     ipw_weights <- prep$ipw_weights
 
     ## map string args to actual params
@@ -56,7 +55,7 @@ balancer <- function(X, trt, y=NULL,
         out <- balancer_att(X, trt, y, weightfunc, weightptr,
                             proxfunc, balancefunc, lambda,
                             nlambda, lambda.min.ratio,
-                            ipw_weights, init, opts)
+                            ipw_weights, mu0, opts)
     } else if(type == "subgrp") {
         out <- balancer_subgrp(X, trt, Z, weightfunc, weightptr,
                                 proxfunc, lambda, ridge, Q, NULL, NULL, opts)
@@ -74,7 +73,7 @@ balancer <- function(X, trt, y=NULL,
 balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
                          proxfunc, balancefunc, lambda=NULL,
                          nlambda=20, lambda.min.ratio=1e-3,
-                         ipw_weights=NULL, init=NULL, opts=list()) {
+                         ipw_weights=NULL, mu0=NULL, opts=list()) {
     #' Balancing weights for ATT (in subgroups)
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
@@ -89,7 +88,7 @@ balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
     #'                         value that gives the reference weights
     #' @param ridge Whether to use L2 penalty in dual
     #' @param ipw_weights Separately estimated IPW weights to measure dispersion against, default is NULL
-    #' @param init Vector of initial values for dual variable
+    #' @param mu0 Optional estimates of the potential outcome under control, default is NULL
     #' @param opts Optimization options
     #'        \itemize{
     #'          \item{MAX_ITERS }{Maximum number of iterations to run}
@@ -118,10 +117,7 @@ balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
     
 
     ## initialize at 0 if no initialization is passed
-
-    if(is.null(init)){
-        init <- matrix(0, nrow=d, ncol=1)
-    }
+    init <- matrix(0, nrow=d, ncol=1)
 
     ## combine opts with defaults
     opts <- c(opts,
@@ -170,8 +166,19 @@ balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
     out$lambda <- lambda
 
     ## estimate treatment effect(s)
+
+    ## outcome model
+    if(is.null(mu0)) {
+        mu0 <- rep(0, nrow(X))
+    }
+
     ## divide by sum of weights for stability
-    out$att <- mean(y[trt==1]) - as.vector(t(y) %*% out$weights) / colSums(out$weights)
+    if(!is.null(y)) {
+        out$att <- mean(y[trt==1] - mu0[trt==1]) -
+            as.vector(t(y - mu0) %*% out$weights) / colSums(out$weights)
+    } else {
+        out$att <- NULL
+    }
     return(out)
 
 }
@@ -420,15 +427,11 @@ preprocess <- function(X, trt, ipw_weights, type, link, normalized) {
     } else {
         ipw_weights = matrix(ipw_weights, length(trt), 1)    
     }
-
-
-    
-    init <- NULL
     
     ## add intercept
     if(normalized) {
         X <- cbind(sum(trt)/sum(1-trt), X)
     }
-    return(list(X=X, init=init, ipw_weights=ipw_weights))
+    return(list(X=X, ipw_weights=ipw_weights))
     
 }

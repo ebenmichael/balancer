@@ -11,7 +11,7 @@ balancer(X, trt, y = NULL, Z = NULL, V = NULL, type = c("att",
   "pos-enet", "posenet"), regularizer = c(NULL, "l1", "grpl1", "l2",
   "ridge", "linf", "nuc", "l1_all", "l1_nuc"), lambda = NULL,
   nlambda = 20, lambda.min.ratio = 0.001, interact = F,
-  normalized = TRUE, ipw_weights = NULL, opts = list())
+  normalized = TRUE, ipw_weights = NULL, mu0 = NULL, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -45,14 +45,13 @@ value that gives the reference weights}
 
 \item{ipw_weights}{Separately estimated IPW weights to measure dispersion against, default is NULL}
 
+\item{mu0}{Optional estimates of the potential outcome under control, default is NULL}
+
 \item{opts}{Optimization options
 \itemize{
   \item{MAX_ITERS }{Maximum number of iterations to run}
   \item{EPS }{Error rolerance}
   \item{alpha }{Elastic net parameter}}}
-
-\item{Q}{m x m matrix to tie together ridge penalty, default: NULL,
-if TRUE, use covariance of treated groups}
 }
 \value{
 \itemize{
