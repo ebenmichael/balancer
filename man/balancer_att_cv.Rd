@@ -7,7 +7,7 @@
 balancer_att_cv(X, trt, k, y = NULL, weightfunc, weightfunc_ptr,
   proxfunc, balancefunc, lambda = NULL, nlambda = 20,
   lambda.min.ratio = 0.001, ipw_weights = NULL, mu0 = NULL,
-  opts = list())
+  opts = list(), prox_opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -42,6 +42,8 @@ value that gives the reference weights}
 \itemize{
   \item{MAX_ITERS }{Maximum number of iterations to run}
   \item{EPS }{Error rolerance}}}
+
+\item{prox_opts}{List of additional arguments for prox}
 }
 \value{
 \itemize{

@@ -11,7 +11,8 @@ balancer(X, trt, y = NULL, Z = NULL, V = NULL, type = c("att",
   "pos-enet", "posenet"), regularizer = c(NULL, "l1", "grpl1", "l2",
   "ridge", "linf", "nuc", "l1_all", "l1_nuc"), lambda = NULL,
   nlambda = 20, lambda.min.ratio = 0.001, interact = F,
-  normalized = TRUE, ipw_weights = NULL, mu0 = NULL, opts = list())
+  normalized = TRUE, alpha = 1, Q = NULL, ipw_weights = NULL,
+  mu0 = NULL, opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -42,6 +43,10 @@ value that gives the reference weights}
 \item{interact}{Whether to interact group and individual level covariates}
 
 \item{normalized}{Whether to normalize the weights}
+
+\item{alpha}{Elastic net parameter \eqn{\frac{1-\alpha}{2}\|\beta\|_2^2 + \alpha\|\beta\|_1}, defaults to 1}
+
+\item{Q}{Matrix for generalized ridge, if null then use inverse covariance matrix}
 
 \item{ipw_weights}{Separately estimated IPW weights to measure dispersion against, default is NULL}
 

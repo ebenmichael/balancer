@@ -349,6 +349,98 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// prox_l2_sq_Q
+mat prox_l2_sq_Q(mat x, double lam, List opts);
+RcppExport SEXP _balancer_prox_l2_sq_Q(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type lam(lamSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(prox_l2_sq_Q(x, lam, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_prox_l2_sq_Q
+pptr make_prox_l2_sq_Q();
+RcppExport SEXP _balancer_make_prox_l2_sq_Q() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_prox_l2_sq_Q());
+    return rcpp_result_gen;
+END_RCPP
+}
+// prox_l2_sq_Q_normalized
+mat prox_l2_sq_Q_normalized(mat x, double lam, List opts);
+RcppExport SEXP _balancer_prox_l2_sq_Q_normalized(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type lam(lamSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(prox_l2_sq_Q_normalized(x, lam, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_prox_l2_sq_Q_normalized
+pptr make_prox_l2_sq_Q_normalized();
+RcppExport SEXP _balancer_make_prox_l2_sq_Q_normalized() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_prox_l2_sq_Q_normalized());
+    return rcpp_result_gen;
+END_RCPP
+}
+// prox_enet
+mat prox_enet(mat x, double lam, List opts);
+RcppExport SEXP _balancer_prox_enet(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type lam(lamSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(prox_enet(x, lam, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_prox_enet
+pptr make_prox_enet();
+RcppExport SEXP _balancer_make_prox_enet() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_prox_enet());
+    return rcpp_result_gen;
+END_RCPP
+}
+// prox_enet_normalized
+mat prox_enet_normalized(mat x, double lam, List opts);
+RcppExport SEXP _balancer_prox_enet_normalized(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type lam(lamSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(prox_enet_normalized(x, lam, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_prox_enet_normalized
+pptr make_prox_enet_normalized();
+RcppExport SEXP _balancer_make_prox_enet_normalized() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_prox_enet_normalized());
+    return rcpp_result_gen;
+END_RCPP
+}
 // prox_nuc
 mat prox_nuc(mat x, double lam, List opts);
 RcppExport SEXP _balancer_prox_nuc(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
@@ -758,6 +850,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_balancer_make_prox_l2_sq", (DL_FUNC) &_balancer_make_prox_l2_sq, 0},
     {"_balancer_prox_l2_sq_normalized", (DL_FUNC) &_balancer_prox_l2_sq_normalized, 3},
     {"_balancer_make_prox_l2_sq_normalized", (DL_FUNC) &_balancer_make_prox_l2_sq_normalized, 0},
+    {"_balancer_prox_l2_sq_Q", (DL_FUNC) &_balancer_prox_l2_sq_Q, 3},
+    {"_balancer_make_prox_l2_sq_Q", (DL_FUNC) &_balancer_make_prox_l2_sq_Q, 0},
+    {"_balancer_prox_l2_sq_Q_normalized", (DL_FUNC) &_balancer_prox_l2_sq_Q_normalized, 3},
+    {"_balancer_make_prox_l2_sq_Q_normalized", (DL_FUNC) &_balancer_make_prox_l2_sq_Q_normalized, 0},
+    {"_balancer_prox_enet", (DL_FUNC) &_balancer_prox_enet, 3},
+    {"_balancer_make_prox_enet", (DL_FUNC) &_balancer_make_prox_enet, 0},
+    {"_balancer_prox_enet_normalized", (DL_FUNC) &_balancer_prox_enet_normalized, 3},
+    {"_balancer_make_prox_enet_normalized", (DL_FUNC) &_balancer_make_prox_enet_normalized, 0},
     {"_balancer_prox_nuc", (DL_FUNC) &_balancer_prox_nuc, 3},
     {"_balancer_make_prox_nuc", (DL_FUNC) &_balancer_make_prox_nuc, 0},
     {"_balancer_prox_l1_grp_l1", (DL_FUNC) &_balancer_prox_l1_grp_l1, 3},

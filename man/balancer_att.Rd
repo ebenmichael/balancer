@@ -6,7 +6,8 @@
 \usage{
 balancer_att(X, trt, y = NULL, weightfunc, weightfunc_ptr, proxfunc,
   balancefunc, lambda = NULL, nlambda = 20, lambda.min.ratio = 0.001,
-  ipw_weights = NULL, mu0 = NULL, opts = list())
+  ipw_weights = NULL, mu0 = NULL, opts = list(),
+  prox_opts = list())
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -38,6 +39,8 @@ value that gives the reference weights}
 \itemize{
   \item{MAX_ITERS }{Maximum number of iterations to run}
   \item{EPS }{Error rolerance}}}
+
+\item{prox_opts}{List of additional arguments for prox}
 
 \item{ridge}{Whether to use L2 penalty in dual}
 }

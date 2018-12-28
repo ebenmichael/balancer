@@ -22,7 +22,7 @@ balancer_cv <- function(X, trt, y=NULL, k=10, Z=NULL, V=NULL,
                         regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc",
                                       "l1_all", "l1_nuc"),
                         lambda=NULL, nlambda=20, lambda.min.ratio=1e-3,
-                        interact=F, normalized=TRUE,
+                        interact=F, normalized=TRUE, alpha=1, Q=NULL,
                         ipw_weights=NULL, mu0=NULL, opts=list()) {
     #' Find Balancing weights by solving the dual optimization problem
     #' @param X n x d matrix of covariates
@@ -43,6 +43,8 @@ balancer_cv <- function(X, trt, y=NULL, k=10, Z=NULL, V=NULL,
     #'                         value that gives the reference weights
     #' @param interact Whether to interact group and individual level covariates
     #' @param normalized Whether to normalize the weights
+    #' @param alpha Elastic net parameter \eqn{\frac{1-\alpha}{2}\|\beta\|_2^2 + \alpha\|\beta\|_1}, defaults to 1
+    #' @param Q Matrix for generalized ridge, if null then use inverse covariance matrix
     #' @param ipw_weights Separately estimated IPW weights to measure dispersion against, default is NULL
     #' @param mu0 Optional estimates of the potential outcome under control, default is NULL
     #' @param opts Optimization options
@@ -57,23 +59,24 @@ balancer_cv <- function(X, trt, y=NULL, k=10, Z=NULL, V=NULL,
     #'          \item{imbalance }{Imbalance in covariates}}
     #' @export
 
-    prep <- preprocess(X, trt, ipw_weights, type, link, normalized)
-    X <- prep$X
-    init <- prep$init
-    ipw_weights <- prep$ipw_weights
-
     ## map string args to actual params
-    params <- map_to_param(link, regularizer, ipw_weights, normalized)
+    params <- map_to_param(X, link, regularizer, ipw_weights, normalized, Q, alpha)
     weightfunc <- params[[1]]
     weightptr <- params[[2]]
     proxfunc <- params[[3]]
     balancefunc <- params[[4]]
+    prox_opts <- params[[5]]
+
+    
+    prep <- preprocess(X, trt, ipw_weights, type, link, normalized)
+    X <- prep$X
+    ipw_weights <- prep$ipw_weights
 
     if(type == "att") {
         out <- balancer_att_cv(X, trt, k, y, weightfunc, weightptr,
                             proxfunc, balancefunc, lambda,
                             nlambda, lambda.min.ratio,
-                            ipw_weights, mu0, opts)
+                            ipw_weights, mu0, opts, prox_opts)
     } else {
         stop("type must be one of ('att')")
     }
@@ -85,7 +88,8 @@ balancer_cv <- function(X, trt, y=NULL, k=10, Z=NULL, V=NULL,
 balancer_att_cv <- function(X, trt, k, y=NULL, weightfunc, weightfunc_ptr,
                             proxfunc, balancefunc, lambda=NULL,
                             nlambda=20, lambda.min.ratio=1e-3,
-                            ipw_weights=NULL, mu0=NULL, opts=list()) {
+                            ipw_weights=NULL, mu0=NULL, opts=list(),
+                            prox_opts=list()) {
     #' Balancing weights for ATT (in subgroups)
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
@@ -106,6 +110,7 @@ balancer_att_cv <- function(X, trt, k, y=NULL, weightfunc, weightfunc_ptr,
     #'        \itemize{
     #'          \item{MAX_ITERS }{Maximum number of iterations to run}
     #'          \item{EPS }{Error rolerance}}
+    #' @param prox_opts List of additional arguments for prox
     #'
     #' @return \itemize{
     #'          \item{theta }{Estimated dual propensity score parameters}
@@ -146,8 +151,8 @@ balancer_att_cv <- function(X, trt, k, y=NULL, weightfunc, weightfunc_ptr,
                    x=init,
                    verbose=F))
 
-    prox_opts = list(lam=1)
-
+    prox_opts = c(prox_opts,
+                  list(lam=1))
     folds <- create_folds(n, k)
 
     ## helper function to fit weights and get balance
@@ -183,7 +188,7 @@ balancer_att_cv <- function(X, trt, k, y=NULL, weightfunc, weightfunc_ptr,
     ## fit on whole data
     out <- balancer_att(X, trt, y, weightfunc, weightfunc_ptr, proxfunc, balancefunc,
                         lambda, nlambda, lambda.min.ratio,
-                         ipw_weights, mu0, opts)
+                         ipw_weights, mu0, opts, prox_opts)
 
     
     out$cvm <- rowMeans(bals)

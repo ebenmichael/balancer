@@ -212,6 +212,66 @@ make_prox_l2_sq_normalized <- function() {
     .Call('_balancer_make_prox_l2_sq_normalized', PACKAGE = 'balancer')
 }
 
+#' Prox for 1/2 x'Qx
+#'
+#' @param x Input matrix
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return Column soft thresholded X
+prox_l2_sq_Q <- function(x, lam, opts) {
+    .Call('_balancer_prox_l2_sq_Q', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_l2_sq_Q <- function() {
+    .Call('_balancer_make_prox_l2_sq_Q', PACKAGE = 'balancer')
+}
+
+#' Prox for 1/2 x'Qx ignoring intercept
+#'
+#' @param x Input matrix ([intercept, coefs])
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return soft thresholded U + group-thresholded V
+prox_l2_sq_Q_normalized <- function(x, lam, opts) {
+    .Call('_balancer_prox_l2_sq_Q_normalized', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_l2_sq_Q_normalized <- function() {
+    .Call('_balancer_make_prox_l2_sq_Q_normalized', PACKAGE = 'balancer')
+}
+
+#' Prox for elastic net
+#'
+#' @param x Input matrix
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return Column soft thresholded X
+prox_enet <- function(x, lam, opts) {
+    .Call('_balancer_prox_enet', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_enet <- function() {
+    .Call('_balancer_make_prox_enet', PACKAGE = 'balancer')
+}
+
+#' Prox for elastic net ignoring intercept
+#'
+#' @param x Input matrix ([intercept, coefs])
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return soft thresholded U + group-thresholded V
+prox_enet_normalized <- function(x, lam, opts) {
+    .Call('_balancer_prox_enet_normalized', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_enet_normalized <- function() {
+    .Call('_balancer_make_prox_enet_normalized', PACKAGE = 'balancer')
+}
+
 #' Nuclear norm prox
 #'
 #' @param x Input matrix

@@ -173,6 +173,7 @@ pptr make_prox_l2_sq() {
 
 
 
+
 //' Squared L2 Prox ignoring intercept
 //'
 //' @param x Input matrix ([intercept, coefs])
@@ -200,6 +201,129 @@ mat prox_l2_sq_normalized(mat x, double lam, List opts) {
 pptr make_prox_l2_sq_normalized() {
   return pptr(new proxPtr(prox_l2_sq_normalized));
 }
+
+
+
+
+
+
+
+//' Prox for 1/2 x'Qx
+//'
+//' @param x Input matrix
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return Column soft thresholded X
+// [[Rcpp::export]]
+mat prox_l2_sq_Q(mat x, double lam, List opts) {
+  lam = lam * as<double>(opts["lam"]);
+  // use eigendecomposition to speed up inversion
+  mat evec = as<mat>(opts["evec"]);
+  vec eval = as<vec>(opts["eval"]);
+  
+  return evec * diagmat(1 / (1 + lam * eval)) * evec.t() * x;
+}
+
+// [[Rcpp::export]]
+pptr make_prox_l2_sq_Q() {
+  return pptr(new proxPtr(prox_l2_sq_Q));
+}
+
+
+
+
+
+//' Prox for 1/2 x'Qx ignoring intercept
+//'
+//' @param x Input matrix ([intercept, coefs])
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return soft thresholded U + group-thresholded V
+// [[Rcpp::export]]
+mat prox_l2_sq_Q_normalized(mat x, double lam, List opts) {
+
+  // separate out the intercept
+  int d = x.n_rows;
+
+  mat alpha = x.row(0);
+  mat beta = x.rows(1,d-1);
+
+  // prox on beta
+  beta = prox_l2_sq_Q(beta, lam, opts);
+
+  return join_vert(alpha, beta);
+  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_l2_sq_Q_normalized() {
+  return pptr(new proxPtr(prox_l2_sq_Q_normalized));
+}
+
+
+
+
+
+
+
+
+
+
+//' Prox for elastic net
+//'
+//' @param x Input matrix
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return Column soft thresholded X
+// [[Rcpp::export]]
+mat prox_enet(mat x, double lam, List opts) {
+  double alpha = as<double>(opts["alpha"]);
+    
+  return prox_l2_sq(prox_l1(x, lam * alpha, opts), lam * (1-alpha), opts);
+}
+
+// [[Rcpp::export]]
+pptr make_prox_enet() {
+  return pptr(new proxPtr(prox_enet));
+}
+
+
+
+
+
+//' Prox for elastic net ignoring intercept
+//'
+//' @param x Input matrix ([intercept, coefs])
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return soft thresholded U + group-thresholded V
+// [[Rcpp::export]]
+mat prox_enet_normalized(mat x, double lam, List opts) {
+
+  // separate out the intercept
+  int d = x.n_rows;
+
+  mat alpha = x.row(0);
+  mat beta = x.rows(1,d-1);
+
+  // prox on beta
+  beta = prox_enet(beta, lam, opts);
+
+  return join_vert(alpha, beta);
+  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_enet_normalized() {
+  return pptr(new proxPtr(prox_enet_normalized));
+}
+
+
+
 
 
 //' Nuclear norm prox

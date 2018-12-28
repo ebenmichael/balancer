@@ -7,7 +7,7 @@ balancer <- function(X, trt, y=NULL,
                      regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc",
                                    "l1_all", "l1_nuc"),
                      lambda=NULL, nlambda=20, lambda.min.ratio=1e-3,
-                     interact=F, normalized=TRUE,
+                     interact=F, normalized=TRUE, alpha=1, Q=NULL,
                      ipw_weights=NULL, mu0=NULL,
                      opts=list()) {
     #' Find Balancing weights by solving the dual optimization problem
@@ -27,6 +27,8 @@ balancer <- function(X, trt, y=NULL,
     #'                         value that gives the reference weights
     #' @param interact Whether to interact group and individual level covariates
     #' @param normalized Whether to normalize the weights
+    #' @param alpha Elastic net parameter \eqn{\frac{1-\alpha}{2}\|\beta\|_2^2 + \alpha\|\beta\|_1}, defaults to 1
+    #' @param Q Matrix for generalized ridge, if null then use inverse covariance matrix
     #' @param ipw_weights Separately estimated IPW weights to measure dispersion against, default is NULL
     #' @param mu0 Optional estimates of the potential outcome under control, default is NULL
     #' @param opts Optimization options
@@ -41,21 +43,25 @@ balancer <- function(X, trt, y=NULL,
     #'          \item{imbalance }{Imbalance in covariates}}
     #' @export
 
-    prep <- preprocess(X, trt, ipw_weights, type, link, normalized)
-    X <- prep$X
-    ipw_weights <- prep$ipw_weights
-
     ## map string args to actual params
-    params <- map_to_param(link, regularizer, ipw_weights, normalized)
+    params <- map_to_param(X, link, regularizer, ipw_weights, normalized, Q, alpha)
     weightfunc <- params[[1]]
     weightptr <- params[[2]]
     proxfunc <- params[[3]]
     balancefunc <- params[[4]]
+    prox_opts <- params[[5]]
+
+    
+    prep <- preprocess(X, trt, ipw_weights, type, link, normalized)
+    X <- prep$X
+    ipw_weights <- prep$ipw_weights
+
+
     if(type == "att") {
         out <- balancer_att(X, trt, y, weightfunc, weightptr,
                             proxfunc, balancefunc, lambda,
                             nlambda, lambda.min.ratio,
-                            ipw_weights, mu0, opts)
+                            ipw_weights, mu0, opts, prox_opts)
     } else if(type == "subgrp") {
         out <- balancer_subgrp(X, trt, Z, weightfunc, weightptr,
                                 proxfunc, lambda, ridge, Q, NULL, NULL, opts)
@@ -73,7 +79,8 @@ balancer <- function(X, trt, y=NULL,
 balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
                          proxfunc, balancefunc, lambda=NULL,
                          nlambda=20, lambda.min.ratio=1e-3,
-                         ipw_weights=NULL, mu0=NULL, opts=list()) {
+                         ipw_weights=NULL, mu0=NULL, opts=list(),
+                         prox_opts=list()) {
     #' Balancing weights for ATT (in subgroups)
     #' @param X n x d matrix of covariates
     #' @param trt Vector of treatment status indicators
@@ -93,6 +100,7 @@ balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
     #'        \itemize{
     #'          \item{MAX_ITERS }{Maximum number of iterations to run}
     #'          \item{EPS }{Error rolerance}}
+    #' @param prox_opts List of additional arguments for prox
     #'
     #' @return \itemize{
     #'          \item{theta }{Estimated dual propensity score parameters}
@@ -147,7 +155,8 @@ balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
 
 
     ## with multiple hyperparameters do warm starts        
-    prox_opts = list(lam=1)
+    prox_opts = c(prox_opts,
+                  list(lam=1))
     
     apgout <- apg_warmstart(make_balancing_grad_att(),
                             proxfunc, loss_opts, prox_opts,
@@ -328,21 +337,24 @@ balancer_subgrp <- function(X, trt, Z=NULL, weightfunc, weightfunc_ptr,
 
 
 
-map_to_param <- function(link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
+map_to_param <- function(X, link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
                          regularizer=c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc",
                                        "l1_all", "l1_nuc"),
                          ipw_weights=NULL,
-                         normalized=F) {
+                         normalized=F, Q=NULL, alpha=1) {
     #' Map string choices to the proper parameters for the balancer sub-functions
+    #' @param X n x d matrix of covariates
     #' @param type Find balancing weights for ATT, subgroup ATTs,
     #'             subgroup ATTs with multilevel p-score, multilevel observational studies,
     #'             ATT with missing outcomes, and heterogeneous effects
     #' @param link Link function for weights
     #' @param regularizer Dual of balance criterion
     #' @param normalized Whether to normalize the weights
+    #' @param Q Matrix for generalized ridge, if null then use inverse covariance matrix
+    #' @param alpha Elastic net parameter \eqn{\frac{1-\alpha}{2}\|\beta\|_2^2 + \alpha\|\beta\|_1}, defaults to 1
     #'
     #' @return Parameters for balancer
-
+    
     
     if(link == "logit") {
         if(normalized) {
@@ -366,6 +378,9 @@ map_to_param <- function(link=c("logit", "linear", "pos-linear", "pos-enet", "po
         stop("link must be one of ('logit', 'linear', 'pos-linear')")
     }
 
+
+    prox_opts <- list(alpha=alpha)
+    
     if(is.null(regularizer)) {
         proxfunc <- make_no_prox()
     } else if(regularizer == "l1") {
@@ -382,8 +397,33 @@ map_to_param <- function(link=c("logit", "linear", "pos-linear", "pos-enet", "po
         balancefunc <- l2
     } else if(regularizer == "ridge") {
         proxfunc <- if(normalized) make_prox_l2_sq_normalized() else make_prox_l2_sq()
+        balancefunc <- function(x) (1 + l2(x))^2
+    } else if (regularizer=="mahal") {
+        proxfunc <- if(normalized) make_prox_l2_sq_Q_normalized() else make_prox_l2_Q_sq()
+        if(is.null(Q)) {
+            ## use inverse covariance matrix of Q is null
+            ## just do svd once
+            Xsvd <- svd(X)
+            prox_opts$evec <- Xsvd$v
+            prox_opts$eval <- Xsvd$d^2 / nrow(X)
+            Q <- prox_opts$evec %*% diag(prox_opts$eval) %*% t(prox_opts$evec)
+        } else {
+            ## eigendecomposition once
+            Qsvd <- eigen(Q)
+            prox_opts$evec <- Qsvd$vectors
+            prox_opts$eval <- Qsvd$values
+        }
+
+        if(normalized) {
+            Q <- rbind(0, cbind(0, Q))
+        }
+        ## balancefunc <- function(x) l2Q(x, Q)
         balancefunc <- l2
-    } else if(regularizer == "linf") {
+
+    } else if(regularizer == "enet") {
+        proxfunc <- if(normalized) make_prox_enet_normalized() else make_prox_enet()
+        balancefunc <- function(x) (1 - alpha) * (1 + l2(x))^2 + alpha * linf(x)
+    }else if(regularizer == "linf") {
         stop("L infinity regularization not implemented")
     } else if(regularizer == "nuc") {
         proxfunc <- make_prox_nuc()
@@ -400,7 +440,7 @@ map_to_param <- function(link=c("logit", "linear", "pos-linear", "pos-enet", "po
     }
 
 
-    return(list(weightfunc, weightptr, proxfunc, balancefunc, ipw_weights))
+    return(list(weightfunc, weightptr, proxfunc, balancefunc, prox_opts))
 }
 
 #' Preprocess covariates
