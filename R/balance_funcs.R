@@ -13,7 +13,7 @@ l2 <- function(x) norm(matrix(x), "2")
 l2sq <- function(x) norm(matrix(x), "2")^2/2
 
 #' Q norm
-l2Q <- function(x, Q) {sqrt( t(x) %*% Q %*% x)}
+l2Q <- function(x, Q) {as.numeric(sqrt( t(x) %*% Q %*% x))}
 
 
 #' One norm

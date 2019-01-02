@@ -397,6 +397,7 @@ map_to_param <- function(X, link=c("logit", "linear", "pos-linear", "pos-enet", 
         balancefunc <- l2
     } else if(regularizer == "ridge") {
         proxfunc <- if(normalized) make_prox_l2_sq_normalized() else make_prox_l2_sq()
+        ## balancefunc <- l2sq
         balancefunc <- function(x) (1 + l2(x))^2
     } else if (regularizer=="mahal") {
         proxfunc <- if(normalized) make_prox_l2_sq_Q_normalized() else make_prox_l2_Q_sq()
@@ -405,7 +406,7 @@ map_to_param <- function(X, link=c("logit", "linear", "pos-linear", "pos-enet", 
             ## just do svd once
             Xsvd <- svd(X)
             prox_opts$evec <- Xsvd$v
-            prox_opts$eval <- Xsvd$d^2 / nrow(X)
+            prox_opts$eval <- 1 / (Xsvd$d^2 / nrow(X))
             Q <- prox_opts$evec %*% diag(prox_opts$eval) %*% t(prox_opts$evec)
         } else {
             ## eigendecomposition once
@@ -417,8 +418,7 @@ map_to_param <- function(X, link=c("logit", "linear", "pos-linear", "pos-enet", 
         if(normalized) {
             Q <- rbind(0, cbind(0, Q))
         }
-        ## balancefunc <- function(x) l2Q(x, Q)
-        balancefunc <- l2
+        balancefunc <- function(x) l2Q(x, Q)
 
     } else if(regularizer == "enet") {
         proxfunc <- if(normalized) make_prox_enet_normalized() else make_prox_enet()
