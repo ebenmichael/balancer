@@ -103,6 +103,16 @@ compute_gram <- function(X, Y, kernel, param) {
     .Call('_balancer_compute_gram', PACKAGE = 'balancer', X, Y, kernel, param)
 }
 
+#' L1 Prox for multilevel model, separate for global/local params + intercepts
+#'
+#' @param x Input matrix (two sets of parameters x = U + V)
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return soft thresholded parameters with different soft thresholds
+#' [[Rcpp::export]]
+NULL
+
 make_no_prox <- function() {
     .Call('_balancer_make_no_prox', PACKAGE = 'balancer')
 }
@@ -377,6 +387,66 @@ make_prox_nuc_l1_normalized <- function() {
     .Call('_balancer_make_prox_nuc_l1_normalized', PACKAGE = 'balancer')
 }
 
+#' Squared L2 Prox for multilevel model, separate for global/local params + intercepts
+#'
+#' @param x Input matrix (contains global and local parameters
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["alpha"] holds the ratio between global and local balance
+#'
+#' @return L2 squared prox values
+prox_multilevel_ridge <- function(x, lam, opts) {
+    .Call('_balancer_prox_multilevel_ridge', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_multilevel_ridge <- function() {
+    .Call('_balancer_make_prox_multilevel_ridge', PACKAGE = 'balancer')
+}
+
+#' Squared L2 Prox for multilevel model, separate for global/local params + intercepts
+#'
+#' @param x Input matrix (contains global and local parameters
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["alpha"] holds the ratio between global and local balance
+#'
+#' @return L2 squared prox values
+prox_multilevel_ridge_normalized <- function(x, lam, opts) {
+    .Call('_balancer_prox_multilevel_ridge_normalized', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_multilevel_ridge_normalized <- function() {
+    .Call('_balancer_make_prox_multilevel_ridge_normalized', PACKAGE = 'balancer')
+}
+
+#' Squared L2 Prox for global parameters, nuclear norm prox for local parameters
+#'
+#' @param x Input matrix (contains global and local parameters
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["alpha"] holds the ratio between global and local balance
+#'
+#' @return L2 squared prox values
+prox_multilevel_ridge_nuc <- function(x, lam, opts) {
+    .Call('_balancer_prox_multilevel_ridge_nuc', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_multilevel_ridge_nuc <- function() {
+    .Call('_balancer_make_prox_multilevel_ridge_nuc', PACKAGE = 'balancer')
+}
+
+#' Squared L2 Prox for multilevel model, separate for global/local params + intercepts
+#'
+#' @param x Input matrix (contains global and local parameters
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["alpha"] holds the ratio between global and local balance
+#'
+#' @return L2 squared prox values
+prox_multilevel_ridge_nuc_normalized <- function(x, lam, opts) {
+    .Call('_balancer_prox_multilevel_ridge_nuc_normalized', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_multilevel_ridge_nuc_normalized <- function() {
+    .Call('_balancer_make_prox_multilevel_ridge_nuc_normalized', PACKAGE = 'balancer')
+}
+
 #' L1 Prox for multilevel model, separate for global/local params + intercepts
 #'
 #' @param x Input matrix (two sets of parameters x = U + V)
@@ -390,17 +460,6 @@ prox_l1_all <- function(x, lam, opts) {
 
 make_prox_l1_all <- function() {
     .Call('_balancer_make_prox_l1_all', PACKAGE = 'balancer')
-}
-
-#' L1 Prox for multilevel model, separate for global/local params + intercepts
-#'
-#' @param x Input matrix (two sets of parameters x = U + V)
-#' @param lam Prox scaling factor
-#' @param opts List of options (opts["lam"] holds the other scaling
-#'
-#' @return soft thresholded parameters with different soft thresholds
-prox_l1_nuc <- function(x, lam, opts) {
-    .Call('_balancer_prox_l1_nuc', PACKAGE = 'balancer', x, lam, opts)
 }
 
 make_prox_l1_nuc <- function() {

@@ -602,6 +602,98 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// prox_multilevel_ridge
+mat prox_multilevel_ridge(mat x, double lam, List opts);
+RcppExport SEXP _balancer_prox_multilevel_ridge(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type lam(lamSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(prox_multilevel_ridge(x, lam, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_prox_multilevel_ridge
+pptr make_prox_multilevel_ridge();
+RcppExport SEXP _balancer_make_prox_multilevel_ridge() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_prox_multilevel_ridge());
+    return rcpp_result_gen;
+END_RCPP
+}
+// prox_multilevel_ridge_normalized
+mat prox_multilevel_ridge_normalized(mat x, double lam, List opts);
+RcppExport SEXP _balancer_prox_multilevel_ridge_normalized(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type lam(lamSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(prox_multilevel_ridge_normalized(x, lam, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_prox_multilevel_ridge_normalized
+pptr make_prox_multilevel_ridge_normalized();
+RcppExport SEXP _balancer_make_prox_multilevel_ridge_normalized() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_prox_multilevel_ridge_normalized());
+    return rcpp_result_gen;
+END_RCPP
+}
+// prox_multilevel_ridge_nuc
+mat prox_multilevel_ridge_nuc(mat x, double lam, List opts);
+RcppExport SEXP _balancer_prox_multilevel_ridge_nuc(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type lam(lamSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(prox_multilevel_ridge_nuc(x, lam, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_prox_multilevel_ridge_nuc
+pptr make_prox_multilevel_ridge_nuc();
+RcppExport SEXP _balancer_make_prox_multilevel_ridge_nuc() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_prox_multilevel_ridge_nuc());
+    return rcpp_result_gen;
+END_RCPP
+}
+// prox_multilevel_ridge_nuc_normalized
+mat prox_multilevel_ridge_nuc_normalized(mat x, double lam, List opts);
+RcppExport SEXP _balancer_prox_multilevel_ridge_nuc_normalized(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type lam(lamSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(prox_multilevel_ridge_nuc_normalized(x, lam, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_prox_multilevel_ridge_nuc_normalized
+pptr make_prox_multilevel_ridge_nuc_normalized();
+RcppExport SEXP _balancer_make_prox_multilevel_ridge_nuc_normalized() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_prox_multilevel_ridge_nuc_normalized());
+    return rcpp_result_gen;
+END_RCPP
+}
 // prox_l1_all
 mat prox_l1_all(mat x, double lam, List opts);
 RcppExport SEXP _balancer_prox_l1_all(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
@@ -622,19 +714,6 @@ BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(make_prox_l1_all());
-    return rcpp_result_gen;
-END_RCPP
-}
-// prox_l1_nuc
-mat prox_l1_nuc(mat x, double lam, List opts);
-RcppExport SEXP _balancer_prox_l1_nuc(SEXP xSEXP, SEXP lamSEXP, SEXP optsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< mat >::type x(xSEXP);
-    Rcpp::traits::input_parameter< double >::type lam(lamSEXP);
-    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
-    rcpp_result_gen = Rcpp::wrap(prox_l1_nuc(x, lam, opts));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -964,9 +1043,16 @@ static const R_CallMethodDef CallEntries[] = {
     {"_balancer_make_prox_nuc_l1", (DL_FUNC) &_balancer_make_prox_nuc_l1, 0},
     {"_balancer_prox_nuc_l1_normalized", (DL_FUNC) &_balancer_prox_nuc_l1_normalized, 3},
     {"_balancer_make_prox_nuc_l1_normalized", (DL_FUNC) &_balancer_make_prox_nuc_l1_normalized, 0},
+    {"_balancer_prox_multilevel_ridge", (DL_FUNC) &_balancer_prox_multilevel_ridge, 3},
+    {"_balancer_make_prox_multilevel_ridge", (DL_FUNC) &_balancer_make_prox_multilevel_ridge, 0},
+    {"_balancer_prox_multilevel_ridge_normalized", (DL_FUNC) &_balancer_prox_multilevel_ridge_normalized, 3},
+    {"_balancer_make_prox_multilevel_ridge_normalized", (DL_FUNC) &_balancer_make_prox_multilevel_ridge_normalized, 0},
+    {"_balancer_prox_multilevel_ridge_nuc", (DL_FUNC) &_balancer_prox_multilevel_ridge_nuc, 3},
+    {"_balancer_make_prox_multilevel_ridge_nuc", (DL_FUNC) &_balancer_make_prox_multilevel_ridge_nuc, 0},
+    {"_balancer_prox_multilevel_ridge_nuc_normalized", (DL_FUNC) &_balancer_prox_multilevel_ridge_nuc_normalized, 3},
+    {"_balancer_make_prox_multilevel_ridge_nuc_normalized", (DL_FUNC) &_balancer_make_prox_multilevel_ridge_nuc_normalized, 0},
     {"_balancer_prox_l1_all", (DL_FUNC) &_balancer_prox_l1_all, 3},
     {"_balancer_make_prox_l1_all", (DL_FUNC) &_balancer_make_prox_l1_all, 0},
-    {"_balancer_prox_l1_nuc", (DL_FUNC) &_balancer_prox_l1_nuc, 3},
     {"_balancer_make_prox_l1_nuc", (DL_FUNC) &_balancer_make_prox_l1_nuc, 0},
     {"_balancer_lin_weights", (DL_FUNC) &_balancer_lin_weights, 2},
     {"_balancer_lin_weights2", (DL_FUNC) &_balancer_lin_weights2, 1},

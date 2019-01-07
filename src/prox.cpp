@@ -552,6 +552,120 @@ pptr make_prox_nuc_l1_normalized() {
 
 
 
+//' Squared L2 Prox for multilevel model, separate for global/local params + intercepts
+//'
+//' @param x Input matrix (contains global and local parameters
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["alpha"] holds the ratio between global and local balance
+//'
+//' @return L2 squared prox values
+// [[Rcpp::export]]
+mat prox_multilevel_ridge(mat x, double lam, List opts) {
+
+  double alpha = as<double>(opts["alpha"]);  
+  
+  // separate out global and local parameters
+  mat xglobal = prox_l2_sq(x.col(0), lam * alpha, opts);
+  mat xlocal = prox_l2_sq(x.cols(1, x.n_cols-1), lam * alpha, opts);
+
+  
+  return join_cols(xglobal, xlocal);
+  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_multilevel_ridge() {
+  return pptr(new proxPtr(prox_multilevel_ridge));
+}
+
+
+
+//' Squared L2 Prox for multilevel model, separate for global/local params + intercepts
+//'
+//' @param x Input matrix (contains global and local parameters
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["alpha"] holds the ratio between global and local balance
+//'
+//' @return L2 squared prox values
+// [[Rcpp::export]]
+mat prox_multilevel_ridge_normalized(mat x, double lam, List opts) {
+
+  // separate out the intercept
+  int d = x.n_rows;
+
+  mat alpha = x.row(0);
+  mat beta = x.rows(1,d-1);
+
+  // prox on beta
+  beta = prox_multilevel_ridge(beta, lam, opts);
+
+  return join_vert(alpha, beta);  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_multilevel_ridge_normalized() {
+  return pptr(new proxPtr(prox_multilevel_ridge_normalized));
+}
+
+
+
+
+
+
+//' Squared L2 Prox for global parameters, nuclear norm prox for local parameters
+//'
+//' @param x Input matrix (contains global and local parameters
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["alpha"] holds the ratio between global and local balance
+//'
+//' @return L2 squared prox values
+// [[Rcpp::export]]
+mat prox_multilevel_ridge_nuc(mat x, double lam, List opts) {
+
+  double alpha = as<double>(opts["alpha"]);  
+  
+  // separate out global and local parameters
+  mat xglobal = prox_l2_sq(x.col(0), lam * alpha, opts);
+  mat xlocal = prox_nuc(x.cols(1, x.n_cols-1), lam * alpha, opts);
+
+  
+  return join_cols(xglobal, xlocal);
+  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_multilevel_ridge_nuc() {
+  return pptr(new proxPtr(prox_multilevel_ridge_nuc));
+}
+
+
+//' Squared L2 Prox for multilevel model, separate for global/local params + intercepts
+//'
+//' @param x Input matrix (contains global and local parameters
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["alpha"] holds the ratio between global and local balance
+//'
+//' @return L2 squared prox values
+// [[Rcpp::export]]
+mat prox_multilevel_ridge_nuc_normalized(mat x, double lam, List opts) {
+
+  // separate out the intercept
+  int d = x.n_rows;
+
+  mat alpha = x.row(0);
+  mat beta = x.rows(1,d-1);
+
+  // prox on beta
+  beta = prox_multilevel_ridge_nuc(beta, lam, opts);
+
+  return join_vert(alpha, beta);  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_multilevel_ridge_nuc_normalized() {
+  return pptr(new proxPtr(prox_multilevel_ridge_nuc_normalized));
+}
+
 
 //' L1 Prox for multilevel model, separate for global/local params + intercepts
 //'
@@ -604,7 +718,7 @@ pptr make_prox_l1_all() {
 //' @param opts List of options (opts["lam"] holds the other scaling
 //'
 //' @return soft thresholded parameters with different soft thresholds
-// [[Rcpp::export]]
+//' [[Rcpp::export]]
 mat prox_l1_nuc(mat x, double lam, List opts) {
 
   int n_groups = as<int>(opts["n_groups"]);
