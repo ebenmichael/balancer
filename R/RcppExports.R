@@ -152,6 +152,21 @@ make_prox_l1_grp <- function() {
     .Call('_balancer_make_prox_l1_grp', PACKAGE = 'balancer')
 }
 
+#' Group L1 Prox ignoring intercept
+#'
+#' @param x Input matrix
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return Group soft thresholded X
+prox_l1_grp_normalized <- function(x, lam, opts) {
+    .Call('_balancer_prox_l1_grp_normalized', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_l1_grp_normalized <- function() {
+    .Call('_balancer_make_prox_l1_grp_normalized', PACKAGE = 'balancer')
+}
+
 #' L2 Prox
 #'
 #' @param x Input matrix
@@ -287,6 +302,21 @@ make_prox_nuc <- function() {
     .Call('_balancer_make_prox_nuc', PACKAGE = 'balancer')
 }
 
+#' Nuclear norm prox ignoring intercept
+#'
+#' @param x Input matrix
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return Singular value soft thresholded X
+prox_nuc_normalized <- function(x, lam, opts) {
+    .Call('_balancer_prox_nuc_normalized', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_nuc_normalized <- function() {
+    .Call('_balancer_make_prox_nuc_normalized', PACKAGE = 'balancer')
+}
+
 #' Group L1 + L1 Prox
 #'
 #' @param x Input matrix (two sets of parameters x = U + V)
@@ -302,6 +332,21 @@ make_prox_l1_grp_l1 <- function() {
     .Call('_balancer_make_prox_l1_grp_l1', PACKAGE = 'balancer')
 }
 
+#' Group L1 + L1 Prox ignoring intercept
+#'
+#' @param x Input matrix (two sets of parameters x = U + V)
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return soft thresholded U + group-thresholded V
+prox_l1_grp_l1_normalized <- function(x, lam, opts) {
+    .Call('_balancer_prox_l1_grp_l1_normalized', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_l1_grp_l1_normalized <- function() {
+    .Call('_balancer_make_prox_l1_grp_l1_normalized', PACKAGE = 'balancer')
+}
+
 #' Nuclear norm + L1 Prox
 #'
 #' @param x Input matrix (two sets of parameters x = U + V)
@@ -315,6 +360,21 @@ prox_nuc_l1 <- function(x, lam, opts) {
 
 make_prox_nuc_l1 <- function() {
     .Call('_balancer_make_prox_nuc_l1', PACKAGE = 'balancer')
+}
+
+#' Nuclear norm + L1 Prox ignoring intercept
+#'
+#' @param x Input matrix (two sets of parameters x = U + V)
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return svd soft thresholded U + soft-thresholded V
+prox_nuc_l1_normalized <- function(x, lam, opts) {
+    .Call('_balancer_prox_nuc_l1_normalized', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_prox_nuc_l1_normalized <- function() {
+    .Call('_balancer_make_prox_nuc_l1_normalized', PACKAGE = 'balancer')
 }
 
 #' L1 Prox for multilevel model, separate for global/local params + intercepts

@@ -97,6 +97,36 @@ pptr make_prox_l1_grp() {
 }
 
 
+
+
+//' Group L1 Prox ignoring intercept
+//'
+//' @param x Input matrix
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return Group soft thresholded X
+// [[Rcpp::export]]
+mat prox_l1_grp_normalized(mat x, double lam, List opts) {
+  
+  // separate out the intercept
+  int d = x.n_rows;
+
+  mat alpha = x.row(0);
+  mat beta = x.rows(1,d-1);
+
+  // prox on beta
+  beta = prox_l1_grp(beta, lam, opts);
+
+  return join_vert(alpha, beta);
+}
+
+// [[Rcpp::export]]
+pptr make_prox_l1_grp_normalized() {
+  return pptr(new proxPtr(prox_l1_grp_normalized));
+}
+
+
 //' L2 Prox
 //'
 //' @param x Input matrix
@@ -368,6 +398,39 @@ pptr make_prox_nuc() {
 
 
 
+
+
+//' Nuclear norm prox ignoring intercept
+//'
+//' @param x Input matrix
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return Singular value soft thresholded X
+// [[Rcpp::export]]
+mat prox_nuc_normalized(mat x, double lam, List opts) {
+
+
+  // separate out the intercept
+  int d = x.n_rows;
+
+  mat alpha = x.row(0);
+  mat beta = x.rows(1,d-1);
+
+  // prox on beta
+  beta = prox_nuc(beta, lam, opts);
+
+  return join_vert(alpha, beta);
+}
+
+// [[Rcpp::export]]
+pptr make_prox_nuc_normalized() {
+  return pptr(new proxPtr(prox_nuc_normalized));
+}
+
+
+
+
 //' Group L1 + L1 Prox
 //'
 //' @param x Input matrix (two sets of parameters x = U + V)
@@ -394,6 +457,37 @@ mat prox_l1_grp_l1(mat x, double lam, List opts) {
 // [[Rcpp::export]]
 pptr make_prox_l1_grp_l1() {
   return pptr(new proxPtr(prox_l1_grp_l1));
+}
+
+
+
+//' Group L1 + L1 Prox ignoring intercept
+//'
+//' @param x Input matrix (two sets of parameters x = U + V)
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return soft thresholded U + group-thresholded V
+// [[Rcpp::export]]
+mat prox_l1_grp_l1_normalized(mat x, double lam, List opts) {
+
+
+
+  // separate out the intercept
+  int d = x.n_rows;
+
+  mat alpha = x.row(0);
+  mat beta = x.rows(1,d-1);
+
+  // prox on beta
+  beta = prox_l1_grp_l1(beta, lam, opts);
+
+  return join_vert(alpha, beta);    
+}
+
+// [[Rcpp::export]]
+pptr make_prox_l1_grp_l1_normalized() {
+  return pptr(new proxPtr(prox_l1_grp_l1_normalized));
 }
 
 
@@ -424,6 +518,38 @@ mat prox_nuc_l1(mat x, double lam, List opts) {
 pptr make_prox_nuc_l1() {
   return pptr(new proxPtr(prox_nuc_l1));
 }
+
+
+
+//' Nuclear norm + L1 Prox ignoring intercept
+//'
+//' @param x Input matrix (two sets of parameters x = U + V)
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return svd soft thresholded U + soft-thresholded V
+// [[Rcpp::export]]
+mat prox_nuc_l1_normalized(mat x, double lam, List opts) {
+
+  // separate out the intercept
+  int d = x.n_rows;
+
+  mat alpha = x.row(0);
+  mat beta = x.rows(1,d-1);
+
+  // prox on beta
+  beta = prox_nuc_l1(beta, lam, opts);
+
+  return join_vert(alpha, beta);
+  
+}
+
+// [[Rcpp::export]]
+pptr make_prox_nuc_l1_normalized() {
+  return pptr(new proxPtr(prox_nuc_l1_normalized));
+}
+
+
 
 
 

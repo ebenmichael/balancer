@@ -387,11 +387,13 @@ map_to_param <- function(X, link=c("logit", "linear", "pos-linear", "pos-enet", 
         proxfunc <- if(normalized) make_prox_l1_normalized() else make_prox_l1()
         balancefunc <- linf
     } else if(regularizer == "grpl1") {
-        proxfunc <- make_prox_l1_grp()
+        proxfunc <- if(normalized) make_prox_l1_grp_normalized() else make_prox_l1_grp()
+        balancefunc <- linf_grp
     } else if(regularizer == "l1grpl1") {
-        proxfunc <- make_prox_l1_grp_l1()
+        proxfunc <- if(normalized) make_prox_l1_grp_l1_normalized() else make_prox_l1_grp_l1()
         ## double the covariate matrix to include two sets of parameters
         X <- cbind(X,X)
+        balancefunc <- linf_grp_linf
     } else if(regularizer == "l2") {
         proxfunc <- if(normalized) make_prox_l2_normalized() else make_prox_l2()
         balancefunc <- l2
@@ -426,11 +428,13 @@ map_to_param <- function(X, link=c("logit", "linear", "pos-linear", "pos-enet", 
     }else if(regularizer == "linf") {
         stop("L infinity regularization not implemented")
     } else if(regularizer == "nuc") {
-        proxfunc <- make_prox_nuc()
+        proxfunc <- if(normalized) make_prox_nuc_normalized()else make_prox_nuc()
+        balancefunc <- op_norm
     } else if(regularizer == "nucl1") {
-        proxfunc <- make_prox_nuc_l1()
+        proxfunc <- if(normalized) make_prox_nuc_l1_normalized() else make_prox_nuc_l1()
         ## double the covariate matrix to include two sets of parameters
         X <- cbind(X,X)
+        balancefunc <- linf_op
     } else if(regularizer == "l1_all") {
         proxfunc <- make_prox_l1_all()
     } else if(regularizer == "l1_nuc") {
