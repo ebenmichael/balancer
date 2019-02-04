@@ -1,3 +1,4 @@
+// [[Rcpp::interfaces(r, cpp)]]
 
 #include <RcppArmadillo.h>
 //#include <Rcpp.h>
