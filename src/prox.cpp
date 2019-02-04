@@ -565,11 +565,11 @@ mat prox_multilevel_ridge(mat x, double lam, List opts) {
   double alpha = as<double>(opts["alpha"]);  
   
   // separate out global and local parameters
-  mat xglobal = prox_l2_sq(x.col(0), lam * alpha, opts);
+  mat xglobal = prox_l2_sq(x.col(0), lam * (1-alpha), opts);
   mat xlocal = prox_l2_sq(x.cols(1, x.n_cols-1), lam * alpha, opts);
 
   
-  return join_cols(xglobal, xlocal);
+  return join_rows(xglobal, xlocal);
   
 }
 
@@ -625,11 +625,11 @@ mat prox_multilevel_ridge_nuc(mat x, double lam, List opts) {
   double alpha = as<double>(opts["alpha"]);  
   
   // separate out global and local parameters
-  mat xglobal = prox_l2_sq(x.col(0), lam * alpha, opts);
+  mat xglobal = prox_l2_sq(x.col(0), lam * (1-alpha), opts);
   mat xlocal = prox_nuc(x.cols(1, x.n_cols-1), lam * alpha, opts);
 
   
-  return join_cols(xglobal, xlocal);
+  return join_rows(xglobal, xlocal);
   
 }
 
