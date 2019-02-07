@@ -1,4 +1,4 @@
-// [[Rcpp::interfaces(r, cpp)]]
+
 
 #include <RcppArmadillo.h>
 //#include <Rcpp.h>
@@ -180,12 +180,10 @@ List apg_warmstart(gptr grad_ptr,
   // iterate over values of lambda
   for(int j = 0; j < nlam; j++) {
     prox_opts["lam"] = lams[j];
-    // Rcout << lams[j] << "\n";
-    // Rcout << x << "\n";
     // use previous optimizer as warm start
     x = apg(grad_ptr, prox_ptr, loss_opts, prox_opts,
             x, max_it, eps, alpha, beta, accel, verbose);
-    Rcout << x << "\n";
+
     output[j] = x;
   }
 

@@ -574,7 +574,3 @@ make_pos_lin_weights_ipw <- function() {
     .Call('_balancer_make_pos_lin_weights_ipw', PACKAGE = 'balancer')
 }
 
-# Register entry points for exported C++ functions
-methods::setLoadAction(function(ns) {
-    .Call('_balancer_RcppExport_registerCCallable', PACKAGE = 'balancer')
-})

@@ -2,19 +2,17 @@
 // Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #include "balancer_types.h"
-#include "../inst/include/balancer.h"
 #include <RcppArmadillo.h>
 #include <Rcpp.h>
-#include <string>
-#include <set>
 
 using namespace Rcpp;
 
 // apg
 mat apg(gptr grad_ptr, pptr prox_ptr, List loss_opts, List prox_opts, mat x, int max_it, double eps, double alpha, double beta, bool accel, bool verbose);
-static SEXP _balancer_apg_try(SEXP grad_ptrSEXP, SEXP prox_ptrSEXP, SEXP loss_optsSEXP, SEXP prox_optsSEXP, SEXP xSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP accelSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _balancer_apg(SEXP grad_ptrSEXP, SEXP prox_ptrSEXP, SEXP loss_optsSEXP, SEXP prox_optsSEXP, SEXP xSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP accelSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< gptr >::type grad_ptr(grad_ptrSEXP);
     Rcpp::traits::input_parameter< pptr >::type prox_ptr(prox_ptrSEXP);
     Rcpp::traits::input_parameter< List >::type loss_opts(loss_optsSEXP);
@@ -28,37 +26,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     rcpp_result_gen = Rcpp::wrap(apg(grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta, accel, verbose));
     return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _balancer_apg(SEXP grad_ptrSEXP, SEXP prox_ptrSEXP, SEXP loss_optsSEXP, SEXP prox_optsSEXP, SEXP xSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP accelSEXP, SEXP verboseSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        Rcpp::RNGScope rcpp_rngScope_gen;
-        rcpp_result_gen = PROTECT(_balancer_apg_try(grad_ptrSEXP, prox_ptrSEXP, loss_optsSEXP, prox_optsSEXP, xSEXP, max_itSEXP, epsSEXP, alphaSEXP, betaSEXP, accelSEXP, verboseSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
+END_RCPP
 }
 // apg_warmstart
 List apg_warmstart(gptr grad_ptr, pptr prox_ptr, List loss_opts, List prox_opts, vec lams, mat x, int max_it, double eps, double alpha, double beta, bool accel, bool verbose);
-static SEXP _balancer_apg_warmstart_try(SEXP grad_ptrSEXP, SEXP prox_ptrSEXP, SEXP loss_optsSEXP, SEXP prox_optsSEXP, SEXP lamsSEXP, SEXP xSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP accelSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _balancer_apg_warmstart(SEXP grad_ptrSEXP, SEXP prox_ptrSEXP, SEXP loss_optsSEXP, SEXP prox_optsSEXP, SEXP lamsSEXP, SEXP xSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP accelSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< gptr >::type grad_ptr(grad_ptrSEXP);
     Rcpp::traits::input_parameter< pptr >::type prox_ptr(prox_ptrSEXP);
     Rcpp::traits::input_parameter< List >::type loss_opts(loss_optsSEXP);
@@ -73,31 +48,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     rcpp_result_gen = Rcpp::wrap(apg_warmstart(grad_ptr, prox_ptr, loss_opts, prox_opts, lams, x, max_it, eps, alpha, beta, accel, verbose));
     return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _balancer_apg_warmstart(SEXP grad_ptrSEXP, SEXP prox_ptrSEXP, SEXP loss_optsSEXP, SEXP prox_optsSEXP, SEXP lamsSEXP, SEXP xSEXP, SEXP max_itSEXP, SEXP epsSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP accelSEXP, SEXP verboseSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        Rcpp::RNGScope rcpp_rngScope_gen;
-        rcpp_result_gen = PROTECT(_balancer_apg_warmstart_try(grad_ptrSEXP, prox_ptrSEXP, loss_optsSEXP, prox_optsSEXP, lamsSEXP, xSEXP, max_itSEXP, epsSEXP, alphaSEXP, betaSEXP, accelSEXP, verboseSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
+END_RCPP
 }
 // balancing_grad_att
 mat balancing_grad_att(mat theta, List opts);
@@ -1041,24 +992,6 @@ BEGIN_RCPP
 END_RCPP
 }
 
-// validate (ensure exported C++ functions exist before calling them)
-static int _balancer_RcppExport_validate(const char* sig) { 
-    static std::set<std::string> signatures;
-    if (signatures.empty()) {
-        signatures.insert("mat(*apg)(gptr,pptr,List,List,mat,int,double,double,double,bool,bool)");
-        signatures.insert("List(*apg_warmstart)(gptr,pptr,List,List,vec,mat,int,double,double,double,bool,bool)");
-    }
-    return signatures.find(sig) != signatures.end();
-}
-
-// registerCCallable (register entry points for exported C++ functions)
-RcppExport SEXP _balancer_RcppExport_registerCCallable() { 
-    R_RegisterCCallable("balancer", "_balancer_apg", (DL_FUNC)_balancer_apg_try);
-    R_RegisterCCallable("balancer", "_balancer_apg_warmstart", (DL_FUNC)_balancer_apg_warmstart_try);
-    R_RegisterCCallable("balancer", "_balancer_RcppExport_validate", (DL_FUNC)_balancer_RcppExport_validate);
-    return R_NilValue;
-}
-
 static const R_CallMethodDef CallEntries[] = {
     {"_balancer_apg", (DL_FUNC) &_balancer_apg, 11},
     {"_balancer_apg_warmstart", (DL_FUNC) &_balancer_apg_warmstart, 12},
@@ -1145,7 +1078,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_balancer_make_pos_lin_weights2", (DL_FUNC) &_balancer_make_pos_lin_weights2, 0},
     {"_balancer_pos_lin_weights_ipw", (DL_FUNC) &_balancer_pos_lin_weights_ipw, 3},
     {"_balancer_make_pos_lin_weights_ipw", (DL_FUNC) &_balancer_make_pos_lin_weights_ipw, 0},
-    {"_balancer_RcppExport_registerCCallable", (DL_FUNC) &_balancer_RcppExport_registerCCallable, 0},
     {NULL, NULL, 0}
 };
 
