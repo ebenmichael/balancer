@@ -185,6 +185,7 @@ List apg_warmstart(gptr grad_ptr,
     // use previous optimizer as warm start
     x = apg(grad_ptr, prox_ptr, loss_opts, prox_opts,
             x, max_it, eps, alpha, beta, accel, verbose);
+    Rcout << x << "\n";
     output[j] = x;
   }
 
