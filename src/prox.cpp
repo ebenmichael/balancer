@@ -367,7 +367,7 @@ pptr make_prox_enet_normalized() {
 mat prox_nuc(mat x, double lam, List opts) {
   mat U; vec s; mat V;
   // SVD then threshold singular values
-  svd_econ(U, s, V, x);
+  bool fail = svd_econ(U, s, V, x);
   // Rcout << U.n_rows << ", " << U.n_cols << "\n";
   // Rcout << V.n_rows << ", " << V.n_cols << "\n";
   // Rcout << s.size() << "\n";
@@ -388,7 +388,13 @@ mat prox_nuc(mat x, double lam, List opts) {
   // }
   // return x;
 
-  return U * diagmat(s) * V.t();
+  // If the SVD fails, jsut return the matrix
+  // TODO: Figure out if this has weird side effects
+  if(1-fail) {
+    return x;
+  } else {
+    return U * diagmat(s) * V.t();
+  }
 }
 
 // [[Rcpp::export]]
