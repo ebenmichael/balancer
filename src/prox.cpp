@@ -388,10 +388,12 @@ mat prox_nuc(mat x, double lam, List opts) {
   // }
   // return x;
 
-  // If the SVD fails, jsut return the matrix
+  // If the SVD fails, return a matrix of NA
   // TODO: Figure out if this has weird side effects
   if(1-fail) {
-    return x;
+    mat out(x.n_rows, x.n_cols);
+    out.fill(datum::nan);
+    return out;
   } else {
     return U * diagmat(s) * V.t();
   }

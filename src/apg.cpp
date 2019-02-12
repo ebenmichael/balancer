@@ -33,6 +33,12 @@ mat apg(gptr grad_ptr,
         double eps, double alpha,
         double beta, bool accel, bool verbose) {
 
+  // don't do anything if the initial x is infinite
+  if(x.has_inf()) {
+    return x;
+  }
+  
+  
   int dim1 = x.n_rows;
   int dim2 = x.n_cols;
   // grab the functions from pointers
@@ -185,6 +191,11 @@ List apg_warmstart(gptr grad_ptr,
             x, max_it, eps, alpha, beta, accel, verbose);
 
     output[j] = x;
+
+    // replace large numbers with infinity
+    if(arma::any(arma::abs(arma::vectorise(x)) > 1e23)) {
+      x.fill(datum::inf);
+    }
   }
 
   return(output);
