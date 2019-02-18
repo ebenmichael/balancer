@@ -41,8 +41,6 @@ value that gives the reference weights}
   \item{EPS }{Error rolerance}}}
 
 \item{prox_opts}{List of additional arguments for prox}
-
-\item{ridge}{Whether to use L2 penalty in dual}
 }
 \value{
 \itemize{

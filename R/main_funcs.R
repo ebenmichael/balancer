@@ -62,12 +62,15 @@ balancer <- function(X, trt, y=NULL,
                             proxfunc, balancefunc, lambda,
                             nlambda, lambda.min.ratio,
                             ipw_weights, mu0, opts, prox_opts)
-    } else if(type == "subgrp") {
-        out <- balancer_subgrp(X, trt, Z, weightfunc, weightptr,
-                                proxfunc, lambda, ridge, Q, NULL, NULL, opts)
-    } else if(type == "subgrp_multi") {
+    } ## else if(type == "subgrp") {
+    ##     out <- balancer_subgrp(X, trt, Z, weightfunc, weightptr,
+    ##                             proxfunc, lambda, ridge, Q, NULL, NULL, opts)
+    ## } 
+    else if(type == "subgrp_multi") {
         out <- balancer_multi(X, V, trt, Z, weightfunc, weightptr,
-                              proxfunc, lambda, ridge, interact, opts)
+                              proxfunc, balancefunc, lambda, nlambda,
+                              lambda.min.ratio, ipw_weights, interact,
+                              opts, prox_opts)
     } else {
         stop("type must be one of ('att', 'subgrp', 'subgrp_multi')")
     }
@@ -93,7 +96,6 @@ balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
     #' @param nlambda Number of hyperparameters to consider
     #' @param lambda.min.ratio Smallest value of hyperparam to consider, as proportion of smallest
     #'                         value that gives the reference weights
-    #' @param ridge Whether to use L2 penalty in dual
     #' @param ipw_weights Separately estimated IPW weights to measure dispersion against, default is NULL
     #' @param mu0 Optional estimates of the potential outcome under control, default is NULL
     #' @param opts Optimization options
@@ -157,7 +159,8 @@ balancer_att <- function(X, trt, y=NULL, weightfunc, weightfunc_ptr,
     ## with multiple hyperparameters do warm starts        
     prox_opts = c(prox_opts,
                   list(lam=1))
-    
+
+
     apgout <- apg_warmstart(make_balancing_grad_att(),
                             proxfunc, loss_opts, prox_opts,
                             lambda,
@@ -439,13 +442,21 @@ map_to_param <- function(X, link=c("logit", "linear", "pos-linear", "pos-enet", 
         proxfunc <- make_prox_l1_all()
     } else if(regularizer == "l1_nuc") {
         proxfunc <- make_prox_l1_nuc()
+    } else if(regularizer == "ridge_multi") {
+        proxfunc <- if(normalized) make_prox_multilevel_ridge_normalized() else make_prox_multilevel_ridge()
+        balancefunc <- function(x) {
+            (1 - alpha) * (1 + balancer:::l2(x[,1]))^2 +
+                alpha * (1 + balancer:::l2(x[,1]))^2
+            }
+    } else if(regularizer == "nuc_multi") {
+        proxfunc <- if(normalized) make_prox_multilevel_ridge_nuc_normalized() else make_prox_multilevel_ridge_nuc()
+        balancefunc <- function(x) balancer:::op_norm(x[,-1]) / alpha
     } else {
         stop("regularizer must be one of (NULL, 'l1', 'grpl1', 'l1grpl1', 'ridge', 'linf', 'nuc', 'nucl1')")
     }
-
-
     return(list(weightfunc, weightptr, proxfunc, balancefunc, prox_opts))
 }
+
 
 #' Preprocess covariates
 #' 

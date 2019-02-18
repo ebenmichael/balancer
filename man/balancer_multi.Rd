@@ -5,7 +5,8 @@
 \title{Balancing weights for ATT (with hierarchical structure)}
 \usage{
 balancer_multi(X, V = NULL, trt, Z, weightfunc, weightfunc_ptr, proxfunc,
-  hyperparam, ridge = F, interact = F, opts = list())
+  balancefunc, lambda, nlambda, lambda.min.ratio, ipw_weights,
+  interact = F, opts = list(), prox_opts)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -20,9 +21,18 @@ balancer_multi(X, V = NULL, trt, Z, weightfunc, weightfunc_ptr, proxfunc,
 
 \item{weightfunc_ptr}{Pointer to weightfunc}
 
-\item{hyperparam}{Regularization hyper parameter}
+\item{proxfunc}{Prox operator of regularization function}
 
-\item{ridge}{Whether to use ridge penalty in dual}
+\item{balancefunc}{Balance criterion measure}
+
+\item{lambda}{Regularization hyper parameter}
+
+\item{nlambda}{Number of hyperparameters to consider}
+
+\item{lambda.min.ratio}{Smallest value of hyperparam to consider, as proportion of smallest
+value that gives the reference weights}
+
+\item{ipw_weights}{Separately estimated IPW weights to measure dispersion against, default is NULL}
 
 \item{interact}{Whether to interact group and individual level characterisitics}
 
@@ -30,6 +40,8 @@ balancer_multi(X, V = NULL, trt, Z, weightfunc, weightfunc_ptr, proxfunc,
 \itemize{
   \item{MAX_ITERS }{Maximum number of iterations to run}
   \item{EPS }{Error rolerance}}}
+
+\item{prox_opts}{List of additional arguments for prox}
 }
 \value{
 \itemize{
