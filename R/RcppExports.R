@@ -457,6 +457,36 @@ make_prox_l1_nuc <- function() {
     .Call('_balancer_make_prox_l1_nuc', PACKAGE = 'balancer')
 }
 
+#' Nuclear norm projection ||x||_* <= lam
+#'
+#' @param x Input matrix
+#' @param lam Constraint on nuclear norm
+#' @param opts List of options (opts["lam"] holds the other scaling
+#'
+#' @return Singular value soft thresholded X
+proj_nuc <- function(x, lam, opts) {
+    .Call('_balancer_proj_nuc', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_proj_nuc <- function() {
+    .Call('_balancer_make_proj_nuc', PACKAGE = 'balancer')
+}
+
+#' Squared L2 Prox for global parameters, nuclear norm projection for local parameters
+#'
+#' @param x Input matrix (contains global and local parameters
+#' @param lam Prox scaling factor
+#' @param opts List of options (opts["alpha"] holds the ratio between global and local balance
+#'
+#' @return L2 squared prox values
+proj_multilevel_ridge_nuc <- function(x, lam, opts) {
+    .Call('_balancer_proj_multilevel_ridge_nuc', PACKAGE = 'balancer', x, lam, opts)
+}
+
+make_proj_multilevel_ridge_nuc <- function() {
+    .Call('_balancer_make_proj_multilevel_ridge_nuc', PACKAGE = 'balancer')
+}
+
 #' Linear weights
 lin_weights <- function(Xc, theta) {
     .Call('_balancer_lin_weights', PACKAGE = 'balancer', Xc, theta)

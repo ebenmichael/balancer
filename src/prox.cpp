@@ -761,3 +761,85 @@ mat prox_l1_nuc(mat x, double lam, List opts) {
 pptr make_prox_l1_nuc() {
   return pptr(new proxPtr(prox_l1_nuc));
 }
+
+
+
+
+//' Nuclear norm projection ||x||_* <= lam
+//'
+//' @param x Input matrix
+//' @param lam Constraint on nuclear norm
+//' @param opts List of options (opts["lam"] holds the other scaling
+//'
+//' @return Singular value soft thresholded X
+// [[Rcpp::export]]
+mat proj_nuc(mat x, double lam, List opts) {
+  mat U; vec s; mat V;
+  // SVD then threshold singular values
+  bool fail = svd_econ(U, s, V, x);
+  int d = x.n_rows;
+  int m = x.n_cols;
+
+  
+  // sort singular values to find optimal threshold
+  lam = lam * as<double>(opts["lam"]);
+  vec sorted_s = sort(s, "descend");
+
+  vec cumsum_s = cumsum(sorted_s);
+  // vec size_vec = cumsum(ones<vec>(sorted_s.n_elem));
+
+  // int rho = size_vec.elem(find(sorted_s - (cumsum_s - lam) / size_vec));
+
+  int rho = 0;
+  while(sorted_s(rho) - (cumsum_s(rho) - lam) / rho > 0) {
+    rho +=  1;
+  }
+  
+  double theta = cumsum_s(rho) /rho - lam;
+  // threshold singular values
+  s = (s - theta) % (s > theta) + (s + theta) % (s < -theta);
+  
+  // If the SVD fails, return a matrix of NA
+  // TODO: Figure out if this has weird side effects
+  if(1-fail) {
+    mat out(x.n_rows, x.n_cols);
+    out.fill(datum::nan);
+    return out;
+  } else {
+    return U * diagmat(s) * V.t();
+  }
+}
+
+// [[Rcpp::export]]
+pptr make_proj_nuc() {
+  return pptr(new proxPtr(proj_nuc));
+}
+
+
+
+//' Squared L2 Prox for global parameters, nuclear norm projection for local parameters
+//'
+//' @param x Input matrix (contains global and local parameters
+//' @param lam Prox scaling factor
+//' @param opts List of options (opts["alpha"] holds the ratio between global and local balance
+//'
+//' @return L2 squared prox values
+// [[Rcpp::export]]
+mat proj_multilevel_ridge_nuc(mat x, double lam, List opts) {
+
+  double alpha = as<double>(opts["alpha"]);  
+  
+  // separate out global and local parameters
+  mat xglobal = x.col(0) / (1 + lam * (1-alpha));
+  mat xlocal = proj_nuc(x.cols(1, x.n_cols-1), lam * alpha, opts);
+
+  
+  return join_rows(xglobal, xlocal);
+  
+}
+
+// [[Rcpp::export]]
+pptr make_proj_multilevel_ridge_nuc() {
+  return pptr(new proxPtr(proj_multilevel_ridge_nuc));
+}
+
