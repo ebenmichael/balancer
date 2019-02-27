@@ -780,22 +780,23 @@ mat proj_nuc(mat x, double lam, List opts) {
   int d = x.n_rows;
   int m = x.n_cols;
 
+  lam = lam * as<double>(opts["lam"]);
+  // if the constraint is already satisfied, just return the matrix
+  if(accu(s) <= lam) {
+    return x;
+  }
+
   
   // sort singular values to find optimal threshold
-  lam = lam * as<double>(opts["lam"]);
-  vec sorted_s = sort(s, "descend");
-
-  vec cumsum_s = cumsum(sorted_s);
-  // vec size_vec = cumsum(ones<vec>(sorted_s.n_elem));
-
-  // int rho = size_vec.elem(find(sorted_s - (cumsum_s - lam) / size_vec));
-
+  
+  vec cumsum_s = cumsum(s);
   int rho = 0;
-  while(sorted_s(rho) - (cumsum_s(rho) - lam) / rho > 0) {
+  while(s(rho + 1) - (cumsum_s(rho + 1) - lam) / (rho + 2) > 0 & rho < s.n_elem - 1) {
     rho +=  1;
   }
   
-  double theta = cumsum_s(rho) /rho - lam;
+  double theta = (cumsum_s(rho) - lam) / (rho + 1);
+
   // threshold singular values
   s = (s - theta) % (s > theta) + (s + theta) % (s < -theta);
   
