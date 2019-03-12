@@ -8,7 +8,7 @@
 standardize <- function(X, target,
                         Z=NULL, 
                         link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
-                        regularizer=c("l2", "l1", "grpl1", "ridge", "linf", "nuc",
+                        regularizer=c("ridge", "l1", "grpl1", "l2", "linf", "nuc",
                                       "l1_all", "l1_nuc"),
                         lambda=NULL, nlambda=20, lambda.min.ratio=1e-3,
                         normalized=TRUE, alpha=1,

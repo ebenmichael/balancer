@@ -5,8 +5,8 @@
 \title{Re-weight groups to target population means}
 \usage{
 standardize(X, target, Z = NULL, link = c("logit", "linear",
-  "pos-linear", "pos-enet", "posenet"), regularizer = c("l2", "l1",
-  "grpl1", "ridge", "linf", "nuc", "l1_all", "l1_nuc"), lambda = NULL,
+  "pos-linear", "pos-enet", "posenet"), regularizer = c("ridge", "l1",
+  "grpl1", "l2", "linf", "nuc", "l1_all", "l1_nuc"), lambda = NULL,
   nlambda = 20, lambda.min.ratio = 0.001, normalized = TRUE,
   alpha = 1, opts = list())
 }
