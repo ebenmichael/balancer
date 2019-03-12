@@ -48,11 +48,7 @@ standardize <- function(X, target,
     prox_opts <- params[[5]]
 
 
-    if(is.null(ipw_weights)) {
-        ipw_weights = matrix(1/nrow(X), nrow(X), 1)    
-    } else {
-        ipw_weights = matrix(ipw_weights, nrow(X), 1)    
-    }
+    ipw_weights = matrix(1/nrow(X), nrow(X), 1)
     
     ## add intercept
     if(normalized) {
