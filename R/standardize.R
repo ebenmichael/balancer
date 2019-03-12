@@ -40,7 +40,7 @@ standardize <- function(X, target,
 
 
     ## map string args to actual params
-    params <- map_to_param(X, link, regularizer, NULL, normalized, Q, alpha)
+    suppressWarnings(params <- map_to_param(X, link, regularizer, NULL, normalized, Q, alpha))
     weightfunc <- params[[1]]
     weightptr <- params[[2]]
     proxfunc <- params[[3]]
@@ -48,11 +48,17 @@ standardize <- function(X, target,
     prox_opts <- params[[5]]
 
 
-    prep <- preprocess(X, trt, NULL, "att", link, normalized)
-    X <- prep$X
-    ipw_weights <- prep$ipw_weights
-
-    if(normalized) target <- c(1, target)
+    if(is.null(ipw_weights)) {
+        ipw_weights = matrix(1/nrow(X), nrow(X), 1)    
+    } else {
+        ipw_weights = matrix(ipw_weights, nrow(X), 1)    
+    }
+    
+    ## add intercept
+    if(normalized) {
+        X <- cbind(1, X)
+        target <- c(1, target)
+    }
 
     out <- standardize_(X, target, Z, weightfunc, weightptr, proxfunc,
                         balancefunc, lambda, nlambda, lambda.min.ratio,
@@ -90,7 +96,7 @@ standardize_  <- function(X, target, Z, weightfunc, weightfunc_ptr,
     
     ## if no subgroups, put everything into one group
     if(is.null(Z)) {
-        Z <- rep(0, length(trt))
+        Z <- rep(0, nrow(X))
     }
 
 
