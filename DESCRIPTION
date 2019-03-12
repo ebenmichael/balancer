@@ -6,11 +6,8 @@ Description: A package for treatment effect heterogeneity and missing data in ob
 Depends:
     R (>= 3.4.2),
     RcppArmadillo
-Imports: apg,
-    Rcpp,
+Imports: Rcpp,
     RcppArmadillo
-Remotes:
-    jpvert/apg
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
