@@ -788,18 +788,20 @@ mat proj_nuc(mat x, double lam, List opts) {
 
   
   // sort singular values to find optimal threshold
-  
+  // Rcout << s << "\n";
   vec cumsum_s = cumsum(s);
+    // Rcout << cumsum_s << "\n";
   int rho = 0;
-  while(s(rho + 1) - (cumsum_s(rho + 1) - lam) / (rho + 2) > 0 & rho < s.n_elem - 1) {
+  while(s(rho + 1) - (cumsum_s(rho + 1) - lam) / (rho + 2) > 0 & rho < s.n_elem - 2) {
+    // Rcout << s(rho + 1) - (cumsum_s(rho + 1) - lam) / (rho + 2)  << "\n";
     rho +=  1;
   }
-  
+  // Rcout << rho << "\n";
   double theta = (cumsum_s(rho) - lam) / (rho + 1);
 
   // threshold singular values
   s = (s - theta) % (s > theta) + (s + theta) % (s < -theta);
-  
+  // Rcout << "Constraint: " << lam << "Actual: " << accu(s)  << "\n\n---------\n";
   // If the SVD fails, return a matrix of NA
   // TODO: Figure out if this has weird side effects
   if(1-fail) {
@@ -829,9 +831,10 @@ pptr make_proj_nuc() {
 mat proj_multilevel_ridge_nuc(mat x, double lam, List opts) {
 
   double alpha = as<double>(opts["alpha"]);  
-  
   // separate out global and local parameters
-  mat xglobal = x.col(0) / (1 + lam * (1-alpha));
+  //NOTE: hyperparameter is inverted
+  List inv_opts = List::create(_["lam"] = 1/as<double>(opts["lam"]));
+  mat xglobal = prox_l2_sq(x.col(0), lam * 1/(1-alpha), inv_opts); 
   mat xlocal = proj_nuc(x.cols(1, x.n_cols-1), lam * alpha, opts);
 
   
