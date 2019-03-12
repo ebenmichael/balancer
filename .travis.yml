@@ -12,3 +12,6 @@ r_binary_packages:
     - glmnet
     - plyr
     - kableExtra
+os:
+    - linux
+    - osx
