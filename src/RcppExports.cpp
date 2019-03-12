@@ -94,6 +94,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// balancing_grad_standardize
+mat balancing_grad_standardize(mat theta, List opts);
+RcppExport SEXP _balancer_balancing_grad_standardize(SEXP thetaSEXP, SEXP optsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< mat >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< List >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(balancing_grad_standardize(theta, opts));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_balancing_grad_standardize
+gptr make_balancing_grad_standardize();
+RcppExport SEXP _balancer_make_balancing_grad_standardize() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(make_balancing_grad_standardize());
+    return rcpp_result_gen;
+END_RCPP
+}
 // balancing_grad
 mat balancing_grad(mat theta, List opts);
 RcppExport SEXP _balancer_balancing_grad(SEXP thetaSEXP, SEXP optsSEXP) {
@@ -1023,6 +1045,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_balancer_make_balancing_grad_att", (DL_FUNC) &_balancer_make_balancing_grad_att, 0},
     {"_balancer_balancing_grad_multilevel", (DL_FUNC) &_balancer_balancing_grad_multilevel, 2},
     {"_balancer_make_balancing_grad_multilevel", (DL_FUNC) &_balancer_make_balancing_grad_multilevel, 0},
+    {"_balancer_balancing_grad_standardize", (DL_FUNC) &_balancer_balancing_grad_standardize, 2},
+    {"_balancer_make_balancing_grad_standardize", (DL_FUNC) &_balancer_make_balancing_grad_standardize, 0},
     {"_balancer_balancing_grad", (DL_FUNC) &_balancer_balancing_grad, 2},
     {"_balancer_make_balancing_grad", (DL_FUNC) &_balancer_make_balancing_grad, 0},
     {"_balancer_poly_kernel", (DL_FUNC) &_balancer_poly_kernel, 3},

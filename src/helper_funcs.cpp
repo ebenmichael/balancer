@@ -118,6 +118,66 @@ gptr make_balancing_grad_multilevel() {
 
 
 
+//' Gradient for standardization
+// [[Rcpp::export]]
+mat balancing_grad_standardize(mat theta, List opts) {
+  
+  // data and target
+  mat X = as<mat>(opts["X"]);
+  mat target = as<mat>(opts["target"]);
+
+  int n_groups = as<int>(opts["n_groups"]);
+  int dim = as<int>(opts["dim"]);
+  
+  mat ipw_weights = as<mat>(opts["ipw_weights"]);
+
+  // initialize gradient as zero
+  mat grad = zeros(X.n_cols, n_groups);
+    
+  weightPtrIPW weight_func = *as<wptripw>(opts["weight_func"]);
+    
+  // subgroup indicators
+  vec z = as<vec>(opts["z"]);
+  vec uni_z = unique(z);
+
+
+
+  mat Xz;
+  uvec idxs;
+  int k;
+  int nk;
+  // iterate over subgroups and compute gradient
+  vec weights = vec(size(X)[0]);
+  for(int i=0; i < uni_z.size(); i++) {
+    k = uni_z(i);
+
+    // get indices for subgroups, passed in through opts
+    idxs = find(z == k);
+    // number of treated units in subgroup
+    nk = accu(z == k);
+
+    // get gradient for subgroup
+    Xz = X.rows(idxs);
+    weights.rows(idxs) = weight_func(Xz, theta.col(i),
+                                     ipw_weights.rows(idxs));
+    grad.col(i) = Xz.t() * weights.rows(idxs);
+  }
+    
+  //combine to get gradient
+  grad -= target;
+
+  return grad;
+}
+
+
+// [[Rcpp::export]]
+gptr make_balancing_grad_standardize() {
+  return gptr(new gradPtr(balancing_grad_standardize));
+}
+
+
+
+
 
 
 

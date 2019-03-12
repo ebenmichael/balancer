@@ -56,6 +56,15 @@ make_balancing_grad_multilevel <- function() {
     .Call('_balancer_make_balancing_grad_multilevel', PACKAGE = 'balancer')
 }
 
+#' Gradient for standardization
+balancing_grad_standardize <- function(theta, opts) {
+    .Call('_balancer_balancing_grad_standardize', PACKAGE = 'balancer', theta, opts)
+}
+
+make_balancing_grad_standardize <- function() {
+    .Call('_balancer_make_balancing_grad_standardize', PACKAGE = 'balancer')
+}
+
 #' Generic balancing loss gradient
 balancing_grad <- function(theta, opts) {
     .Call('_balancer_balancing_grad', PACKAGE = 'balancer', theta, opts)
