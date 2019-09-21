@@ -188,3 +188,122 @@ standardize_  <- function(X, target, Z, weightfunc, weightfunc_ptr,
     out$lambda <- lambda
     return(out)
 }
+
+#' Internal function to reweight to target population means
+#' @param X n x d matrix of covariates
+#' @param target Vector of population means to re-weight to
+#' @param Z Vector of group indicators
+#' @param lambda Regularization hyper parameter
+#' @param lowlim Lower limit on weights, default 0
+#' @param uplim Upper limit on weights, default 1
+#'
+#' @return \itemize{
+#'          \item{weights }{Estimated primal weights}
+#'          \item{imbalance }{Imbalance in covariates}}
+standardize_qp <- function(X, target, Z, lambda, lowlim = 0, uplim = 1) {
+
+    # Setup the components of the QP and solve
+    q <- create_q_vector(X, target)
+    print("q")
+    P <- create_P_matrix(X, Z) + lambda * Matrix::Diagonal(nrow(X))
+    print("P")
+    constraints <- create_constraints(X, target, Z, lowlim, uplim)
+    print("constraints")
+    settings <- osqp::osqpSettings(verbose = TRUE, eps_abs = 1e-7,
+                                   eps_rel = 1e-7, max_iter = 5000)
+    solution <- osqp::solve_osqp(P, q, constraints$A,
+                                 constraints$l, constraints$u, pars = settings)
+
+    # convert weights into a matrix
+    unique_Z <- unique(Z)
+    J <- length(unique_Z)
+    weights <- sapply(1:J, function(j) (Z == unique_Z[j]) * solution$x)
+
+    # compute imbalance matrix
+
+    imbalance <- target - t(X) %*% weights
+    return(list(weights = weights, imbalance = imbalance))
+
+}
+
+#' Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x
+#' @param X n x d matrix of covariates
+#' @param target Vector of population means to re-weight to
+#'
+#' @return q vector
+create_q_vector <- function(X, target) {
+    return(X %*% target)
+}
+
+#' Create the P matrix for an QP that solves min_x 0.5 * x'Px + q'x
+#' @param X n x d matrix of covariates
+#' @param Z Vector of group indicators
+#'
+#' @return P matrix
+create_P_matrix <- function(X, Z) {
+
+    # select the rows of X that correspond to group j
+    create_selector_matrix <- function(j) {
+        # Matrix::Matrix(diag(diag((Z == j) %*% t(Z == j)))) %*% X
+        Matrix::Matrix((Z == j) * X)
+    }
+
+    Ps <- lapply(unique(Z),
+                function(j) {
+                    sel_mat <- create_selector_matrix(j)
+                    sel_mat %*% Matrix::t(sel_mat)
+                })
+    # return(Ps)
+    return(Reduce(`+`, Ps))
+}
+
+#' Create the P matrix for an QP that solves min_x 0.5 * x'Px + q'x
+#' @param X n x d matrix of covariates
+#' @param Z Vector of group indicators
+#'
+#' @return P matrix
+create_P_matrix2 <- function(X, Z) {
+
+    onehot_Z <- Matrix::sparse.model.matrix(~ as.factor(Z) - 1)
+    P <- onehot_Z %*% Matrix::t(onehot_Z) * X %*% t(X)
+    return(P)
+}
+
+
+#' Create the constraints for QP: l <= Ax <= u
+#' @param X n x d matrix of covariates
+#' @param target Vector of population means to re-weight to
+#' @param Z Vector of group indicators
+#' @param lowlim Lower limit on weights
+#' @param uplim Upper limit on weights
+#'
+#' @return A, l, and u
+create_constraints <- function(X, target, Z, lowlim, uplim) {
+
+    unique_Z <- unique(Z)
+    J <- length(unique_Z)
+    n <- nrow(X)
+    nj <- table(as.factor(Z))
+
+    # sum-to-one constraint for each group
+    A1 <- t(sapply(unique_Z, function(j) Z == j)) * 1
+    l1 <- rep(1, J)
+    u1 <- rep(1, J)
+
+
+    # upper and lower bounds
+    A2 <- diag(nrow(X))
+    l2 <- rep(lowlim, n)
+    u2 <- rep(uplim, n)
+
+    # Constrain the overall mean to be equal to the target
+    A3 <- t(c(nj[as.factor(Z)]) * X)
+    l3 <- n * target
+    u3 <- n * target
+
+    A <- Matrix::Matrix(rbind(A1, A2, A3))
+    l <- c(l1, l2, l3)
+    u <- c(u1, u2, u3)
+
+    return(list(A = A, l = l, u = u))
+}

@@ -2,7 +2,7 @@ context("Testing that standardization runs")
 
 ## make fake data
 n <- 1000
-d <- 100
+d <- 10
 k <- 20
 X <- matrix(rnorm(n * d), nrow=n)
 Z <- sample(1:k, n, replace=T)
