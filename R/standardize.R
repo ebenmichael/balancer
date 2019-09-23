@@ -2,10 +2,136 @@
 ## Wrapper to standardize to target means
 ################################################################################
 
+#' Internal function to reweight to target population means
+#' @param X n x d matrix of covariates
+#' @param target Vector of population means to re-weight to
+#' @param Z Vector of group indicators
+#' @param lambda Regularization hyper parameter
+#' @param lowlim Lower limit on weights, default 0
+#' @param uplim Upper limit on weights, default 1
+#' @param data_in Optional list containing pre-computed objective matrix/vector and constraints (without regularization term)
+#' @param verbose Whether to show messages, default T
+#' @param return_data Whether to return the objective matrix and vector and constraints, default T
+#'
+#' @return \itemize{
+#'          \item{weights }{Estimated primal weights}
+#'          \item{imbalance }{Imbalance in covariates}}
+standardize <- function(X, target, Z, lambda, lowlim = 0, uplim = 1, 
+                        data_in = NULL, verbose = TRUE, return_data = TRUE) {
+
+    unique_Z <- unique(Z)
+    J <- length(unique_Z)
+
+    # Setup the components of the QP and solve
+    if(verbose) message("Creating linear term vector...")
+    if(is.null(data_in$q)) {
+        q <- create_q_vector(X, target)
+    } else {
+        q <- data_in$q
+    }
+
+    if(verbose) message("Creating quadratic term matrix...")
+    if(is.null(data_in$P)) {
+        P <- create_P_matrix(X,Z) + lambda * Matrix::Diagonal(nrow(X))
+    } else {
+        P <- data_in$P + lambda * Matrix::Diagonal(nrow(X))
+    }
+
+    if(verbose) message("Creating constraint matrix...")
+    if(is.null(data_in$constraints)) {
+        constraints <- create_constraints(X, target, Z, lowlim, uplim)
+    } else {
+        constraints <- data_in$constraints
+    }
 
 
+    if(verbose) {
+        settings <- osqp::osqpSettings(verbose = TRUE, eps_abs = 1e-7,
+                                   eps_rel = 1e-7, max_iter = 5000)
+    } else {
+        settings <- osqp::osqpSettings(verbose = FALSE, eps_abs = 1e-7,
+                                   eps_rel = 1e-7, max_iter = 5000)
+    }
+    solution <- osqp::solve_osqp(P, q, constraints$A,
+                                 constraints$l, constraints$u, pars = settings)
 
-standardize <- function(X, target,
+    # convert weights into a matrix
+    weights <- sapply(1:J, function(j) (Z == unique_Z[j]) * solution$x)
+
+    # compute imbalance matrix
+    imbalance <- target - t(X) %*% weights
+
+    if(return_data) { 
+        data_out <- list(P = P  - lambda * Matrix::Diagonal(nrow(X)), 
+                         q = q, constraints = constraints)
+    } else {
+        data_out <- NULL
+    }
+
+    return(list(weights = weights, imbalance = imbalance, data_out = data_out))
+
+}
+
+#' Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x
+#' @param X n x d matrix of covariates
+#' @param target Vector of population means to re-weight to
+#'
+#' @return q vector
+create_q_vector <- function(X, target) {
+    return(X %*% target)
+}
+
+#' Create the P matrix for an QP that solves min_x 0.5 * x'Px + q'x
+#' @param X n x d matrix of covariates
+#' @param Z Vector of group indicators
+#'
+#' @return P matrix
+create_P_matrix <- function(X, Z) {
+
+    interacted <- Matrix::sparse.model.matrix(~ X:as.factor(Z) - 1)
+    P <- interacted %*% Matrix::t(interacted)
+    return(P)
+}
+
+
+#' Create the constraints for QP: l <= Ax <= u
+#' @param X n x d matrix of covariates
+#' @param target Vector of population means to re-weight to
+#' @param Z Vector of group indicators
+#' @param lowlim Lower limit on weights
+#' @param uplim Upper limit on weights
+#'
+#' @return A, l, and u
+create_constraints <- function(X, target, Z, lowlim, uplim) {
+
+    unique_Z <- unique(Z)
+    J <- length(unique_Z)
+    n <- nrow(X)
+    nj <- table(as.factor(Z))
+
+    # sum-to-one constraint for each group
+    A1 <- t(sapply(unique_Z, function(j) Z == j)) * 1
+    l1 <- rep(1, J)
+    u1 <- rep(1, J)
+
+    # upper and lower bounds
+    A2 <- Matrix::Diagonal(nrow(X))
+    l2 <- rep(lowlim, n)
+    u2 <- rep(uplim, n)
+
+    # Constrain the overall mean to be equal to the target
+    A3 <- t(c(nj[as.factor(Z)]) * X)
+    l3 <- n * target
+    u3 <- n * target
+
+    A <- rbind(A1, A2, A3)
+    l <- c(l1, l2, l3)
+    u <- c(u1, u2, u3)
+    return(list(A = A, l = l, u = u))
+}
+
+
+standardize_old <- function(X, target,
                         Z=NULL, 
                         link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
                         regularizer=c("ridge", "l1", "grpl1", "l2", "linf", "nuc",
@@ -61,7 +187,6 @@ standardize <- function(X, target,
                         ipw_weights, opts, prox_opts)
     return(out)
 }
-
 
 standardize_  <- function(X, target, Z, weightfunc, weightfunc_ptr,
                             proxfunc, balancefunc, lambda, nlambda,
@@ -187,100 +312,4 @@ standardize_  <- function(X, target, Z, weightfunc, weightfunc_ptr,
 
     out$lambda <- lambda
     return(out)
-}
-
-#' Internal function to reweight to target population means
-#' @param X n x d matrix of covariates
-#' @param target Vector of population means to re-weight to
-#' @param Z Vector of group indicators
-#' @param lambda Regularization hyper parameter
-#' @param lowlim Lower limit on weights, default 0
-#' @param uplim Upper limit on weights, default 1
-#'
-#' @return \itemize{
-#'          \item{weights }{Estimated primal weights}
-#'          \item{imbalance }{Imbalance in covariates}}
-standardize_qp <- function(X, target, Z, lambda, lowlim = 0, uplim = 1) {
-
-    unique_Z <- unique(Z)
-    J <- length(unique_Z)
-
-    # Setup the components of the QP and solve
-    q <- create_q_vector(X, target)
-    print("q")
-    P <- create_P_matrix(X, Z) + lambda * Matrix::Diagonal(nrow(X))
-    print("P")
-    constraints <- create_constraints(X, target, Z, lowlim, uplim)
-    print("constraints")
-    settings <- osqp::osqpSettings(verbose = TRUE, eps_abs = 1e-7,
-                                   eps_rel = 1e-7, max_iter = 5000)
-    solution <- osqp::solve_osqp(P, q, constraints$A,
-                                 constraints$l, constraints$u, pars = settings)
-
-    # convert weights into a matrix
-    weights <- sapply(1:J, function(j) (Z == unique_Z[j]) * solution$x)
-
-    # compute imbalance matrix
-
-    imbalance <- target - t(X) %*% weights
-    return(list(weights = weights, imbalance = imbalance))
-
-}
-
-#' Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x
-#' @param X n x d matrix of covariates
-#' @param target Vector of population means to re-weight to
-#'
-#' @return q vector
-create_q_vector <- function(X, target) {
-    return(X %*% target)
-}
-
-#' Create the P matrix for an QP that solves min_x 0.5 * x'Px + q'x
-#' @param X n x d matrix of covariates
-#' @param Z Vector of group indicators
-#'
-#' @return P matrix
-create_P_matrix <- function(X, Z) {
-
-    interacted <- Matrix::sparse.model.matrix(~ X:as.factor(Z) - 1)
-    P <- interacted %*% Matrix::t(interacted)
-    return(P)
-}
-
-
-#' Create the constraints for QP: l <= Ax <= u
-#' @param X n x d matrix of covariates
-#' @param target Vector of population means to re-weight to
-#' @param Z Vector of group indicators
-#' @param lowlim Lower limit on weights
-#' @param uplim Upper limit on weights
-#'
-#' @return A, l, and u
-create_constraints <- function(X, target, Z, lowlim, uplim) {
-
-    unique_Z <- unique(Z)
-    J <- length(unique_Z)
-    n <- nrow(X)
-    nj <- table(as.factor(Z))
-
-    # sum-to-one constraint for each group
-    A1 <- t(sapply(unique_Z, function(j) Z == j)) * 1
-    l1 <- rep(1, J)
-    u1 <- rep(1, J)
-
-    # upper and lower bounds
-    A2 <- Matrix::Diagonal(nrow(X))
-    l2 <- rep(lowlim, n)
-    u2 <- rep(uplim, n)
-
-    # Constrain the overall mean to be equal to the target
-    A3 <- t(c(nj[as.factor(Z)]) * X)
-    l3 <- n * target
-    u3 <- n * target
-
-    A <- rbind(A1, A2, A3)
-    l <- c(l1, l2, l3)
-    u <- c(u1, u2, u3)
-    return(list(A = A, l = l, u = u))
 }
