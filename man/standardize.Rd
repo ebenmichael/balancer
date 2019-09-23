@@ -4,47 +4,36 @@
 \alias{standardize}
 \title{Re-weight groups to target population means}
 \usage{
-standardize(X, target, Z = NULL, link = c("logit", "linear",
-  "pos-linear", "pos-enet", "posenet"), regularizer = c("ridge", "l1",
-  "grpl1", "l2", "linf", "nuc", "l1_all", "l1_nuc"), lambda = NULL,
-  nlambda = 20, lambda.min.ratio = 0.001, normalized = TRUE,
-  alpha = 1, opts = list())
+standardize(X, target, Z, lambda, lowlim = 0, uplim = 1,
+  data_in = NULL, verbose = TRUE, return_data = TRUE)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
 
-\item{target}{Vector of population moments to weight towards}
+\item{target}{Vector of population means to re-weight to}
 
-\item{Z}{Vector of site indicators}
+\item{Z}{Vector of group indicators with J levels}
 
-\item{link}{Link function for weights}
+\item{lambda}{Regularization hyper parameter}
 
-\item{regularizer}{Dual of balance criterion}
+\item{lowlim}{Lower limit on weights, default 0}
 
-\item{lambda}{Regularization hyperparameter}
+\item{uplim}{Upper limit on weights, default 1}
 
-\item{nlambda}{Number of hyperparameters to consider}
+\item{data_in}{Optional list containing pre-computed objective matrix/vector and constraints (without regularization term)}
 
-\item{lambda.min.ratio}{Smallest value of hyperparam to consider, as proportion of smallest
-value that gives the reference weights}
+\item{verbose}{Whether to show messages, default T}
 
-\item{normalized}{Whether to normalize the weights}
-
-\item{alpha}{Elastic net parameter \eqn{\frac{1-\alpha}{2}\|\beta\|_2^2 + \alpha\|\beta\|_1}, defaults to 1}
-
-\item{opts}{Optimization options
-\itemize{
-  \item{MAX_ITERS }{Maximum number of iterations to run}
-  \item{EPS }{Error rolerance}
-  \item{alpha }{Elastic net parameter}}}
-
-\item{interact}{Whether to interact group and individual level covariates}
+\item{return_data}{Whether to return the objective matrix and vector and constraints, default T}
 }
 \value{
 \itemize{
-         \item{theta }{Estimated dual propensity score parameters}
-         \item{weights }{Estimated primal weights}
-         \item{imbalance }{Imbalance in covariates}}
+         \item{weights }{Estimated primal weights as an n x J matrix}
+         \item{imbalance }{Imbalance in covariates as a d X J matrix}
+         \item{data_out }{List containing elements of QP min 0.5 x'Px + q'x st l <= Ax <= u \itemize{
+                 \item{P, q}{}
+                 \item{constraints }{A, l , u}
+}}}
 }
 \description{
 Re-weight groups to target population means

@@ -2,10 +2,10 @@
 ## Wrapper to standardize to target means
 ################################################################################
 
-#' Internal function to reweight to target population means
+#' Re-weight groups to target population means
 #' @param X n x d matrix of covariates
 #' @param target Vector of population means to re-weight to
-#' @param Z Vector of group indicators
+#' @param Z Vector of group indicators with J levels
 #' @param lambda Regularization hyper parameter
 #' @param lowlim Lower limit on weights, default 0
 #' @param uplim Upper limit on weights, default 1
@@ -14,8 +14,12 @@
 #' @param return_data Whether to return the objective matrix and vector and constraints, default T
 #'
 #' @return \itemize{
-#'          \item{weights }{Estimated primal weights}
-#'          \item{imbalance }{Imbalance in covariates}}
+#'          \item{weights }{Estimated primal weights as an n x J matrix}
+#'          \item{imbalance }{Imbalance in covariates as a d X J matrix}
+#'          \item{data_out }{List containing elements of QP min 0.5 x'Px + q'x st l <= Ax <= u \itemize{
+#'                  \item{P, q}{}
+#'                  \item{constraints }{A, l , u}
+#'}}}
 standardize <- function(X, target, Z, lambda, lowlim = 0, uplim = 1, 
                         data_in = NULL, verbose = TRUE, return_data = TRUE) {
 

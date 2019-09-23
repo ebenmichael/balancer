@@ -10,14 +10,15 @@ target <- colMeans(X)
                             
 test_that("Standardization runs without hiccups", {
     
-    out <- standardize(X, target, Z, lambda=1e1)
+    out <- standardize(X, target, Z, lambda = 0, verbose = F)
 
     ## weights are right shape
     expect_equal(dim(out$weights), c(n, k))
 
-    ## dual parameters are right shape
-    expect_equal(dim(out$theta), c(d+1, k))
-    
-    
+    ## imbalance is the right shape
+    expect_equal(dim(out$imbalance), c(d, k))
+
+    ## P matrix is the right shape
+    expect_equal(dim(out$data_out$P), c(n, n))
 }
 )
