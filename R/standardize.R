@@ -202,6 +202,9 @@ standardize_  <- function(X, target, Z, weightfunc, weightfunc_ptr,
 #'          \item{imbalance }{Imbalance in covariates}}
 standardize_qp <- function(X, target, Z, lambda, lowlim = 0, uplim = 1) {
 
+    unique_Z <- unique(Z)
+    J <- length(unique_Z)
+
     # Setup the components of the QP and solve
     q <- create_q_vector(X, target)
     print("q")
@@ -215,8 +218,6 @@ standardize_qp <- function(X, target, Z, lambda, lowlim = 0, uplim = 1) {
                                  constraints$l, constraints$u, pars = settings)
 
     # convert weights into a matrix
-    unique_Z <- unique(Z)
-    J <- length(unique_Z)
     weights <- sapply(1:J, function(j) (Z == unique_Z[j]) * solution$x)
 
     # compute imbalance matrix
@@ -242,30 +243,8 @@ create_q_vector <- function(X, target) {
 #' @return P matrix
 create_P_matrix <- function(X, Z) {
 
-    # select the rows of X that correspond to group j
-    create_selector_matrix <- function(j) {
-        # Matrix::Matrix(diag(diag((Z == j) %*% t(Z == j)))) %*% X
-        Matrix::Matrix((Z == j) * X)
-    }
-
-    Ps <- lapply(unique(Z),
-                function(j) {
-                    sel_mat <- create_selector_matrix(j)
-                    sel_mat %*% Matrix::t(sel_mat)
-                })
-    # return(Ps)
-    return(Reduce(`+`, Ps))
-}
-
-#' Create the P matrix for an QP that solves min_x 0.5 * x'Px + q'x
-#' @param X n x d matrix of covariates
-#' @param Z Vector of group indicators
-#'
-#' @return P matrix
-create_P_matrix2 <- function(X, Z) {
-
-    onehot_Z <- Matrix::sparse.model.matrix(~ as.factor(Z) - 1)
-    P <- onehot_Z %*% Matrix::t(onehot_Z) * X %*% t(X)
+    interacted <- Matrix::sparse.model.matrix(~ X:as.factor(Z) - 1)
+    P <- interacted %*% Matrix::t(interacted)
     return(P)
 }
 
@@ -290,9 +269,8 @@ create_constraints <- function(X, target, Z, lowlim, uplim) {
     l1 <- rep(1, J)
     u1 <- rep(1, J)
 
-
     # upper and lower bounds
-    A2 <- diag(nrow(X))
+    A2 <- Matrix::Diagonal(nrow(X))
     l2 <- rep(lowlim, n)
     u2 <- rep(uplim, n)
 
@@ -301,9 +279,8 @@ create_constraints <- function(X, target, Z, lowlim, uplim) {
     l3 <- n * target
     u3 <- n * target
 
-    A <- Matrix::Matrix(rbind(A1, A2, A3))
+    A <- rbind(A1, A2, A3)
     l <- c(l1, l2, l3)
     u <- c(u1, u2, u3)
-
     return(list(A = A, l = l, u = u))
 }
