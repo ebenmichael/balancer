@@ -20,6 +20,7 @@
 #'                  \item{P, q}{}
 #'                  \item{constraints }{A, l , u}
 #'}}}
+#' @export
 standardize <- function(X, target, Z, lambda, lowlim = 0, uplim = 1, 
                         data_in = NULL, verbose = TRUE, return_data = TRUE) {
 
