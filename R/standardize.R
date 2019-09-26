@@ -38,7 +38,7 @@ standardize <- function(X, target, Z, lambda, lowlim = 0, uplim = 1,
     # Setup the components of the QP and solve
     if(verbose) message("Creating linear term vector...")
     if(is.null(data_in$q)) {
-        q <- create_q_vector(Xz, target)
+        q <- create_q_vector(Xz, target, aux_dim)
     } else {
         q <- data_in$q
     }
@@ -99,12 +99,13 @@ standardize <- function(X, target, Z, lambda, lowlim = 0, uplim = 1,
 #' Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x
 #' @param Xz list of J n x d matrices of covariates split by group
 #' @param target Vector of population means to re-weight to
+#' @param aux_dim Dimension of auxiliary weights
 #'
 #' @return q vector
-create_q_vector <- function(Xz, target) {
-    q <- do.call(rbind, Xz) %*% target
-    q <- Matrix::sparseVector(c(q), 1:length(q),
-                              length(q) + length(Xz) * ncol(Xz[[1]]))
+create_q_vector <- function(Xz, target, aux_dim) {
+    q <- c(do.call(rbind, Xz) %*% target)
+    q <- Matrix::sparseVector(q, 1:length(q),
+                              length(q) + aux_dim)
     return(q)
 }
 
