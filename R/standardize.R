@@ -24,6 +24,9 @@
 standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1, 
                         data_in = NULL, verbose = TRUE, return_data = TRUE) {
 
+    # convert X to a matrix
+    X <- as.matrix(X)
+
     # split matrix by targets
     Z_factor <- as.factor(Z)
     Xz <- split.data.frame(X, Z_factor)
