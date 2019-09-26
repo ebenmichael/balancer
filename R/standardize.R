@@ -6,7 +6,7 @@
 #' @param X n x d matrix of covariates
 #' @param target Vector of population means to re-weight to
 #' @param Z Vector of group indicators with J levels
-#' @param lambda Regularization hyper parameter
+#' @param lambda Regularization hyper parameter, default 0
 #' @param lowlim Lower limit on weights, default 0
 #' @param uplim Upper limit on weights, default 1
 #' @param data_in Optional list containing pre-computed objective matrix/vector and constraints (without regularization term)
@@ -21,12 +21,16 @@
 #'                  \item{constraints }{A, l , u}
 #'}}}
 #' @export
-standardize <- function(X, target, Z, lambda, lowlim = 0, uplim = 1, 
+standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1, 
                         data_in = NULL, verbose = TRUE, return_data = TRUE) {
 
     # split matrix by targets
     Z_factor <- as.factor(Z)
     Xz <- split.data.frame(X, Z_factor)
+
+    # ensure that target is a vector
+    target <- c(target)
+
     check_data(X, target, Z, Xz, lambda, lowlim, uplim, data_in)
 
 
@@ -36,8 +40,7 @@ standardize <- function(X, target, Z, lambda, lowlim = 0, uplim = 1,
     aux_dim <- J * ncol(X)
     n <- nrow(X)
 
-    # ensure that target is a vector
-    target <- c(target)
+
 
 
     idxs <- split(1:nrow(X), Z_factor)
@@ -223,9 +226,20 @@ check_data <- function(X, target, Z, Xz, lambda, lowlim, uplim, data_in) {
     aux_dim <- d * J
     nj <- as.numeric(lapply(Xz, nrow))
 
+    if(length(Z) != n) {
+        stop("The number of rows in covariate matrix X (", n,
+             ") does not equal the dimension of and grouping vector Z (",
+             length(Z), ").")
+    }
+
     if(sum(nj) != n) {
         stop("Implied number of weights (", sum(nj), 
              ") does not equal number of units (", n, ").")
+    }
+
+    if(length(target) != d) {
+        stop("Target dimension (", length(target),
+             ") is not equal to data dimension (", d, ").")
     }
 
     if(!is.null(data_in$q)) {

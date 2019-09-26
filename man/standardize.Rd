@@ -4,7 +4,7 @@
 \alias{standardize}
 \title{Re-weight groups to target population means}
 \usage{
-standardize(X, target, Z, lambda, lowlim = 0, uplim = 1,
+standardize(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
   data_in = NULL, verbose = TRUE, return_data = TRUE)
 }
 \arguments{
@@ -14,7 +14,7 @@ standardize(X, target, Z, lambda, lowlim = 0, uplim = 1,
 
 \item{Z}{Vector of group indicators with J levels}
 
-\item{lambda}{Regularization hyper parameter}
+\item{lambda}{Regularization hyper parameter, default 0}
 
 \item{lowlim}{Lower limit on weights, default 0}
 
