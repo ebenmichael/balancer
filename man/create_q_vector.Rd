@@ -4,10 +4,10 @@
 \alias{create_q_vector}
 \title{Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x}
 \usage{
-create_q_vector(X, target)
+create_q_vector(Xz, target)
 }
 \arguments{
-\item{X}{n x d matrix of covariates}
+\item{Xz}{list of J n x d matrices of covariates split by group}
 
 \item{target}{Vector of population means to re-weight to}
 }

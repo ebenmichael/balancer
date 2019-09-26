@@ -4,7 +4,7 @@
 \alias{create_P_matrix}
 \title{Create the P matrix for an QP that solves min_x 0.5 * x'Px + q'x}
 \usage{
-create_P_matrix(X, Z)
+create_P_matrix(n, aux_dim)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}

@@ -1,15 +1,15 @@
 context("Testing that standardization runs")
 
 ## make fake data
-n <- 1000
+n <- 2500
 d <- 10
-k <- 20
+k <- 100
 X <- matrix(rnorm(n * d), nrow=n)
 Z <- sample(1:k, n, replace=T)
 target <- colMeans(X)
                             
 test_that("Standardization runs without hiccups", {
-    
+
     out <- standardize(X, target, Z, lambda = 0, verbose = F)
 
     ## weights are right shape
@@ -19,6 +19,6 @@ test_that("Standardization runs without hiccups", {
     expect_equal(dim(out$imbalance), c(d, k))
 
     ## P matrix is the right shape
-    expect_equal(dim(out$data_out$P), c(n, n))
+    expect_equal(dim(out$data_out$P), c(n + d * k, n + d * k))
 }
 )

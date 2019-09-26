@@ -24,50 +24,69 @@
 standardize <- function(X, target, Z, lambda, lowlim = 0, uplim = 1, 
                         data_in = NULL, verbose = TRUE, return_data = TRUE) {
 
-    unique_Z <- unique(Z)
+    Z_factor <- as.factor(Z)
+    unique_Z <- levels(Z_factor)
     J <- length(unique_Z)
+    # dimension of auxiliary weights
+    aux_dim <- J * ncol(X)
+    n <- nrow(X)
+
+    # split matrix by targets
+    Xz <- split.data.frame(X, Z_factor)
+    idxs <- split(1:nrow(X), Z_factor)
 
     # Setup the components of the QP and solve
     if(verbose) message("Creating linear term vector...")
     if(is.null(data_in$q)) {
-        q <- create_q_vector(X, target)
+        q <- create_q_vector(Xz, target)
     } else {
         q <- data_in$q
     }
 
     if(verbose) message("Creating quadratic term matrix...")
     if(is.null(data_in$P)) {
-        P <- create_P_matrix(X,Z) + lambda * Matrix::Diagonal(nrow(X))
+        P <- create_P_matrix(n, aux_dim)
     } else {
         P <- data_in$P + lambda * Matrix::Diagonal(nrow(X))
     }
+    I0 <- Matrix::bdiag(Matrix::Diagonal(nrow(X)), Matrix::Diagonal(aux_dim, 0))
+    P <- P + lambda * I0
 
     if(verbose) message("Creating constraint matrix...")
     if(is.null(data_in$constraints)) {
-        constraints <- create_constraints(X, target, Z, lowlim, uplim)
+        constraints <- create_constraints(Xz, target, Z, lowlim, uplim, verbose)
     } else {
         constraints <- data_in$constraints
     }
 
 
     if(verbose) {
-        settings <- osqp::osqpSettings(verbose = TRUE, eps_abs = 1e-7,
-                                   eps_rel = 1e-7, max_iter = 5000)
+        settings <- osqp::osqpSettings(verbose = TRUE, eps_abs = 1e-6,
+                                   eps_rel = 1e-6, max_iter = 5000)
     } else {
-        settings <- osqp::osqpSettings(verbose = FALSE, eps_abs = 1e-7,
-                                   eps_rel = 1e-7, max_iter = 5000)
+        settings <- osqp::osqpSettings(verbose = FALSE, eps_abs = 1e-6,
+                                   eps_rel = 1e-6, max_iter = 5000)
     }
     solution <- osqp::solve_osqp(P, q, constraints$A,
                                  constraints$l, constraints$u, pars = settings)
 
+
     # convert weights into a matrix
-    weights <- sapply(1:J, function(j) (Z == unique_Z[j]) * solution$x)
+
+    nj <- sapply(1:J, function(j) nrow(Xz[[j]]))
+    weights <- Matrix::Matrix(0, ncol = J, nrow = n)
+
+    if(verbose) message("Reordering weights...")
+    cumsumnj <- cumsum(c(1, nj))
+    for(j in 1:J) {
+        weights[idxs[[j]], j] <- solution$x[cumsumnj[j]:(cumsumnj[j + 1] - 1)]
+    }
 
     # compute imbalance matrix
-    imbalance <- target - t(X) %*% weights
+    imbalance <- as.matrix(target - t(X) %*% weights)
 
-    if(return_data) { 
-        data_out <- list(P = P  - lambda * Matrix::Diagonal(nrow(X)), 
+    if(return_data) {
+        data_out <- list(P = P  - lambda * I0,
                          q = q, constraints = constraints)
     } else {
         data_out <- NULL
@@ -78,60 +97,82 @@ standardize <- function(X, target, Z, lambda, lowlim = 0, uplim = 1,
 }
 
 #' Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x
-#' @param X n x d matrix of covariates
+#' @param Xz list of J n x d matrices of covariates split by group
 #' @param target Vector of population means to re-weight to
 #'
 #' @return q vector
-create_q_vector <- function(X, target) {
-    return(X %*% target)
+create_q_vector <- function(Xz, target) {
+    q <- do.call(rbind, Xz) %*% target
+    q <- Matrix::sparseVector(c(q), 1:length(q),
+                              length(q) + length(Xz) * ncol(Xz[[1]]))
+    return(q)
 }
+
 
 #' Create the P matrix for an QP that solves min_x 0.5 * x'Px + q'x
 #' @param X n x d matrix of covariates
 #' @param Z Vector of group indicators
 #'
 #' @return P matrix
-create_P_matrix <- function(X, Z) {
-
-    interacted <- Matrix::sparse.model.matrix(~ X:as.factor(Z) - 1)
-    P <- interacted %*% Matrix::t(interacted)
-    return(P)
+create_P_matrix <- function(n, aux_dim) {
+    return(Matrix::Diagonal(n + aux_dim))
 }
 
-
 #' Create the constraints for QP: l <= Ax <= u
-#' @param X n x d matrix of covariates
+#' @param Xz list of J n x d matrices of covariates split by group
 #' @param target Vector of population means to re-weight to
 #' @param Z Vector of group indicators
 #' @param lowlim Lower limit on weights
 #' @param uplim Upper limit on weights
 #'
 #' @return A, l, and u
-create_constraints <- function(X, target, Z, lowlim, uplim) {
+create_constraints <- function(Xz, target, Z, lowlim, uplim, verbose) {
 
-    unique_Z <- unique(Z)
-    J <- length(unique_Z)
-    n <- nrow(X)
-    nj <- table(as.factor(Z))
+    J <- length(Xz)
+    nj <- sapply(1:J, function(j) nrow(Xz[[j]]))
+    d <- ncol(Xz[[1]])
+    cumsum_nj <- cumsum(c(1, nj))
+    n <- sum(nj)
+    Xzt <- lapply(Xz, t)
 
+    # dimension of auxiliary weights
+    aux_dim <- J * d
+
+    if(verbose) message("\tx Sum to one constraint")
     # sum-to-one constraint for each group
-    A1 <- t(sapply(unique_Z, function(j) Z == j)) * 1
+    A1 <- Matrix::t(Matrix::bdiag(lapply(Xz, function(x) rep(1, nrow(x)))))
+    A1 <- Matrix::cbind2(A1, Matrix::Matrix(0, nrow=nrow(A1), ncol = aux_dim))
     l1 <- rep(1, J)
     u1 <- rep(1, J)
 
+    if(verbose) message("\tx Upper and lower bounds")
     # upper and lower bounds
-    A2 <- Matrix::Diagonal(nrow(X))
+    A2 <- Matrix::Diagonal(n)
+    A2 <- Matrix::cbind2(A2, Matrix::Matrix(0, nrow = nrow(A2), ncol = aux_dim))
     l2 <- rep(lowlim, n)
     u2 <- rep(uplim, n)
 
+    if(verbose) message("\tx Mantain overall population mean")
     # Constrain the overall mean to be equal to the target
-    A3 <- t(c(nj[as.factor(Z)]) * X)
+    A3 <- do.call(cbind, lapply(Xzt, function(x) x * ncol(x)))
+
+    A3 <- Matrix::cbind2(A3, Matrix::Matrix(0, nrow = nrow(A3), ncol = aux_dim))
+
     l3 <- n * target
     u3 <- n * target
 
-    A <- rbind(A1, A2, A3)
-    l <- c(l1, l2, l3)
-    u <- c(u1, u2, u3)
+    if(verbose) message("\tx Fit weights to data")
+    # constrain the auxiliary weights to be sqrt(P)'gamma
+    sqrtP <- Matrix::bdiag(Xzt)
+    A4 <- Matrix::cbind2(sqrtP, -Matrix::Diagonal(aux_dim))
+    l4 <- rep(0, aux_dim)
+    u4 <- rep(0, aux_dim)
+
+    if(verbose) message("\tx Combining constraints")
+    A <- rbind(A1, A2, A3, A4)
+    l <- c(l1, l2, l3, l4)
+    u <- c(u1, u2, u3, u4)
+
     return(list(A = A, l = l, u = u))
 }
 

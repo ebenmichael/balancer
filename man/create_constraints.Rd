@@ -4,10 +4,10 @@
 \alias{create_constraints}
 \title{Create the constraints for QP: l <= Ax <= u}
 \usage{
-create_constraints(X, target, Z, lowlim, uplim)
+create_constraints(Xz, target, Z, lowlim, uplim, verbose)
 }
 \arguments{
-\item{X}{n x d matrix of covariates}
+\item{Xz}{list of J n x d matrices of covariates split by group}
 
 \item{target}{Vector of population means to re-weight to}
 
