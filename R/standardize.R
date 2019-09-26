@@ -73,6 +73,8 @@ standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
         constraints <- create_constraints(Xz, target, Z, lowlim, uplim, verbose)
     } else {
         constraints <- data_in$constraints
+        constraints$l[(J + 1): (J + 1 + n)] <- lowlim
+        constraints$u[(J + 1): (J + 1 + n)] <- uplim
     }
 
 

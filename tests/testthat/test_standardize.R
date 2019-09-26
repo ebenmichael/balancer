@@ -50,3 +50,15 @@ test_that("Standardization runs without hiccups", {
     expect_equal(dim(out$data_out$P), c(n + d * k, n + d * k))
 }
 )
+
+test_that("Standardization runs with re-inputted data", {
+
+    out1 <- standardize(X, target, Z, lambda = 0, verbose = F)
+
+    out2 <- standardize(X, target, Z, lambda = 0, verbose = F, 
+                        data_in = out1$data_out)
+
+    ## weights are right shape
+    expect_equal(out1$weights, out2$weights, tolerance = 1e-1)
+}
+)
