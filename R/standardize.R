@@ -63,7 +63,7 @@ standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
     if(is.null(data_in$P)) {
         P <- create_P_matrix(n, aux_dim)
     } else {
-        P <- data_in$P + lambda * Matrix::Diagonal(nrow(X))
+        P <- data_in$P
     }
     I0 <- Matrix::bdiag(Matrix::Diagonal(nrow(X)), Matrix::Diagonal(aux_dim, 0))
     P <- P + lambda * I0
