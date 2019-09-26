@@ -24,16 +24,25 @@
 standardize <- function(X, target, Z, lambda, lowlim = 0, uplim = 1, 
                         data_in = NULL, verbose = TRUE, return_data = TRUE) {
 
+    # split matrix by targets
     Z_factor <- as.factor(Z)
+    Xz <- split.data.frame(X, Z_factor)
+    check_data(X, target, Z, Xz, lambda, lowlim, uplim, data_in)
+
+
     unique_Z <- levels(Z_factor)
     J <- length(unique_Z)
     # dimension of auxiliary weights
     aux_dim <- J * ncol(X)
     n <- nrow(X)
 
-    # split matrix by targets
-    Xz <- split.data.frame(X, Z_factor)
+    # ensure that target is a vector
+    target <- c(target)
+
+
     idxs <- split(1:nrow(X), Z_factor)
+
+
 
     # Setup the components of the QP and solve
     if(verbose) message("Creating linear term vector...")
@@ -42,6 +51,7 @@ standardize <- function(X, target, Z, lambda, lowlim = 0, uplim = 1,
     } else {
         q <- data_in$q
     }
+
 
     if(verbose) message("Creating quadratic term matrix...")
     if(is.null(data_in$P)) {
@@ -178,185 +188,94 @@ create_constraints <- function(Xz, target, Z, lowlim, uplim, verbose) {
 }
 
 
-standardize_old <- function(X, target,
-                        Z=NULL, 
-                        link=c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
-                        regularizer=c("ridge", "l1", "grpl1", "l2", "linf", "nuc",
-                                      "l1_all", "l1_nuc"),
-                        lambda=NULL, nlambda=20, lambda.min.ratio=1e-3,
-                        normalized=TRUE, alpha=1,
-                        opts=list()) {
-    #' Re-weight groups to target population means
-    #' @param X n x d matrix of covariates
-    #' @param target Vector of population moments to weight towards
-    #' @param Z Vector of site indicators
-    #' @param link Link function for weights
-    #' @param regularizer Dual of balance criterion
-    #' @param lambda Regularization hyperparameter
-    #' @param nlambda Number of hyperparameters to consider
-    #' @param lambda.min.ratio Smallest value of hyperparam to consider, as proportion of smallest
-    #'                         value that gives the reference weights
-    #' @param interact Whether to interact group and individual level covariates
-    #' @param normalized Whether to normalize the weights
-    #' @param alpha Elastic net parameter \eqn{\frac{1-\alpha}{2}\|\beta\|_2^2 + \alpha\|\beta\|_1}, defaults to 1
-    #' @param opts Optimization options
-    #'        \itemize{
-    #'          \item{MAX_ITERS }{Maximum number of iterations to run}
-    #'          \item{EPS }{Error rolerance}
-    #'          \item{alpha }{Elastic net parameter}}
-    #'
-    #' @return \itemize{
-    #'          \item{theta }{Estimated dual propensity score parameters}
-    #'          \item{weights }{Estimated primal weights}
-    #'          \item{imbalance }{Imbalance in covariates}}
-    #' @export
+
+#' Check that data is in right shape and hyparameters are feasible
+#' @param X n x d matrix of covariates
+#' @param target Vector of population means to re-weight to
+#' @param Z Vector of group indicators with J levels
+#' @param Xz list of J n x d matrices of covariates split by group
+#' @param lambda Regularization hyper parameter
+#' @param lowlim Lower limit on weights, default 0
+#' @param uplim Upper limit on weights, default 1
+#' @param data_in Optional list containing pre-computed objective matrix/vector and constraints (without regularization term)
+#' @param verbose Whether to show messages, default T
+#' @param return_data Whether to return the objective matrix and vector and constraints, default T
+check_data <- function(X, target, Z, Xz, lambda, lowlim, uplim, data_in) {
 
 
-    ## map string args to actual params
-    suppressWarnings(params <- map_to_param(X, link, regularizer, NULL, normalized, Q, alpha))
-    weightfunc <- params[[1]]
-    weightptr <- params[[2]]
-    proxfunc <- params[[3]]
-    balancefunc <- params[[4]]
-    prox_opts <- params[[5]]
-
-
-    ipw_weights = matrix(1/nrow(X), nrow(X), 1)
-    
-    ## add intercept
-    if(normalized) {
-        X <- cbind(1, X)
-        target <- c(1, target)
+    # NA checks
+    if(any(is.na(X))) {
+        stop("Covariate matrix X contains NA values.")
     }
 
-    out <- standardize_(X, target, Z, weightfunc, weightptr, proxfunc,
-                        balancefunc, lambda, nlambda, lambda.min.ratio,
-                        ipw_weights, opts, prox_opts)
-    return(out)
-}
-
-standardize_  <- function(X, target, Z, weightfunc, weightfunc_ptr,
-                            proxfunc, balancefunc, lambda, nlambda,
-                            lambda.min.ratio, ipw_weights, 
-                          opts=list(), prox_opts) {
-    #' Internal function to reweight to target population means
-    #' @param X n x d matrix of covariates
-    #' @param target Vector of population means to re-weight to
-    #' @param Z Vector of hierarchical factor indicators
-    #' @param weightfunc Derivative of convex conjugate of dispersion function (possibly normalized)
-    #' @param weightfunc_ptr Pointer to weightfunc
-    #' @param proxfunc Prox operator of regularization function
-    #' @param balancefunc Balance criterion measure
-    #' @param lambda Regularization hyper parameter
-    #' @param nlambda Number of hyperparameters to consider
-    #' @param lambda.min.ratio Smallest value of hyperparam to consider, as proportion of smallest
-    #'                         value that gives the reference weights
-    #' @param opts Optimization options
-    #'        \itemize{
-    #'          \item{MAX_ITERS }{Maximum number of iterations to run}
-    #'          \item{EPS }{Error rolerance}}
-    #' @param prox_opts List of additional arguments for prox    
-    #'
-    #' @return \itemize{
-    #'          \item{theta }{Estimated dual propensity score parameters}
-    #'          \item{weights }{Estimated primal weights}
-    #'          \item{imbalance }{Imbalance in covariates}}
-    
-    ## if no subgroups, put everything into one group
-    if(is.null(Z)) {
-        Z <- rep(0, nrow(X))
+    if(any(is.na(Z))) {
+        stop("Grouping vector Z contains NA values.")
     }
 
-
-    
-    ## get the distinct group labels
-    grps <- sort(unique(Z))
-    m <- length(grps)
-
-    n <- dim(X)[1]
-    d <- dim(X)[2]
-    
-    target <- as.matrix(sapply(grps,
-                  function(k) target))
-
-
-    loss_opts = list(X=X,
-                     target=target,
-                     z=Z,
-                     weight_func=weightfunc_ptr,
-                     ipw_weights=ipw_weights,
-                     n_groups=m,
-                     dim=d
-                     )
-
-
-    ## initialize at 0
-    init = matrix(0, nrow=d, ncol=(m))
-    
-    ## combine opts with defauls
-    opts <- c(opts,
-              list(max_it=5000,
-                   eps=1e-8,
-                   alpha=1.01, beta=.9,
-                   accel=T,
-                   x=init,
-                   verbose=F))
-
-    ## if hyperparam is NULL, start from reference weights and decrease
-    if(is.null(lambda)) {
-        lam0 <- balancefunc(balancing_grad_multilevel(init, loss_opts))
-        lam1 <- lam0 * lambda.min.ratio
-        ## decrease on log scale
-        lambda <- exp(seq(log(lam0), log(lam1), length.out=nlambda))
+    if(any(is.na(target))) {
+        stop("Target vector contains NA values.")
     }
 
+    #dimension checks
+    n <- nrow(X)
+    d <- ncol(X)
+    J <- length(Xz)
+    aux_dim <- d * J
+    nj <- as.numeric(lapply(Xz, nrow))
 
-    ## collect results
-    out <- list()
-    out$theta <- matrix(,nrow=d, ncol=length(lambda))
-    out$imbalance <- matrix(,nrow=d, ncol=length(lambda))    
-    out$weights <- matrix(0, nrow=n, ncol=length(lambda))
-    out$weightfunc <- weightfunc
+    if(sum(nj) != n) {
+        stop("Implied number of weights (", sum(nj), 
+             ") does not equal number of units (", n, ").")
+    }
 
-
-    ## with multiple hyperparameters do warm starts        
-    prox_opts <- c(prox_opts,
-                  list(lam=1))
-
-
-    apgout <- apg_warmstart(make_balancing_grad_standardize(),
-                            proxfunc, loss_opts, prox_opts,
-                            lambda,
-                            opts$x, opts$max_it, opts$eps,
-                            opts$alpha, opts$beta, opts$accel, opts$verbose)
-
-    ## theta
-    theta <- apgout
-    out$theta <- theta
-    ## weights
-    weights_from_theta <- function(th) {
-        weights <- matrix(0, nrow=n, ncol=m)
-        for(i in 1:m) {
-            k = grps[i]
-            weights[(Z == k), i] <-
-                weightfunc(X[Z == k, , drop=FALSE],
-                           th[,i,drop=FALSE],
-                           ipw_weights[Z == k,,drop=FALSE])
+    if(!is.null(data_in$q)) {
+        if(length(data_in$q) != n + aux_dim) {
+            stop("data_in$q vectors should have dimension ", n + aux_dim)
         }
-        weights
     }
-    
-    weights <- lapply(out$theta, weights_from_theta)
 
-    out$weights <- if(length(weights)==1) weights[[1]] else weights
+    if(!is.null(data_in$P)) {
+        if(dim(data_in$P)[1] != dim(data_in$P)[2]) {
+            stop("data_in$P matrix must be square")
+        }
+        if(dim(data_in$P)[1] != n + aux_dim) {
+            stop("data_in$P should have ", n + aux_dim, 
+                 " rows and columns")
+        }
+    }
 
-    
-    ## The final imbalance    
-    imbalance <- lapply(theta, function(th) balancing_grad_standardize(th, loss_opts))
-    out$imbalance <- if(length(imbalance) == 1) imbalance[[1]] else imbalance
+    if(!is.null(data_in$constraints)) {
+        if(length(data_in$constraints$l) != length(data_in$constraints$u)) {
+            stop("data_in$constraints$l and data_in$constraints$u",
+                 " must have the same dimension")
+        }
+        if(length(data_in$constraints$l) != J + n + d +aux_dim) {
+            stop("data_in$constraints$l must have dimension ",
+                 J + d + n + aux_dim)
+        }
+        if(nrow(data_in$constraints$A) != length(data_in$constraints$l)) {
+            stop("The number of rows in data_in$constraints$A must be ",
+                 "the same as the dimension of data_in$constraints$l")
+        }
 
-    out$theta <- if(length(out$theta) == 1) out$theta[[1]] else out$theta
+        if(ncol(data_in$constraints$A) != n + aux_dim) {
+            stop("The number of columns in data_in$constraints$A must be ",
+                 n + aux_dim)
+        }
+    }
 
-    out$lambda <- lambda
-    return(out)
+    # hyerparameters are feasible
+    if(lambda < 0) {
+        stop("lambda must be >= 0")
+    }
+    if(lowlim > uplim) {
+        stop("Lower threshold must be lower than upper threshold")
+    }
+    if(lowlim > 1/max(nj)) {
+        stop("Lower threshold must be lower than 1 / size of largest group")
+    }
+    if(uplim < 1 / min(nj)) {
+        stop("Upper threshold must be higher than 1 / size of smallest group")
+    }
+
 }
