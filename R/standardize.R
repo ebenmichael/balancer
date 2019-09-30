@@ -92,7 +92,7 @@ standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
     # convert weights into a matrix
 
     nj <- sapply(1:J, function(j) nrow(Xz[[j]]))
-    weights <- Matrix::Matrix(0, ncol = J, nrow = n)
+    weights <- matrix(0, ncol = J, nrow = n)
 
     if(verbose) message("Reordering weights...")
     cumsumnj <- cumsum(c(1, nj))

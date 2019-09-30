@@ -4,8 +4,10 @@ context("Testing that standardization runs")
 n <- 2500
 d <- 10
 k <- 100
-X <- matrix(rnorm(n * d), nrow=n)
-Z <- sample(1:k, n, replace=T)
+X <- matrix(rnorm(n * d), nrow = n)
+# labs <- c(1, 2, 4, 5, 39, 42, 43, 58, 66, 80, 85, 98, 103,
+#           4750, 4810, 4820, 4890, 4910, 4920, 4960, 4980, 5000, 5010, 5020, 5040, 5100)
+Z <- sample(1:k, n, replace = T)
 target <- colMeans(X)
 
 
