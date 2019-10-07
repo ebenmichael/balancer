@@ -5,7 +5,8 @@
 \title{Re-weight groups to target population means}
 \usage{
 standardize(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
-  data_in = NULL, verbose = TRUE, return_data = TRUE)
+  scale_sample_size = T, data_in = NULL, verbose = TRUE,
+  return_data = TRUE)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -19,6 +20,8 @@ standardize(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
 \item{lowlim}{Lower limit on weights, default 0}
 
 \item{uplim}{Upper limit on weights, default 1}
+
+\item{scale_sample_size}{Whether to scale the dispersion penalty by the sample size of each group, default T}
 
 \item{data_in}{Optional list containing pre-computed objective matrix/vector and constraints (without regularization term)}
 

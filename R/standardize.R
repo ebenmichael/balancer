@@ -9,6 +9,7 @@
 #' @param lambda Regularization hyper parameter, default 0
 #' @param lowlim Lower limit on weights, default 0
 #' @param uplim Upper limit on weights, default 1
+#' @param scale_sample_size Whether to scale the dispersion penalty by the sample size of each group, default T
 #' @param data_in Optional list containing pre-computed objective matrix/vector and constraints (without regularization term)
 #' @param verbose Whether to show messages, default T
 #' @param return_data Whether to return the objective matrix and vector and constraints, default T
@@ -21,7 +22,8 @@
 #'                  \item{constraints }{A, l , u}
 #'}}}
 #' @export
-standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1, 
+standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
+                        scale_sample_size = T,
                         data_in = NULL, verbose = TRUE, return_data = TRUE) {
 
     # convert X to a matrix
@@ -65,7 +67,7 @@ standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
     } else {
         P <- data_in$P
     }
-    I0 <- Matrix::bdiag(Matrix::Diagonal(nrow(X)), Matrix::Diagonal(aux_dim, 0))
+    I0 <- create_I0_matrix(Xz, scale_sample_size, n, aux_dim)
     P <- P + lambda * I0
 
     if(verbose) message("Creating constraint matrix...")
@@ -112,6 +114,26 @@ standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
 
     return(list(weights = weights, imbalance = imbalance, data_out = data_out))
 
+}
+
+#' Create diagonal regularization matrix
+#' @param Xz list of J n x d matrices of covariates split by group
+#' @param scale_sample_size Whether to scale the dispersion penalty by the sample size of each group, default T
+#' @param n Total number of units
+#' @param aux_dim Dimension of auxiliary weights
+create_I0_matrix <- function(Xz, scale_sample_size, n, aux_dim) {
+
+    if(scale_sample_size) {
+        # diagonal matrix n_j / n for each group j
+        subdiags <- lapply(Xz,
+                        function(x) Matrix::Diagonal(nrow(x), nrow(x) / n))
+        I0 <- Matrix::bdiag(subdiags)
+    } else {
+        # all diagonal entries are 1
+        I0 <- Matrix::Diagonal(nrow(X))
+    }
+    I0 <- Matrix::bdiag(I0, Matrix::Diagonal(aux_dim, 0))
+    return(I0)
 }
 
 #' Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x
