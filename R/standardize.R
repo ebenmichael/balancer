@@ -126,7 +126,7 @@ create_I0_matrix <- function(Xz, scale_sample_size, n, aux_dim) {
     if(scale_sample_size) {
         # diagonal matrix n_j / n for each group j
         subdiags <- lapply(Xz,
-                        function(x) Matrix::Diagonal(nrow(x), nrow(x) / n))
+                        function(x) Matrix::Diagonal(nrow(x), nrow(x)))
         I0 <- Matrix::bdiag(subdiags)
     } else {
         # all diagonal entries are 1
