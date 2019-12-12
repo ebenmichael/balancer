@@ -4,7 +4,7 @@
 \alias{create_constraints}
 \title{Create the constraints for QP: l <= Ax <= u}
 \usage{
-create_constraints(Xz, target, Z, lowlim, uplim, verbose)
+create_constraints(Xz, target, Z, lowlim, uplim, exact_global, verbose)
 }
 \arguments{
 \item{Xz}{list of J n x d matrices of covariates split by group}

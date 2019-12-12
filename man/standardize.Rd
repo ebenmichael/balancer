@@ -6,7 +6,8 @@
 \usage{
 standardize(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
   scale_sample_size = T, data_in = NULL, verbose = TRUE,
-  return_data = TRUE)
+  return_data = TRUE, exact_global = T, init_uniform = F,
+  eps_abs = 1e-05, eps_rel = 1e-05, ...)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -28,6 +29,16 @@ standardize(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
 \item{verbose}{Whether to show messages, default T}
 
 \item{return_data}{Whether to return the objective matrix and vector and constraints, default T}
+
+\item{exact_global}{Whether to enforce exact balance for overall population}
+
+\item{init_uniform}{Wheter to initialize solver with uniform weights}
+
+\item{eps_abs}{Absolute error tolerance for solver}
+
+\item{eps_rel}{Relative error tolerance for solver}
+
+\item{...}{Extra arguments for osqp solver}
 }
 \value{
 \itemize{

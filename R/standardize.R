@@ -13,6 +13,11 @@
 #' @param data_in Optional list containing pre-computed objective matrix/vector and constraints (without regularization term)
 #' @param verbose Whether to show messages, default T
 #' @param return_data Whether to return the objective matrix and vector and constraints, default T
+#' @param exact_global Whether to enforce exact balance for overall population
+#' @param init_uniform Wheter to initialize solver with uniform weights
+#' @param eps_abs Absolute error tolerance for solver
+#' @param eps_rel Relative error tolerance for solver
+#' @param ... Extra arguments for osqp solver
 #'
 #' @return \itemize{
 #'          \item{weights }{Estimated primal weights as an n x J matrix}
@@ -24,7 +29,9 @@
 #' @export
 standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
                         scale_sample_size = T,
-                        data_in = NULL, verbose = TRUE, return_data = TRUE) {
+                        data_in = NULL, verbose = TRUE, return_data = TRUE,
+                        exact_global = T, init_uniform = F,
+                        eps_abs = 1e-5, eps_rel = 1e-5, ...) {
 
     # convert X to a matrix
     X <- as.matrix(X)
@@ -72,7 +79,8 @@ standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
 
     if(verbose) message("Creating constraint matrix...")
     if(is.null(data_in$constraints)) {
-        constraints <- create_constraints(Xz, target, Z, lowlim, uplim, verbose)
+        constraints <- create_constraints(Xz, target, Z, lowlim, 
+                                          uplim, exact_global, verbose)
     } else {
         constraints <- data_in$constraints
         constraints$l[(J + 1): (J + n)] <- lowlim
@@ -87,9 +95,26 @@ standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
         settings <- osqp::osqpSettings(verbose = FALSE, eps_abs = 1e-6,
                                    eps_rel = 1e-6, max_iter = 5000)
     }
-    solution <- osqp::solve_osqp(P, q, constraints$A,
-                                 constraints$l, constraints$u, pars = settings)
 
+    settings <- do.call(osqp::osqpSettings, 
+                        c(list(verbose = verbose, 
+                               eps_rel = eps_rel,
+                               eps_abs = eps_abs), 
+                        list(...)))
+
+    if(init_uniform) {
+        if(verbose) message("Initializing with uniform weights")
+        # initialize with uniform weights
+        unifw <- get_uniform_weights(Xz)
+        obj <- osqp::osqp(P, q, constraints$A,
+                            constraints$l, constraints$u, pars = settings)
+        obj$WarmStart(x = unifw)
+        solution <- obj$Solve()
+    } else {
+        solution <- osqp::solve_osqp(P, q, constraints$A,
+                                     constraints$l, constraints$u,
+                                     pars = settings)
+    }
 
     # convert weights into a matrix
 
@@ -159,6 +184,20 @@ create_P_matrix <- function(n, aux_dim) {
     return(Matrix::Diagonal(n + aux_dim))
 }
 
+#' Get a set of uniform weights for initialization
+#' @param Xz list of J n x d matrices of covariates split by group
+#' 
+get_uniform_weights <- function(Xz) {
+
+    # uniform weights for each group
+    uniw <- do.call(c, lapply(Xz, function(x) rep(1 / nrow(x), nrow(x))))
+
+    # transformed auxiliary uniform weights
+    sqrtP <- Matrix::bdiag(lapply(Xz, t))
+    aux_uniw <- as.numeric(sqrtP %*% uniw)
+    return(c(uniw, aux_uniw))
+}
+
 #' Create the constraints for QP: l <= Ax <= u
 #' @param Xz list of J n x d matrices of covariates split by group
 #' @param target Vector of population means to re-weight to
@@ -167,7 +206,7 @@ create_P_matrix <- function(n, aux_dim) {
 #' @param uplim Upper limit on weights
 #'
 #' @return A, l, and u
-create_constraints <- function(Xz, target, Z, lowlim, uplim, verbose) {
+create_constraints <- function(Xz, target, Z, lowlim, uplim, exact_global, verbose) {
 
     J <- length(Xz)
     nj <- sapply(1:J, function(j) nrow(Xz[[j]]))
@@ -193,14 +232,22 @@ create_constraints <- function(Xz, target, Z, lowlim, uplim, verbose) {
     l2 <- rep(lowlim, n)
     u2 <- rep(uplim, n)
 
-    if(verbose) message("\tx Mantain overall population mean")
-    # Constrain the overall mean to be equal to the target
-    A3 <- do.call(cbind, lapply(Xzt, function(x) x * ncol(x)))
+    if(exact_global) {
+        if(verbose) message("\tx Mantain overall population mean")
+        # Constrain the overall mean to be equal to the target
+        A3 <- do.call(cbind, lapply(Xzt, function(x) x * ncol(x)))
 
-    A3 <- Matrix::cbind2(A3, Matrix::Matrix(0, nrow = nrow(A3), ncol = aux_dim))
+        A3 <- Matrix::cbind2(A3, Matrix::Matrix(0, nrow = nrow(A3), ncol = aux_dim))
 
-    l3 <- n * target
-    u3 <- n * target
+        l3 <- n * target
+        u3 <- n * target
+    } else {
+        if(verbose) message("\t(SKIPPING) Mantain overall population mean")
+        # skip this constraint and just make empty
+        A3 <- matrix(, nrow = 0, ncol = ncol(A2))
+        l3 <- numeric(0)
+        u3 <- numeric(0)
+    }
 
     if(verbose) message("\tx Fit weights to data")
     # constrain the auxiliary weights to be sqrt(P)'gamma
