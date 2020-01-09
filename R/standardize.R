@@ -141,6 +141,7 @@ standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
 
 }
 
+
 #' Create diagonal regularization matrix
 #' @param Xz list of J n x d matrices of covariates split by group
 #' @param scale_sample_size Whether to scale the dispersion penalty by the sample size of each group, default T
@@ -181,7 +182,7 @@ create_q_vector <- function(Xz, target, aux_dim) {
 #'
 #' @return P matrix
 create_P_matrix <- function(n, aux_dim) {
-    return(Matrix::Diagonal(n + aux_dim))
+    return(Matrix::bdiag(Matrix::Diagonal(n, 0), Matrix::Diagonal(aux_dim, 1)))
 }
 
 #' Get a set of uniform weights for initialization
