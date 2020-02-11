@@ -14,6 +14,7 @@
 #' @param data_in Optional list containing pre-computed objective matrix/vector and constraints (without regularization term)
 #' @param verbose Whether to show messages, default T
 #' @param return_data Whether to return the objective matrix and vector and constraints, default T
+#' @param constrain_trt_prop Whether to constrain the treated proportions within each site to be equal to the observed proportion
 #' @param exact_global Whether to enforce exact balance for overall population
 #' @param init_uniform Wheter to initialize solver with uniform weights
 #' @param eps_abs Absolute error tolerance for solver
@@ -32,7 +33,8 @@ standardize_rct <- function(X, trt, target, Z,
                             lambda = 0, lowlim = 0, uplim = 1,
                             scale_sample_size = T,
                             data_in = NULL, verbose = TRUE, return_data = TRUE,
-                            exact_global = T, init_uniform = F,
+                            constrain_trt_prop = TRUE,
+                            exact_global = F, init_uniform = F,
                             eps_abs = 1e-5, eps_rel = 1e-5, ...) {
 
     # convert X to a matrix
@@ -82,7 +84,8 @@ standardize_rct <- function(X, trt, target, Z,
     if(verbose) message("Creating constraint matrix...")
     if(is.null(data_in$constraints)) {
         constraints <- create_constraints_rct(Xz, trt, target, Z, lowlim,
-                                              uplim, exact_global, verbose)
+                                              uplim, exact_global,
+                                              constrain_trt_prop, verbose)
     } else {
         constraints <- data_in$constraints
         constraints$l[(2 * J + 1): (2 * J + n)] <- lowlim
@@ -153,29 +156,35 @@ standardize_rct <- function(X, trt, target, Z,
 #'
 #' @return A, l, and u
 create_constraints_rct <- function(Xz, trt, target, Z, 
-                                   lowlim, uplim, exact_global, verbose) {
+                                   lowlim, uplim, exact_global,
+                                   constrain_trt_prop, verbose) {
     J <- length(Xz)
     d <- ncol(Xz[[1]])
     # dimension of auxiliary weights
     aux_dim <- J * d
 
-    # split treatment vector
-    trtz <- split(trt, Z)
-    if(verbose) message("\tx Keep treatment proportion unchanged")
-    A0 <- Matrix::t(Matrix::bdiag(trtz))
-    A0 <- Matrix::cbind2(A0, Matrix::Matrix(0, nrow=nrow(A0), ncol = aux_dim))
-    # treated proportions in each group
-    p1z <- sapply(trtz, mean)
-    l0 <- p1z
-    u0 <- p1z
-
-    # compute constraints then add on treatment proportion constraint 
-    consts <- create_constraints(Xz, target, Z, lowlim, uplim, 
+    # compute constraints then add on treatment proportion constraint
+    consts <- create_constraints(Xz, target, Z, lowlim, uplim,
                                  exact_global, verbose)
 
-    consts$A <- rbind(A0, consts$A)
-    consts$l <- c(l0, consts$l)
-    consts$u <- c(u0, consts$u)
+
+    if(constrain_trt_prop) {
+        # split treatment vector
+        trtz <- split(trt, Z)
+        if(verbose) message("\tx Keep treatment proportion unchanged")
+        A0 <- Matrix::t(Matrix::bdiag(trtz))
+        A0 <- Matrix::cbind2(A0, 
+                            Matrix::Matrix(0, nrow=nrow(A0), ncol = aux_dim))
+        # treated proportions in each group
+        p1z <- sapply(trtz, mean)
+        l0 <- p1z
+        u0 <- p1z
+        consts$A <- rbind(A0, consts$A)
+        consts$l <- c(l0, consts$l)
+        consts$u <- c(u0, consts$u)
+    }
+
+
     return(consts)
 }
 
