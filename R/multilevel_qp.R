@@ -171,9 +171,9 @@ multilevel_qp <- function(X, trt, Z, lambda = 0, lowlim = 0, uplim = 1,
 create_I0_matrix <- function(Xz, scale_sample_size, n, aux_dim) {
 
     if(scale_sample_size) {
-        # diagonal matrix n_j / n for each group j
+        # diagonal matrix 1 / n_j for each group j
         subdiags <- lapply(Xz,
-                        function(x) Matrix::Diagonal(nrow(x), nrow(x)))
+                        function(x) Matrix::Diagonal(1 / nrow(x), nrow(x)))
         I0 <- Matrix::bdiag(subdiags)
     } else {
         # all diagonal entries are 1
