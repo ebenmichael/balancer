@@ -156,7 +156,7 @@ create_I0_matrix <- function(Xz, scale_sample_size, n, aux_dim) {
         I0 <- Matrix::bdiag(subdiags)
     } else {
         # all diagonal entries are 1
-        I0 <- Matrix::Diagonal(nrow(X))
+        I0 <- Matrix::Diagonal(n)
     }
     I0 <- Matrix::bdiag(I0, Matrix::Diagonal(aux_dim, 0))
     return(I0)
