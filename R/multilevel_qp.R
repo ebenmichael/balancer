@@ -119,17 +119,17 @@ multilevel_qp <- function(X, trt, Z, lambda = 0, lowlim = 0, uplim = 1,
     if(verbose) message("Creating quadratic term matrix...")
     P <- create_P_matrix_multi(n, aux_dim)
 
-    I0 <- create_I0_matrix(Xz, scale_sample_size, n, aux_dim)
+    I0 <- create_I0_matrix_multi(Xz, scale_sample_size, n, aux_dim)
     P <- P + lambda * I0
 
     if(verbose) message("Creating constraint matrix...")
     constraints <- create_constraints_multi(Xz, trtz, lowlim, 
                                             uplim, exact_global, verbose)
 
-    settings <- do.call(osqp::osqpSettings, 
-                        c(list(verbose = verbose, 
+    settings <- do.call(osqp::osqpSettings,
+                        c(list(verbose = verbose,
                                eps_rel = eps_rel,
-                               eps_abs = eps_abs), 
+                               eps_abs = eps_abs),
                         list(...)))
 
     solution <- osqp::solve_osqp(P, q, constraints$A,
@@ -138,27 +138,29 @@ multilevel_qp <- function(X, trt, Z, lambda = 0, lowlim = 0, uplim = 1,
 
     # convert weights into a matrix
     nj <- sapply(1:J, function(j) nrow(Xz[[j]]))
-    weights <- matrix(0, ncol = J, nrow = n)
+    weights <- numeric(n)
 
     if(verbose) message("Reordering weights...")
     cumsumnj <- cumsum(c(1, nj))
     for(j in 1:J) {
-        weights[idxs[[j]], j] <- solution$x[cumsumnj[j]:(cumsumnj[j + 1] - 1)]
+        weights[idxs[[j]]] <- solution$x[cumsumnj[j]:(cumsumnj[j + 1] - 1)]
     }
 
     # compute imbalance matrix
-    target <- vapply(1:J, 
-                     function(j) colMeans(Xz[[j]][trtz[[j]] == 1, , drop = F]),
-                     numeric(ncol(X)))
-    imbalance <- as.matrix(target - t(X) %*% weights)
+    n1j <- sapply(trtz, sum)
+    imbalance <- vapply(1:J,
+                        function(j) {
+                            target <- colMeans(Xz[[j]][trtz[[j]] == 1, , drop = F])
+                            target - t(X[idxs[[j]], ]) %*% weights[idxs[[j]]] / n1j[[j]]
+                        },
+                        numeric(ncol(X)))
 
     # compute overall imbalance
-    n1j <- sapply(trtz, sum)
     global_imbal <- colSums(t(imbalance) * n1j) / sum(n1j)
-    global_weights <- colSums(t(weights) * n1j) / sum(n1j)
+    global_imbal <-  colMeans(X[trt == 1,]) - t(X) %*% weights / sum(n1j)
     return(list(weights = weights,
                 imbalance = imbalance,
-                global_weights = global_weights,
+                weights = weights,
                 global_imbalance = global_imbal))
 
 }
@@ -168,16 +170,16 @@ multilevel_qp <- function(X, trt, Z, lambda = 0, lowlim = 0, uplim = 1,
 #' @param scale_sample_size Whether to scale the dispersion penalty by the sample size of each group, default T
 #' @param n Total number of units
 #' @param aux_dim Dimension of auxiliary weights
-create_I0_matrix <- function(Xz, scale_sample_size, n, aux_dim) {
+create_I0_matrix_multi <- function(Xz, scale_sample_size, n, aux_dim) {
 
     if(scale_sample_size) {
-        # diagonal matrix n_j / n for each group j
+        # diagonal matrix 1 / n_j for each group j
         subdiags <- lapply(Xz,
-                        function(x) Matrix::Diagonal(nrow(x), nrow(x)))
+                        function(x) Matrix::Diagonal(nrow(x), 1 / nrow(x)))
         I0 <- Matrix::bdiag(subdiags)
     } else {
         # all diagonal entries are 1
-        I0 <- Matrix::Diagonal(nrow(X))
+        I0 <- Matrix::Diagonal(n)
     }
     I0 <- Matrix::bdiag(I0, Matrix::Diagonal(aux_dim, 0))
     return(I0)
@@ -197,7 +199,7 @@ create_q_vector_multi <- function(Xz, trtz) {
     # concenate treated averages for each group
     q <- - do.call(c,
                  lapply(1:J,
-                    function(j) colMeans(Xz[[j]][trtz[[j]] == 1, ,drop = F])
+                    function(j) colSums(Xz[[j]][trtz[[j]] == 1, ,drop = F])
                        )
                 )
 
@@ -217,19 +219,19 @@ create_P_matrix_multi <- function(n, aux_dim) {
                          Matrix::Diagonal(aux_dim)))
 }
 
-#' Get a set of uniform weights for initialization
-#' @param Xz list of J n x d matrices of covariates split by group
-#' 
-get_uniform_weights <- function(Xz) {
+# #' Get a set of uniform weights for initialization
+# #' @param Xz list of J n x d matrices of covariates split by group
+# #' 
+# get_uniform_weights <- function(Xz) {
 
-    # uniform weights for each group
-    uniw <- do.call(c, lapply(Xz, function(x) rep(1 / nrow(x), nrow(x))))
+#     # uniform weights for each group
+#     uniw <- do.call(c, lapply(Xz, function(x) rep(1 / nrow(x), nrow(x))))
 
-    # transformed auxiliary uniform weights
-    sqrtP <- Matrix::bdiag(lapply(Xz, t))
-    aux_uniw <- as.numeric(sqrtP %*% uniw)
-    return(c(uniw, aux_uniw))
-}
+#     # transformed auxiliary uniform weights
+#     sqrtP <- Matrix::bdiag(lapply(Xz, t))
+#     aux_uniw <- as.numeric(sqrtP %*% uniw)
+#     return(c(uniw, aux_uniw))
+# }
 
 #' Create the constraints for QP: l <= Ax <= u
 #' @param Xz list of J n x d matrices of covariates split by group
@@ -241,8 +243,9 @@ get_uniform_weights <- function(Xz) {
 create_constraints_multi <- function(Xz, trtz, lowlim, uplim, exact_global, verbose) {
 
     J <- length(Xz)
-    # nj <- sapply(1:J, function(j) nrow(Xz[[j]]))
+    n0j <- sapply(1:J, function(j) nrow(Xz[[j]]))
     n1j <- sapply(trtz, sum)
+
     d <- ncol(Xz[[1]])
     n <- Reduce(`+`, lapply(Xz, nrow))
     Xzt <- lapply(Xz, t)
@@ -251,31 +254,31 @@ create_constraints_multi <- function(Xz, trtz, lowlim, uplim, exact_global, verb
     aux_dim <- J * d
 
     if(verbose) message("\tx Sum to one constraint")
-    # sum-to-one constraint for each group
+    # sum-to-n1j constraint for each group
     A1 <- Matrix::t(Matrix::bdiag(lapply(Xz, function(x) rep(1, nrow(x)))))
     A1 <- Matrix::cbind2(A1, Matrix::Matrix(0, nrow=nrow(A1), ncol = aux_dim))
-    l1 <- rep(1, J)
-    u1 <- rep(1, J)
-
+    l1 <- n1j
+    u1 <- n1j
     if(verbose) message("\tx Upper and lower bounds")
     # upper and lower bounds
     A2 <- Matrix::Diagonal(n)
     A2 <- Matrix::cbind2(A2, Matrix::Matrix(0, nrow = nrow(A2), ncol = aux_dim))
-    l2 <- rep(lowlim, n)
-    u2 <- rep(uplim, n)
+    l2 <- Reduce(c, sapply(1:J, function(j) rep(lowlim * n1j[[j]], n0j[j])))
+    u2 <- Reduce(c, sapply(1:J, function(j) rep(uplim * n1j[[j]], n0j[j])))
 
     if(exact_global) {
-        if(verbose) message("\tx Mantain overall population mean")
+        if(verbose) message("\tx Enforce exact global balance")
         # Constrain the overall mean to be equal to the target
-        A3 <- do.call(cbind, lapply(1:J, function(j) Xzt[[j]] * n1j[j]))
+        A3 <- do.call(cbind, lapply(1:J, function(j) Xzt[[j]]))
         A3 <- Matrix::cbind2(A3, Matrix::Matrix(0, nrow = nrow(A3), ncol = aux_dim))
         trt_sum <- Reduce(`+`,
             lapply(1:J,
                 function(j) colSums(Xz[[j]][trtz[[j]] == 1, , drop = F])))
         l3 <- trt_sum
         u3 <- trt_sum
+        
     } else {
-        if(verbose) message("\t(SKIPPING) Mantain overall population mean")
+        if(verbose) message("\t(SKIPPING) Enforce exact global balance")
         # skip this constraint and just make empty
         A3 <- matrix(, nrow = 0, ncol = ncol(A2))
         l3 <- numeric(0)
