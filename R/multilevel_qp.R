@@ -157,7 +157,7 @@ multilevel_qp <- function(X, trt, Z, lambda = 0, lowlim = 0, uplim = 1,
 
     # compute overall imbalance
     global_imbal <- colSums(t(imbalance) * n1j) / sum(n1j)
-    global_imbal <-  colMeans(X[trt == 1,]) - t(X) %*% weights / sum(n1j)
+    global_imbal <-  colMeans(X[trt == 1,, drop = F]) - t(X) %*% weights / sum(n1j)
     return(list(weights = weights,
                 imbalance = imbalance,
                 weights = weights,
