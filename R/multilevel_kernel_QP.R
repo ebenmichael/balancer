@@ -4,35 +4,29 @@
 
 #' Re-weight control sub-groups to treated sub-group with kernel imbalance
 #' @param X n x d matrix of covariates
-#' @param target Vector of population means to re-weight to
+#' @param trt Vector of treatment assignments
 #' @param Z Vector of group indicators with J levels
+#' @param kernel Kernel to compute balance measure with, default is the inner product
 #' @param lambda Regularization hyper parameter, default 0
 #' @param lowlim Lower limit on weights, default 0
 #' @param uplim Upper limit on weights, default 1
 #' @param scale_sample_size Whether to scale the dispersion penalty by the sample size of each group, default T
-#' @param data_in Optional list containing pre-computed objective matrix/vector and constraints (without regularization term)
-#' @param verbose Whether to show messages, default T
-#' @param return_data Whether to return the objective matrix and vector and constraints, default T
 #' @param exact_global Whether to enforce exact balance for overall population
-#' @param init_uniform Wheter to initialize solver with uniform weights
+#' @param verbose Whether to show messages, default T
 #' @param eps_abs Absolute error tolerance for solver
 #' @param eps_rel Relative error tolerance for solver
 #' @param ... Extra arguments for osqp solver
 #'
 #' @return \itemize{
-#'          \item{weights }{Estimated primal weights as an n x J matrix}
+#'          \item{weights }{Estimated weights as a length n vector}
 #'          \item{imbalance }{Imbalance in covariates as a d X J matrix}
-#'          \item{data_out }{List containing elements of QP min 0.5 x'Px + q'x st l <= Ax <= u \itemize{
-#'                  \item{P, q}{}
-#'                  \item{constraints }{A, l , u}
-#'}}}
+#'          \item{global_imbalance}{Overall imbalance in covariates, as a length d vector }}
 #' @export
 multilevel_kernel_qp <- function(X, trt, Z,
                                 kernel = kernlab::vanilladot(),
                                 lambda = 0, lowlim = 0, uplim = 1,
-                                scale_sample_size = T,
-                                verbose = TRUE, return_data = TRUE,
-                                exact_global = T, init_uniform = F,
+                                scale_sample_size = T, exact_global = T,
+                                verbose = TRUE,
                                 eps_abs = 1e-5, eps_rel = 1e-5, ...) {
 
     # convert X to a matrix

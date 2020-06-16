@@ -5,12 +5,13 @@
 \title{Re-weight control sub-groups to treated sub-group means}
 \usage{
 multilevel_qp(X, trt, Z, lambda = 0, lowlim = 0, uplim = 1,
-  scale_sample_size = T, verbose = TRUE, return_data = TRUE,
-  exact_global = T, init_uniform = F, eps_abs = 1e-05,
-  eps_rel = 1e-05, ...)
+  scale_sample_size = T, exact_global = T, verbose = TRUE,
+  eps_abs = 1e-05, eps_rel = 1e-05, ...)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
+
+\item{trt}{Vector of treatment assignments}
 
 \item{Z}{Vector of group indicators with J levels}
 
@@ -22,32 +23,21 @@ multilevel_qp(X, trt, Z, lambda = 0, lowlim = 0, uplim = 1,
 
 \item{scale_sample_size}{Whether to scale the dispersion penalty by the sample size of each group, default T}
 
-\item{verbose}{Whether to show messages, default T}
-
-\item{return_data}{Whether to return the objective matrix and vector and constraints, default T}
-
 \item{exact_global}{Whether to enforce exact balance for overall population}
 
-\item{init_uniform}{Wheter to initialize solver with uniform weights}
+\item{verbose}{Whether to show messages, default T}
 
 \item{eps_abs}{Absolute error tolerance for solver}
 
 \item{eps_rel}{Relative error tolerance for solver}
 
 \item{...}{Extra arguments for osqp solver}
-
-\item{target}{Vector of population means to re-weight to}
-
-\item{data_in}{Optional list containing pre-computed objective matrix/vector and constraints (without regularization term)}
 }
 \value{
 \itemize{
-         \item{weights }{Estimated primal weights as an n x J matrix}
+         \item{weights }{Estimated weights as a length n vector}
          \item{imbalance }{Imbalance in covariates as a d X J matrix}
-         \item{data_out }{List containing elements of QP min 0.5 x'Px + q'x st l <= Ax <= u \itemize{
-                 \item{P, q}{}
-                 \item{constraints }{A, l , u}
-}}}
+         \item{global_imbalance}{Overall imbalance in covariates, as a length d vector }}
 }
 \description{
 Re-weight control sub-groups to treated sub-group means
