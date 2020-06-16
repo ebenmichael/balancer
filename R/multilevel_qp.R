@@ -160,7 +160,6 @@ multilevel_qp <- function(X, trt, Z, lambda = 0, lowlim = 0, uplim = 1,
     global_imbal <-  colMeans(X[trt == 1,, drop = F]) - t(X) %*% weights / sum(n1j)
     return(list(weights = weights,
                 imbalance = imbalance,
-                weights = weights,
                 global_imbalance = global_imbal))
 
 }

@@ -64,6 +64,7 @@ multilevel_kernel_qp <- function(X, trt, Z,
     if(verbose) message("Creating linear term vector...")
     q <- create_q_vector_multi_kern(kern_mats, trtz)
 
+
     if(verbose) message("Creating quadratic term matrix...")
     P <- create_P_matrix_multi_kern(kern_mats)
 
@@ -87,37 +88,29 @@ multilevel_kernel_qp <- function(X, trt, Z,
 
     # convert weights into a matrix
     nj <- sapply(1:J, function(j) nrow(Xz[[j]]))
-    weights <- matrix(0, ncol = J, nrow = n)
-    imbalance <- numeric(J)
+    weights <- numeric(n)
+
     if(verbose) message("Reordering weights...")
     cumsumnj <- cumsum(c(1, nj))
     for(j in 1:J) {
-        weightsj <- solution$x[cumsumnj[j]:(cumsumnj[j + 1] - 1)]
-        weights[idxs[[j]], j] <- weightsj
-        # compute imbalance vector
-        imbal1 <- t(trtz[[j]]) %*% kern_mats[[j]] %*% trtz[[j]]
-        imbal2 <- t(trtz[[j]]) %*% kern_mats[[j]] %*% weightsj
-        imbal3 <- t(weightsj) %*% kern_mats[[j]] %*% weightsj
-        n1 <- sum(trtz[[j]])
-        imbalance[j] <- 0.5 * imbal1 / n1 ^ 2 - imbal2 / n1 + 0.5 * imbal3
+        weights[idxs[[j]]] <- solution$x[cumsumnj[j]:(cumsumnj[j + 1] - 1)]
     }
 
-    
-    # target <- vapply(1:J, 
-    #                  function(j) colMeans(Xz[[j]][trtz[[j]] == 1, , drop = F]),
-    #                  numeric(ncol(X)))
-    # imbalance <- as.matrix(target - t(X) %*% weights)
+    # compute imbalance matrix
+    n1j <- sapply(trtz, sum)
+    imbalance <- vapply(1:J,
+                        function(j) {
+                            target <- colMeans(Xz[[j]][trtz[[j]] == 1, , drop = F])
+                            target - t(X[idxs[[j]], ]) %*% weights[idxs[[j]]] / n1j[[j]]
+                        },
+                        numeric(ncol(X)))
 
     # compute overall imbalance
-    n1j <- sapply(trtz, sum)
-    # global_imbal <- colSums(t(imbalance) * n1j) / sum(n1j)
-    global_weights <- colSums(t(weights) * n1j) / sum(n1j)
+    global_imbal <- colSums(t(imbalance) * n1j) / sum(n1j)
+    global_imbal <-  colMeans(X[trt == 1,, drop = F]) - t(X) %*% weights / sum(n1j)
     return(list(weights = weights,
                 imbalance = imbalance,
-                global_weights = global_weights
-                # global_imbalance = global_imbal
-                ))
-
+                global_imbalance = global_imbal))
 }
 
 
@@ -145,11 +138,12 @@ create_scaled_I_matrix <- function(Xz, scale_sample_size) {
     if(scale_sample_size) {
         # diagonal matrix n_j / n for each group j
         subdiags <- lapply(Xz,
-                        function(x) Matrix::Diagonal(nrow(x), nrow(x)))
+                        function(x) Matrix::Diagonal(nrow(x), 1 / nrow(x)))
         I <- Matrix::bdiag(subdiags)
     } else {
         # all diagonal entries are 1
-        I <- Matrix::Diagonal(nrow(X))
+        n <- lapply(Xz, nrow) %>% Reduce(`+`, .)
+        I <- Matrix::Diagonal(n)
     }
     return(I)
 }
@@ -166,7 +160,7 @@ create_q_vector_multi_kern <- function(kern_mats, trtz) {
     # concenate treated averages for each group
     q <- - do.call(c,
                  lapply(1:J,
-                    function(j) colMeans(kern_mats[[j]][trtz[[j]] == 1, , drop = F])
+                    function(j) colSums(kern_mats[[j]][trtz[[j]] == 1, , drop = F])
                        )
                 )
     # q <- Matrix::sparseVector(q, 1:n,
@@ -201,6 +195,7 @@ create_constraints_multi_kern <- function(Xz, trtz, lowlim, uplim,
 
     J <- length(Xz)
     # nj <- sapply(1:J, function(j) nrow(Xz[[j]]))
+    n0j <- sapply(1:J, function(j) nrow(Xz[[j]]))
     n1j <- sapply(trtz, sum)
     d <- ncol(Xz[[1]])
     n <- Reduce(`+`, lapply(Xz, nrow))
@@ -208,39 +203,69 @@ create_constraints_multi_kern <- function(Xz, trtz, lowlim, uplim,
 
     # dimension of auxiliary weights
     aux_dim <- n
+  if(verbose) message("\tx Sum to one constraint")
+  # sum-to-n1j constraint for each group
+  A1 <- Matrix::t(Matrix::bdiag(lapply(Xz, function(x) rep(1, nrow(x)))))
+  # A1 <- Matrix::cbind2(A1, Matrix::Matrix(0, nrow=nrow(A1), ncol = aux_dim))
+  l1 <- n1j
+  u1 <- n1j
+  if(verbose) message("\tx Upper and lower bounds")
+  # upper and lower bounds
+  A2 <- Matrix::Diagonal(n)
+  # A2 <- Matrix::cbind2(A2, Matrix::Matrix(0, nrow = nrow(A2), ncol = aux_dim))
+  l2 <- Reduce(c, sapply(1:J, function(j) rep(lowlim * n1j[[j]], n0j[j])))
+  u2 <- Reduce(c, sapply(1:J, function(j) rep(uplim * n1j[[j]], n0j[j])))
 
-    if(verbose) message("\tx Sum to one constraint")
-    # sum-to-one constraint for each group
-    A1 <- Matrix::t(Matrix::bdiag(lapply(Xz, function(x) rep(1, nrow(x)))))
-    # A1 <- Matrix::cbind2(A1, Matrix::Matrix(0, nrow=nrow(A1), ncol = aux_dim))
-    l1 <- rep(1, J)
-    u1 <- rep(1, J)
-
-    if(verbose) message("\tx Upper and lower bounds")
-    # upper and lower bounds
-    A2 <- Matrix::Diagonal(n)
-    # A2 <- Matrix::cbind2(A2, Matrix::Matrix(0, nrow = nrow(A2), ncol = aux_dim))
-    l2 <- rep(lowlim, n)
-    u2 <- rep(uplim, n)
-
-    # exact_global <- FALSE
-    if(exact_global) {
-        if(verbose) message("\tx Mantain overall population mean")
-        # Constrain the overall mean to be equal to the target
-        A3 <- do.call(cbind, lapply(1:J, function(j) Xzt[[j]] * n1j[j]))
-        # A3 <- Matrix::cbind2(A3, Matrix::Matrix(0, nrow = nrow(A3), ncol = aux_dim))
-        trt_sum <- Reduce(`+`,
-            lapply(1:J,
-                function(j) colSums(Xz[[j]][trtz[[j]] == 1, , drop = F])))
-        l3 <- trt_sum
-        u3 <- trt_sum
-    } else {
-        if(verbose) message("\t(SKIPPING) Mantain overall population mean")
+  if(exact_global) {
+      if(verbose) message("\tx Enforce exact global balance")
+      # Constrain the overall mean to be equal to the target
+      A3 <- do.call(cbind, lapply(1:J, function(j) Xzt[[j]]))
+      # A3 <- Matrix::cbind2(A3, Matrix::Matrix(0, nrow = nrow(A3), ncol = aux_dim))
+      trt_sum <- Reduce(`+`,
+          lapply(1:J,
+              function(j) colSums(Xz[[j]][trtz[[j]] == 1, , drop = F])))
+      l3 <- trt_sum
+      u3 <- trt_sum
+      
+  } else {
+        if(verbose) message("\t(SKIPPING) Enforce exact global balance")
         # skip this constraint and just make empty
         A3 <- matrix(, nrow = 0, ncol = ncol(A2))
         l3 <- numeric(0)
         u3 <- numeric(0)
     }
+    # if(verbose) message("\tx Sum to one constraint")
+    # # sum-to-one constraint for each group
+    # A1 <- Matrix::t(Matrix::bdiag(lapply(Xz, function(x) rep(1, nrow(x)))))
+    # # A1 <- Matrix::cbind2(A1, Matrix::Matrix(0, nrow=nrow(A1), ncol = aux_dim))
+    # l1 <- rep(1, J)
+    # u1 <- rep(1, J)
+
+    # if(verbose) message("\tx Upper and lower bounds")
+    # # upper and lower bounds
+    # A2 <- Matrix::Diagonal(n)
+    # # A2 <- Matrix::cbind2(A2, Matrix::Matrix(0, nrow = nrow(A2), ncol = aux_dim))
+    # l2 <- rep(lowlim, n)
+    # u2 <- rep(uplim, n)
+
+    # # exact_global <- FALSE
+    # if(exact_global) {
+    #     if(verbose) message("\tx Mantain overall population mean")
+    #     # Constrain the overall mean to be equal to the target
+    #     A3 <- do.call(cbind, lapply(1:J, function(j) Xzt[[j]] * n1j[j]))
+    #     # A3 <- Matrix::cbind2(A3, Matrix::Matrix(0, nrow = nrow(A3), ncol = aux_dim))
+    #     trt_sum <- Reduce(`+`,
+    #         lapply(1:J,
+    #             function(j) colSums(Xz[[j]][trtz[[j]] == 1, , drop = F])))
+    #     l3 <- trt_sum
+    #     u3 <- trt_sum
+    # } else {
+    #     if(verbose) message("\t(SKIPPING) Mantain overall population mean")
+    #     # skip this constraint and just make empty
+    #     A3 <- matrix(, nrow = 0, ncol = ncol(A2))
+    #     l3 <- numeric(0)
+    #     u3 <- numeric(0)
+    # }
 
     # if(verbose) message("\tx Fit weights to data")
     # # constrain the auxiliary weights to be sqrt(P)'gamma
