@@ -2,7 +2,7 @@
 ## Multilevel balancing weights
 ################################################################################
 
-#' Re-weight groups to target population means
+#' Re-weight control sub-groups to treated sub-group with kernel imbalance
 #' @param X n x d matrix of covariates
 #' @param target Vector of population means to re-weight to
 #' @param Z Vector of group indicators with J levels

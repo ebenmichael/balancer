@@ -2,62 +2,7 @@
 ## Multilevel balancing weights
 ################################################################################
 
-#' Estimate ATT per group and overall
-#' @param y Vector of outcomes
-#' @param trt Vector of treatment assignments
-#' @param Z Vector of group indicators with J levels
-#' @param weights Estimated primal weights as an n x J matrix
-#' 
-#' @return att Vector of ATT estimates by group
-estimate_att_multi <- function(y, trt, Z, weights) {
-
-    # treamtent means by group
-    mu1s <- split(y[trt == 1], Z[trt == 1]) %>% sapply(mean)
-
-    # re-weighted control means by group
-    mu0s <- c(y %*% weights)
-
-    atts <- mu1s - mu0s
-    n1z <- table(Z[trt == 1])
-    global_att <- sum(n1z * atts) / sum(n1z)
-
-    return(list(atts = atts,
-                global_att = global_att))
-}
-
-
-#' Estimate standard error per group
-#' @param y Vector of outcomes
-#' @param trt Vector of treatment assignments
-#' @param Z Vector of group indicators with J levels
-#' @param weights Estimated primal weights as an n x J matrix
-#' 
-#' @return att Vector of ATT estimates by group
-estimate_se_multi <- function(y, trt, Z, weights, global_weights) {
-
-    # treated SEs by group
-    se12 <- split(y[trt == 1], Z[trt == 1]) %>%
-            sapply(function(x) var(x) / length(x))
-    # re-weighted control means by group
-    weights_vec <- rowSums(weights)
-    # control SEs by group
-    se22 <- sapply(unique(Z),
-                   function(z) sum(weights_vec[Z == z] ^ 2 *
-                                (y[Z == z] -
-                                sum(y[Z == z] * weights_vec[Z == z])) ^ 2) /
-                                sum(weights_vec[Z == z]))
-
-    se_att <- sqrt(se12 + se22)
-    se_glob_12 <- var(y[trt == 1]) / sum(trt)
-    se_glob_22 <- sum(global_weights ^ 2 * 
-                      (y - sum(y * global_weights)) ^ 2) /
-                      sum(global_weights) ^ 2
-    se_global_att <- sqrt(se_glob_12 + se_glob_22)
-    return(list(se_atts = se_att,
-                se_global_att = se_global_att))
-}
-
-#' Re-weight groups to target population means
+#' Re-weight control sub-groups to treated sub-group means
 #' @param X n x d matrix of covariates
 #' @param target Vector of population means to re-weight to
 #' @param Z Vector of group indicators with J levels

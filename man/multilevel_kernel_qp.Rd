@@ -2,7 +2,7 @@
 % Please edit documentation in R/multilevel_kernel_QP.R
 \name{multilevel_kernel_qp}
 \alias{multilevel_kernel_qp}
-\title{Re-weight groups to target population means}
+\title{Re-weight control sub-groups to treated sub-group with kernel imbalance}
 \usage{
 multilevel_kernel_qp(X, trt, Z, kernel = kernlab::vanilladot(),
   lambda = 0, lowlim = 0, uplim = 1, scale_sample_size = T,
@@ -50,5 +50,5 @@ multilevel_kernel_qp(X, trt, Z, kernel = kernlab::vanilladot(),
 }}}
 }
 \description{
-Re-weight groups to target population means
+Re-weight control sub-groups to treated sub-group with kernel imbalance
 }

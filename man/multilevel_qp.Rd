@@ -2,7 +2,7 @@
 % Please edit documentation in R/multilevel_qp.R
 \name{multilevel_qp}
 \alias{multilevel_qp}
-\title{Re-weight groups to target population means}
+\title{Re-weight control sub-groups to treated sub-group means}
 \usage{
 multilevel_qp(X, trt, Z, lambda = 0, lowlim = 0, uplim = 1,
   scale_sample_size = T, verbose = TRUE, return_data = TRUE,
@@ -50,5 +50,5 @@ multilevel_qp(X, trt, Z, lambda = 0, lowlim = 0, uplim = 1,
 }}}
 }
 \description{
-Re-weight groups to target population means
+Re-weight control sub-groups to treated sub-group means
 }
