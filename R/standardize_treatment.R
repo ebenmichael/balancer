@@ -108,11 +108,11 @@ standardize_treatment <- function(X0, Xtau, target, S, Z, pscores, lambda = 0,
     settings <- osqp::osqpSettings(verbose = FALSE, eps_abs = 1e-6,
                                    eps_rel = 1e-6, max_iter = 5000)
   }
-  # settings <- do.call(osqp::osqpSettings, 
-  #                     c(list(verbose = verbose, 
-  #                            eps_rel = eps_rel,
-  #                            eps_abs = eps_abs), 
-  #                       list(...)))
+  settings <- do.call(osqp::osqpSettings,
+                      c(list(verbose = verbose,
+                             eps_rel = eps_rel,
+                             eps_abs = eps_abs),
+                        list(...)))
 
   # solve optimization problem (possibly with uniform weights)
   if(init_uniform) {
