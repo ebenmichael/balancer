@@ -91,8 +91,9 @@ standardize_treatment <- function(X0, Xtau, target, S, Z, pscores, lambda = 0,
   # construct constraint matrix
   if(verbose) message("Creating constraint matrix...")
   if(is.null(data_in$constraints)) {
-    constraints <- create_constraints(X0s, Xtaus, target, Z, lowlim, 
-                                      uplim, exact_global, verbose)
+    constraints <- create_constraints(X0s, Xtaus, target, Z, S_factor,
+                                      pro_trt_split, pro_ctr_split,
+                                      lowlim, uplim, exact_global, verbose)
   } else {
     constraints <- data_in$constraints
     constraints$l[(J + 1):(J + n)] <- lowlim
@@ -219,13 +220,16 @@ get_uniform_weights <- function(Xs) {
 #' @param Xtaus List of J n x dtau matrices of covariates split by group
 #' @param target Vector of population means to re-weight to
 #' @param Z Vector of group indicators
+#' @param S_factor Vector of site indicators
 #' @param lowlim Lower limit on weights
 #' @param uplim Upper limit on weights
 #' @param exact_global Boolean indicating whether to enforce global constraint
 #' @param verbose Boolean indicating whether to print progress
 #'
 #' @return A, l, and u
-create_constraints <- function(X0s, Xtaus, target, Z, lowlim, uplim, exact_global, verbose) {
+create_constraints <- function(X0s, Xtaus, target, Z, S_factor,
+                               pro_trt_split, pro_ctr_split,
+                               lowlim, uplim, exact_global, verbose) {
   
   J <- length(X0s)
   nj <- as.numeric(sapply(X0s, nrow))
