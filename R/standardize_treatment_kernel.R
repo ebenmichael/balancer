@@ -75,7 +75,7 @@ standardize_treatment_kernel <- function(X0, Xtau, target, S, Z, pscores,
   # construct linear term vector
   if(verbose) message("Creating linear term vector...")
   if(is.null(data_in$q)) {
-    q <- create_q_vector_treatment_kernel(Xtaus, pro_trt_split, target)
+    q <- create_q_vector_treatment_kernel(Xtaus, pro_trt_split, target, kerneltau)
   } else {
     q <- data_in$q
   }
@@ -188,10 +188,13 @@ create_I0_matrix_treatment_kernel <- function(pro_trt_split, pro_ctr_split, scal
 #' @param Xtaus List of J n x dtau matrices of covariates split by group
 #' @param pro_trt_split List of J vectors of treatment propensity multipliers
 #' @param target Vector of population means to re-weight to
+#' @param kernel Kernel to use for average treatment effect function
 #'
 #' @return q vector
-create_q_vector_treatment_kernel <- function(Xtaus, pro_trt_split, target) {
-  q <- -c(do.call(rbind, Xtaus) %*% target) * unlist(pro_trt_split)
+create_q_vector_treatment_kernel <- function(Xtaus, pro_trt_split, target, kernel) {
+  q <- -c(kernlab::kernelMatrix(kernel = kernel,
+                                x = do.call(rbind, Xtaus),
+                                y = as.matrix(target))) * unlist(pro_trt_split)
   return(q)
 }
 
