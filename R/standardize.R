@@ -79,7 +79,7 @@ standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
 
     if(verbose) message("Creating constraint matrix...")
     if(is.null(data_in$constraints)) {
-        constraints <- create_constraints(Xz, target, Z, lowlim, 
+        constraints <- create_constraints(Xz, target, Z, lowlim,
                                           uplim, exact_global, verbose)
     } else {
         constraints <- data_in$constraints
@@ -87,19 +87,10 @@ standardize <- function(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
         constraints$u[(J + 1): (J + n)] <- uplim
     }
 
-
-    if(verbose) {
-        settings <- osqp::osqpSettings(verbose = TRUE, eps_abs = 1e-6,
-                                   eps_rel = 1e-6, max_iter = 5000)
-    } else {
-        settings <- osqp::osqpSettings(verbose = FALSE, eps_abs = 1e-6,
-                                   eps_rel = 1e-6, max_iter = 5000)
-    }
-
-    settings <- do.call(osqp::osqpSettings, 
-                        c(list(verbose = verbose, 
+    settings <- do.call(osqp::osqpSettings,
+                        c(list(verbose = verbose,
                                eps_rel = eps_rel,
-                               eps_abs = eps_abs), 
+                               eps_abs = eps_abs),
                         list(...)))
 
     if(init_uniform) {
@@ -187,7 +178,7 @@ create_P_matrix <- function(n, aux_dim) {
 
 #' Get a set of uniform weights for initialization
 #' @param Xz list of J n x d matrices of covariates split by group
-#' 
+#'
 get_uniform_weights <- function(Xz) {
 
     # uniform weights for each group
@@ -308,7 +299,7 @@ check_data <- function(X, target, Z, Xz, lambda, lowlim, uplim, data_in) {
     }
 
     if(sum(nj) != n) {
-        stop("Implied number of weights (", sum(nj), 
+        stop("Implied number of weights (", sum(nj),
              ") does not equal number of units (", n, ").")
     }
 
@@ -328,7 +319,7 @@ check_data <- function(X, target, Z, Xz, lambda, lowlim, uplim, data_in) {
             stop("data_in$P matrix must be square")
         }
         if(dim(data_in$P)[1] != n + aux_dim) {
-            stop("data_in$P should have ", n + aux_dim, 
+            stop("data_in$P should have ", n + aux_dim,
                  " rows and columns")
         }
     }

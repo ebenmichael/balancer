@@ -18,7 +18,6 @@ standardize_treatment(
   data_in = NULL,
   verbose = TRUE,
   return_program = TRUE,
-  exact_global = F,
   init_uniform = F,
   eps_abs = 1e-05,
   eps_rel = 1e-05,
@@ -51,8 +50,6 @@ standardize_treatment(
 \item{verbose}{Whether to show messages, default T}
 
 \item{return_program}{Whether to return the objective matrix and vector and constraints, default T}
-
-\item{exact_global}{Whether to enforce exact balance for overall population, default F}
 
 \item{init_uniform}{Wheter to initialize solver with uniform weights, default F}
 

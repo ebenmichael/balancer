@@ -16,7 +16,6 @@
 #' @param data_in Optional list containing pre-computed objective matrix/vector and constraints (without regularization term)
 #' @param verbose Whether to show messages, default T
 #' @param return_program Whether to return the objective matrix and vector and constraints, default T
-#' @param exact_global Whether to enforce exact balance for overall population, default F
 #' @param init_uniform Wheter to initialize solver with uniform weights, default F
 #' @param eps_abs Absolute error tolerance for solver
 #' @param eps_rel Relative error tolerance for solver
@@ -34,7 +33,7 @@
 standardize_treatment <- function(X0, Xtau, target, S, Z, pscores, lambda = 0,
                                   lowlim = 0, uplim = nrow(X0), scale_sample_size = F,
                                   data_in = NULL, verbose = TRUE,
-                                  return_program = TRUE, exact_global = F,
+                                  return_program = TRUE,
                                   init_uniform = F, eps_abs = 1e-5,
                                   eps_rel = 1e-5, ...) {
 
@@ -96,7 +95,7 @@ standardize_treatment <- function(X0, Xtau, target, S, Z, pscores, lambda = 0,
   if(is.null(data_in$constraints)) {
     constraints <- create_constraints_treatment(X0s, Xtaus, target, Z, S_factor,
                                                 pro_trt_split, pro_ctr_split,
-                                                lowlim, uplim, exact_global, verbose)
+                                                lowlim, uplim, verbose)
   } else {
     constraints <- data_in$constraints
     constraints$l[(J + 1):(J + n)] <- lowlim
@@ -104,13 +103,6 @@ standardize_treatment <- function(X0, Xtau, target, S, Z, pscores, lambda = 0,
   }
 
   # set optimization settings
-  if(verbose) {
-    settings <- osqp::osqpSettings(verbose = TRUE, eps_abs = 1e-6,
-                                   eps_rel = 1e-6, max_iter = 5000)
-  } else {
-    settings <- osqp::osqpSettings(verbose = FALSE, eps_abs = 1e-6,
-                                   eps_rel = 1e-6, max_iter = 5000)
-  }
   settings <- do.call(osqp::osqpSettings,
                       c(list(verbose = verbose,
                              eps_rel = eps_rel,
@@ -143,6 +135,9 @@ standardize_treatment <- function(X0, Xtau, target, S, Z, pscores, lambda = 0,
   imbalancetau <- as.matrix(target - t(Xtau) %*% (weights * pro_trt))
   imbalance0 <- as.matrix(t(X0) %*% (weights * pro_trt) -
                           t(X0) %*% (weights * pro_ctr))
+
+  # collapse weight matrix to vector
+  weights <- rowSums(weights)
 
   # package program components if requested by user
   if(return_program) {
@@ -232,13 +227,12 @@ get_uniform_weights_treatment <- function(X0s, Xtaus) {
 #' @param pro_ctr_split List of J vectors of control propensity multipliers
 #' @param lowlim Lower limit on weights
 #' @param uplim Upper limit on weights
-#' @param exact_global Boolean indicating whether to enforce global constraint
 #' @param verbose Boolean indicating whether to print progress
 #'
 #' @return A, l, and u
 create_constraints_treatment <- function(X0s, Xtaus, target, Z, S_factor,
                                pro_trt_split, pro_ctr_split,
-                               lowlim, uplim, exact_global, verbose) {
+                               lowlim, uplim, verbose) {
 
   J <- length(X0s)
   nj <- as.numeric(sapply(X0s, nrow))
@@ -276,45 +270,18 @@ create_constraints_treatment <- function(X0s, Xtaus, target, Z, S_factor,
   l2 <- rep(lowlim, n)
   u2 <- rep(uplim, n)
 
-  if(exact_global) {
-    if(verbose) message("\tx Mantain overall population mean")
-    # require that the weighted average of the treated units (over all sites)
-    # equals the weighted average of the control units (over all sites)
-    response_mat <- t(
-                      t(
-                        do.call(cbind, X0st)) * ((unlist(pro_trt_split) * rep(n1j / sum(n1j), nj)) -
-                                                 (unlist(pro_ctr_split) * rep(n0j / sum(n0j), nj))))
-    treat_mat <- t(t(do.call(cbind, Xtaust)) * rep(n1j, nj) * unlist(pro_trt_split))
-
-    A3 <- Matrix::rbind2(response_mat, treat_mat)
-
-    rm(response_mat)
-    rm(treat_mat)
-
-    A3 <- Matrix::cbind2(A3, Matrix::Matrix(0, nrow = nrow(A3), ncol = aux_dim))
-
-    l3 <- c(rep(0, d0), sum(n1j) * target)
-    u3 <- c(rep(0, d0), sum(n1j) * target)
-  } else {
-    if(verbose) message("\t(SKIPPING) Mantain overall population mean")
-    # skip this constraint and just make empty
-    A3 <- matrix(, nrow = 0, ncol = ncol(A2))
-    l3 <- numeric(0)
-    u3 <- numeric(0)
-  }
-
   if(verbose) message("\tx Fit weights to data")
   # constrain the auxiliary weights to be sqrt(P)'gamma
   sqrtP1 <- Matrix::t(Matrix::t(Matrix::bdiag(X0st)) * (unlist(pro_trt_split) - unlist(pro_ctr_split)))
   sqrtP2 <- Matrix::t(Matrix::t(Matrix::bdiag(Xtaust)) * unlist(pro_trt_split))
-  A4 <- Matrix::cbind2(Matrix::rbind2(sqrtP1, sqrtP2), -Matrix::Diagonal(aux_dim))
-  l4 <- rep(0, aux_dim)
-  u4 <- rep(0, aux_dim)
+  A3 <- Matrix::cbind2(Matrix::rbind2(sqrtP1, sqrtP2), -Matrix::Diagonal(aux_dim))
+  l3 <- rep(0, aux_dim)
+  u3 <- rep(0, aux_dim)
 
   if(verbose) message("\tx Combining constraints")
-  A <- rbind(A1, A2, A3, A4)
-  l <- c(l1, l2, l3, l4)
-  u <- c(u1, u2, u3, u4)
+  A <- rbind(A1, A2, A3)
+  l <- c(l1, l2, l3)
+  u <- c(u1, u2, u3)
 
   return(list(A = A, l = l, u = u))
 }
