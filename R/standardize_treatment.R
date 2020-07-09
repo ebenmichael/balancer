@@ -3,8 +3,8 @@
 ################################################################################
 
 #' Re-weight groups to target population means
-#' @param X0 n x d0 matrix of covariates defining the mean control response function
-#' @param Xtau n x dtau matrix of covariates defining the mean treatment effect function
+#' @param X0 n x d0 matrix of (transformed) covariates defining the mean control response function
+#' @param Xtau n x dtau matrix of (transformed) covariates defining the mean treatment effect function
 #' @param target Vector of population means to re-weight to
 #' @param S Numeric vector of site indicators with J levels
 #' @param Z Numeric vector of treatment indicators with 2 levels
@@ -238,7 +238,6 @@ create_constraints_treatment <- function(X0s, Xtaus, target, Z, S_factor,
   nj <- as.numeric(sapply(X0s, nrow))
   d0 <- ncol(X0s[[1]])
   dtau <- ncol(Xtaus[[1]])
-  cumsum_nj <- cumsum(c(1, nj))
   n <- sum(nj)
   X0st <- lapply(X0s, t)
   Xtaust <- lapply(Xtaus, t)

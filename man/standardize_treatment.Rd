@@ -25,9 +25,9 @@ standardize_treatment(
 )
 }
 \arguments{
-\item{X0}{n x d0 matrix of covariates defining the mean control response function}
+\item{X0}{n x d0 matrix of (transformed) covariates defining the mean control response function}
 
-\item{Xtau}{n x dtau matrix of covariates defining the mean treatment effect function}
+\item{Xtau}{n x dtau matrix of (transformed) covariates defining the mean treatment effect function}
 
 \item{target}{Vector of population means to re-weight to}
 

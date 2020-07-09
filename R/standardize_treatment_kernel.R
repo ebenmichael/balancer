@@ -3,9 +3,9 @@
 ################################################################################
 
 #' Re-weight groups to target population means
-#' @param X0 n x d0 matrix of covariates defining the mean control response function
-#' @param Xtau n x dtau matrix of covariates defining the mean treatment effect function
-#' @param target Vector of population means to re-weight to
+#' @param X0 n x d0 matrix of untransformed covariates defining the mean control response function
+#' @param Xtau n x dtau matrix of untransformed covariates defining the mean treatment effect function
+#' @param Xtarget ntarget x dtau matrix of untransformed covariates constituting the target population
 #' @param S Numeric vector of site indicators with J levels
 #' @param Z Numeric vector of treatment indicators with 2 levels
 #' @param pscores Numeric vector of propensity scores
@@ -32,7 +32,7 @@
 #'                  \item{constraints }{A, l , u}
 #'}}}
 #' @export
-standardize_treatment_kernel <- function(X0, Xtau, target, S, Z, pscores,
+standardize_treatment_kernel <- function(X0, Xtau, Xtarget, S, Z, pscores,
                                          kernel0 = kernlab::vanilladot(),
                                          kerneltau = kernlab::vanilladot(), lambda = 0,
                                          lowlim = 0, uplim = nrow(X0), scale_sample_size = F,
@@ -44,6 +44,7 @@ standardize_treatment_kernel <- function(X0, Xtau, target, S, Z, pscores,
   # ensure that covariate matrices are matrices and get total number of units
   X0 <- as.matrix(X0)
   Xtau <- as.matrix(Xtau)
+  Xtarget <- as.matrix(Xtarget)
   n <- nrow(X0)
 
   # convert site indicators to factor, get index of sites, and compute # sites
@@ -59,11 +60,8 @@ standardize_treatment_kernel <- function(X0, Xtau, target, S, Z, pscores,
   # get row IDs of units by site
   idxs <- split(1:nrow(X0), S_factor)
 
-  # ensure that target is a vector
-  target <- c(target)
-
   # check arguments for issues
-  check_args_treatment_kernel(X0, Xtau, target, S, Z, pscores, X0s, Xtaus,
+  check_args_treatment_kernel(X0, Xtau, Xtarget, S, Z, pscores, X0s, Xtaus,
                               as.numeric(nj), lambda, lowlim, uplim, data_in)
 
   # create propensity score multipliers and split by site
@@ -75,7 +73,7 @@ standardize_treatment_kernel <- function(X0, Xtau, target, S, Z, pscores,
   # construct linear term vector
   if(verbose) message("Creating linear term vector...")
   if(is.null(data_in$q)) {
-    q <- create_q_vector_treatment_kernel(Xtaus, pro_trt_split, target, kerneltau)
+    q <- create_q_vector_treatment_kernel(Xtaus, pro_trt_split, Xtarget, kerneltau)
   } else {
     q <- data_in$q
   }
@@ -88,14 +86,14 @@ standardize_treatment_kernel <- function(X0, Xtau, target, S, Z, pscores,
   } else {
     P <- data_in$P
   }
-  I0 <- create_I0_matrix_treatment_kernel(pro_trt_split, pro_ctr_split,
-                                          scale_sample_size, nj, n)
+  I0 <- create_I0_matrix_treatment(pro_trt_split, pro_ctr_split,
+                                   scale_sample_size, nj, n, 0)
   P <- P + lambda * I0
 
   # construct constraint matrix
   if(verbose) message("Creating constraint matrix...")
   if(is.null(data_in$constraints)) {
-    constraints <- create_constraints_treatment_kernel(X0s, Xtaus, target, Z, S_factor,
+    constraints <- create_constraints_treatment_kernel(X0s, Xtaus, Z, S_factor,
                                                        pro_trt_split, pro_ctr_split,
                                                        lowlim, uplim, verbose)
   } else {
@@ -134,7 +132,7 @@ standardize_treatment_kernel <- function(X0, Xtau, target, S, Z, pscores,
   }
 
   # compute imbalance matrix
-  imbalancetau <- as.matrix(target - t(Xtau) %*% (weights * pro_trt))
+  imbalancetau <- as.matrix(colMeans(Xtarget) - t(Xtau) %*% (weights * pro_trt))
   imbalance0 <- as.matrix(t(X0) %*% (weights * pro_trt) -
                           t(X0) %*% (weights * pro_ctr))
 
@@ -163,7 +161,6 @@ compute_block_diag_kernel <- function(Xs, kernel) {
   # block diagonal kernel matrix
   kern_mat <- Matrix::bdiag(lapply(Xs, function(x) kernlab::kernelMatrix(kernel, x)))
   return(kern_mat)
-
 }
 
 #' Create diagonal regularization matrix
@@ -187,14 +184,14 @@ create_I0_matrix_treatment_kernel <- function(pro_trt_split, pro_ctr_split, scal
 #' Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x
 #' @param Xtaus List of J n x dtau matrices of covariates split by group
 #' @param pro_trt_split List of J vectors of treatment propensity multipliers
-#' @param target Vector of population means to re-weight to
+#' @param Xtarget ntarget x dtau matrix constituting the target population
 #' @param kernel Kernel to use for average treatment effect function
 #'
 #' @return q vector
-create_q_vector_treatment_kernel <- function(Xtaus, pro_trt_split, target, kernel) {
-  q <- -c(kernlab::kernelMatrix(kernel = kernel,
-                                x = do.call(rbind, Xtaus),
-                                y = as.matrix(target))) * unlist(pro_trt_split)
+create_q_vector_treatment_kernel <- function(Xtaus, pro_trt_split, Xtarget, kernel) {
+  q <- -rowMeans(kernlab::kernelMatrix(kernel = kernel,
+                                       x = do.call(rbind, Xtaus),
+                                       y = Xtarget)) * unlist(pro_trt_split)
   return(q)
 }
 
@@ -242,7 +239,6 @@ get_uniform_weights_treatment_kernel <- function(nj) {
 #' Create the constraints for QP: l <= Ax <= u
 #' @param X0s List of J n x d0 matrices of covariates split by group
 #' @param Xtaus List of J n x dtau matrices of covariates split by group
-#' @param target Vector of population means to re-weight to
 #' @param Z Vector of group indicators
 #' @param S_factor Vector of site indicators
 #' @param pro_trt_split List of J vectors of treatment propensity multipliers
@@ -252,7 +248,7 @@ get_uniform_weights_treatment_kernel <- function(nj) {
 #' @param verbose Boolean indicating whether to print progress
 #'
 #' @return A, l, and u
-create_constraints_treatment_kernel <- function(X0s, Xtaus, target, Z, S_factor,
+create_constraints_treatment_kernel <- function(X0s, Xtaus, Z, S_factor,
                                                 pro_trt_split, pro_ctr_split,
                                                 lowlim, uplim, verbose) {
 
@@ -260,10 +256,7 @@ create_constraints_treatment_kernel <- function(X0s, Xtaus, target, Z, S_factor,
   nj <- as.numeric(sapply(X0s, nrow))
   d0 <- ncol(X0s[[1]])
   dtau <- ncol(Xtaus[[1]])
-  cumsum_nj <- cumsum(c(1, nj))
   n <- sum(nj)
-  X0st <- lapply(X0s, t)
-  Xtaust <- lapply(Xtaus, t)
 
   # compute number of treated and control units within each site
   n1j <- sapply(1:J, FUN = function(j) sum(Z[S_factor == j]))
@@ -317,6 +310,10 @@ check_args_treatment_kernel <- function(X0, Xtau, target, S, Z, pscores, X0s, Xt
   if(any(is.na(X0))) {
     stop("Covariate matrix X0 contains NA values.")
   }
+  
+  if(any(is.na(Xtau))) {
+    stop("Covariate matrix Xtau contains NA values.")
+  }
 
   if(any(is.na(S))) {
     stop("Grouping vector S contains NA values.")
@@ -331,7 +328,7 @@ check_args_treatment_kernel <- function(X0, Xtau, target, S, Z, pscores, X0s, Xt
   }
 
   if(any(is.na(target))) {
-    stop("Target vector contains NA values.")
+    stop("Target contains NA values.")
   }
 
   # dimension checks
@@ -364,8 +361,18 @@ check_args_treatment_kernel <- function(X0, Xtau, target, S, Z, pscores, X0s, Xt
   }
 
   if(length(target) != dtau) {
-    stop("Target dimension (", length(target),
-         ") is not equal to data dimension (", dtau, ").")
+    
+    if (!is.null(ncol(target))) {
+      
+      if (ncol(target) != dtau) {
+        stop("Target dimension (", ncol(target),
+             ") is not equal to data dimension (", dtau, ").")
+      }
+      
+    } else {
+      stop("Target dimension (", length(target),
+           ") is not equal to data dimension (", dtau, ").")
+    }
   }
 
   if(!is.null(data_in$q)) {
