@@ -21,6 +21,7 @@
 #' @param init_uniform Wheter to initialize solver with uniform weights, default F
 #' @param eps_abs Absolute error tolerance for solver
 #' @param eps_rel Relative error tolerance for solver
+#' @param gc boolean indicating whether to garbage collect between operations
 #' @param ... Extra arguments for osqp solver
 #'
 #' @return \itemize{
@@ -39,7 +40,7 @@ standardize_treatment_kernel <- function(X0, Xtau, Xtarget, S, Z, pscores,
                                          data_in = NULL, verbose = TRUE,
                                          return_program = TRUE,
                                          init_uniform = F, eps_abs = 1e-5,
-                                         eps_rel = 1e-5, ...) {
+                                         eps_rel = 1e-5, gc = TRUE, ...) {
 
   # ensure that covariate matrices are matrices and get total number of units
   X0 <- as.matrix(X0)
@@ -82,7 +83,7 @@ standardize_treatment_kernel <- function(X0, Xtau, Xtarget, S, Z, pscores,
   if(verbose) message("Creating quadratic term matrix...")
   if(is.null(data_in$P)) {
     P <- create_P_matrix_treatment_kernel(n, X0s, Xtaus, kernel0, kerneltau,
-                                          pro_trt_split, pro_ctr_split)
+                                          pro_trt, pro_ctr, S_factor, gc)
   } else {
     P <- data_in$P
   }
@@ -156,10 +157,13 @@ standardize_treatment_kernel <- function(X0, Xtau, Xtarget, S, Z, pscores,
 #' Compute block diagonal kernel matrix
 #' @param Xs List of covariate matrices by site
 #' @param kernel Kernel to use
-compute_block_diag_kernel <- function(Xs, kernel) {
+#' @param gc boolean indicating whether to garbage collect between operations
+compute_block_diag_kernel <- function(Xs, kernel, gc) {
 
   # block diagonal kernel matrix
-  kern_mat <- Matrix::bdiag(lapply(Xs, function(x) kernlab::kernelMatrix(kernel, x)))
+  kern_list <- lapply(Xs, function(x) kernlab::kernelMatrix(kernel, x))
+  if (gc) gc()
+  kern_mat <- Matrix::bdiag(kern_list)
   return(kern_mat)
 }
 
@@ -202,25 +206,53 @@ create_q_vector_treatment_kernel <- function(Xtaus, pro_trt_split, Xtarget, kern
 #' @param Xtaus List of J n x dtau matrices of covariates split by group
 #' @param kernel0 Kernel to use for average control potential outcome function
 #' @param kerneltau Kernel to use for average treatment effect function
-#' @param pro_trt_split List of J vectors of treatment propensity multipliers
-#' @param pro_ctr_split List of J vectors of control propensity multipliers
+#' @param pro_trt Vector of treatment propensity multipliers
+#' @param pro_ctr Vector of control propensity multipliers
+#' @param S_factor Vector of site labels
+#' @param gc boolean indicating whether to garbage collect between operations
 #'
 #' @return P matrix
 create_P_matrix_treatment_kernel <- function(n, X0s, Xtaus, kernel0, kerneltau,
-                                             pro_trt_split, pro_ctr_split) {
+                                             pro_trt, pro_ctr, S_factor, gc) {
+  tic("total P matrix time")
+  # construct kernel matrices for each site
+  tic("kernel matrices 0 time")
+  kern_list <- lapply(X0s, function(x) kernlab::kernelMatrix(kernel0, x))
+  toc(log = TRUE)
 
-  # construct kernel matrices
-  kern_mat0 <- compute_block_diag_kernel(X0s, kernel0)
-  kern_mattau <- compute_block_diag_kernel(Xtaus, kerneltau)
+  # construct propensity matrices for each site
+  tic("propensity matrices 0 time")
+  pro_diff <- split(pro_trt - pro_ctr, S_factor)
+  pro_list <- lapply(pro_diff, function(x) x %*% t(x))
+  rm(pro_diff)
+  toc(log = TRUE)
 
-  # construct propensity matrices
-  pro_diff_unsplit <- unlist(pro_trt_split) - unlist(pro_ctr_split)
-  pro_mat0 <- pro_diff_unsplit %*% t(pro_diff_unsplit)
-  pro_trt_unsplit <- unlist(pro_trt_split)
-  pro_mattau <- pro_trt_unsplit %*% t(pro_trt_unsplit)
+  # multiply kernel and propensity matrices for each site
+  tic("multiply kernel and propensity matrices 0 time")
+  kern_list0 <- mapply(function(x, y) x * y, kern_list, pro_list, SIMPLIFY = FALSE)
+  toc(log = TRUE)
 
-  # combine matrices
-  P <- (kern_mat0 * pro_mat0) + (kern_mattau * pro_mattau)
+  # construct kernel matrices for each site
+  tic("kernel matrices tau time")
+  kern_list <- lapply(Xtaus, function(x) kernlab::kernelMatrix(kerneltau, x))
+  toc(log = TRUE)
+
+  # construct propensity matrices for each site
+  tic("propensity matrices tau time")
+  pro_list <- lapply(split(pro_trt, S_factor), function(x) x %*% t(x))
+  toc(log = TRUE)
+
+  # multiply kernel and propensity matrices for each site
+  tic("multiply kernel and propensity matrices tau time")
+  kern_listtau <- mapply(function(x, y) x * y, kern_list, pro_list, SIMPLIFY = FALSE)
+  toc(log = TRUE)
+
+  # add matrices
+  tic("add and block diagonalize time")
+  P <- Matrix::bdiag(mapply(function(x, y) x + y, kern_list0, kern_listtau, SIMPLIFY = FALSE))
+  toc(log = TRUE)
+  toc(log = TRUE)
+  if (gc) gc()
 
   return(P)
 }
@@ -259,8 +291,8 @@ create_constraints_treatment_kernel <- function(X0s, Xtaus, Z, S_factor,
   n <- sum(nj)
 
   # compute number of treated and control units within each site
-  n1j <- sapply(1:J, FUN = function(j) sum(Z[S_factor == j]))
-  n0j <- sapply(1:J, FUN = function(j) sum(1 - (Z[S_factor == j])))
+  n1j <- sapply(unique(S_factor), FUN = function(j) sum(Z[S_factor == j]))
+  n0j <- sapply(unique(S_factor), FUN = function(j) sum(1 - (Z[S_factor == j])))
 
   if(verbose) message("\tx Sum to one constraint")
   # sum-to-one constraint for each group
@@ -310,7 +342,7 @@ check_args_treatment_kernel <- function(X0, Xtau, target, S, Z, pscores, X0s, Xt
   if(any(is.na(X0))) {
     stop("Covariate matrix X0 contains NA values.")
   }
-  
+
   if(any(is.na(Xtau))) {
     stop("Covariate matrix Xtau contains NA values.")
   }
@@ -361,14 +393,14 @@ check_args_treatment_kernel <- function(X0, Xtau, target, S, Z, pscores, X0s, Xt
   }
 
   if(length(target) != dtau) {
-    
+
     if (!is.null(ncol(target))) {
-      
+
       if (ncol(target) != dtau) {
         stop("Target dimension (", ncol(target),
              ") is not equal to data dimension (", dtau, ").")
       }
-      
+
     } else {
       stop("Target dimension (", length(target),
            ") is not equal to data dimension (", dtau, ").")

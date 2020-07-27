@@ -243,8 +243,8 @@ create_constraints_treatment <- function(X0s, Xtaus, target, Z, S_factor,
   Xtaust <- lapply(Xtaus, t)
 
   # compute number of treated and control units within each site
-  n1j <- sapply(1:J, FUN = function(j) sum(Z[S_factor == j]))
-  n0j <- sapply(1:J, FUN = function(j) sum(1 - (Z[S_factor == j])))
+  n1j <- sapply(unique(S_factor), FUN = function(j) sum(Z[S_factor == j]))
+  n0j <- sapply(unique(S_factor), FUN = function(j) sum(1 - (Z[S_factor == j])))
 
   # dimension of auxiliary weights
   aux_dim <- (J * d0) + (J * dtau)

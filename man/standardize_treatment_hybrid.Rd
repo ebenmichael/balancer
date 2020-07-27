@@ -22,6 +22,7 @@ standardize_treatment_hybrid(
   init_uniform = F,
   eps_abs = 1e-05,
   eps_rel = 1e-05,
+  gc,
   ...
 )
 }
@@ -59,6 +60,8 @@ standardize_treatment_hybrid(
 \item{eps_abs}{Absolute error tolerance for solver}
 
 \item{eps_rel}{Relative error tolerance for solver}
+
+\item{gc}{boolean indicating whether to garbage collect between operations}
 
 \item{...}{Extra arguments for osqp solver}
 }
