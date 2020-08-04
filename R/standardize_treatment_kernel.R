@@ -214,44 +214,44 @@ create_q_vector_treatment_kernel <- function(Xtaus, pro_trt_split, Xtarget, kern
 #' @return P matrix
 create_P_matrix_treatment_kernel <- function(n, X0s, Xtaus, kernel0, kerneltau,
                                              pro_trt, pro_ctr, S_factor, gc) {
-  tic("total P matrix time")
+  # tic("total P matrix time")
   # construct kernel matrices for each site
-  tic("kernel matrices 0 time")
+  # tic("kernel matrices 0 time")
   kern_list <- lapply(X0s, function(x) kernlab::kernelMatrix(kernel0, x))
-  toc(log = TRUE)
+  # toc(log = TRUE)
 
   # construct propensity matrices for each site
-  tic("propensity matrices 0 time")
+  # tic("propensity matrices 0 time")
   pro_diff <- split(pro_trt - pro_ctr, S_factor)
   pro_list <- lapply(pro_diff, function(x) x %*% t(x))
   rm(pro_diff)
-  toc(log = TRUE)
+  # toc(log = TRUE)
 
   # multiply kernel and propensity matrices for each site
-  tic("multiply kernel and propensity matrices 0 time")
+  # tic("multiply kernel and propensity matrices 0 time")
   kern_list0 <- mapply(function(x, y) x * y, kern_list, pro_list, SIMPLIFY = FALSE)
-  toc(log = TRUE)
+  # toc(log = TRUE)
 
   # construct kernel matrices for each site
-  tic("kernel matrices tau time")
+  # tic("kernel matrices tau time")
   kern_list <- lapply(Xtaus, function(x) kernlab::kernelMatrix(kerneltau, x))
-  toc(log = TRUE)
+  # toc(log = TRUE)
 
   # construct propensity matrices for each site
-  tic("propensity matrices tau time")
+  # tic("propensity matrices tau time")
   pro_list <- lapply(split(pro_trt, S_factor), function(x) x %*% t(x))
-  toc(log = TRUE)
+  # toc(log = TRUE)
 
   # multiply kernel and propensity matrices for each site
-  tic("multiply kernel and propensity matrices tau time")
+  # tic("multiply kernel and propensity matrices tau time")
   kern_listtau <- mapply(function(x, y) x * y, kern_list, pro_list, SIMPLIFY = FALSE)
-  toc(log = TRUE)
+  # toc(log = TRUE)
 
   # add matrices
-  tic("add and block diagonalize time")
+  # tic("add and block diagonalize time")
   P <- Matrix::bdiag(mapply(function(x, y) x + y, kern_list0, kern_listtau, SIMPLIFY = FALSE))
-  toc(log = TRUE)
-  toc(log = TRUE)
+  # toc(log = TRUE)
+  # toc(log = TRUE)
   if (gc) gc()
 
   return(P)

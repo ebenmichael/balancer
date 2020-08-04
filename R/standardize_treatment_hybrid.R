@@ -73,13 +73,13 @@ standardize_treatment_hybrid <- function(X0, Xtau, target, S, Z, pscores,
 
   # construct linear term vector
   if(verbose) message("Creating linear term vector...")
-  tic("q vector")
+  # tic("q vector")
   if(is.null(data_in$q)) {
     q <- create_q_vector_treatment(Xtaus, pro_trt_split, target, 0)
   } else {
     q <- data_in$q
   }
-  toc(log = TRUE)
+  # toc(log = TRUE)
 
   # construct quadratic term matrix
   if(verbose) message("Creating quadratic term matrix...")
@@ -89,17 +89,17 @@ standardize_treatment_hybrid <- function(X0, Xtau, target, S, Z, pscores,
   } else {
     P <- data_in$P
   }
-  tic("create IO matrix)")
+  # tic("create IO matrix)")
   I0 <- create_I0_matrix_treatment(pro_trt_split, pro_ctr_split,
                                    scale_sample_size, nj, n, 0)
-  toc(log = TRUE)
-  tic("P + I0")
+  # toc(log = TRUE)
+  # tic("P + I0")
   P <- P + lambda * I0
-  toc(log = TRUE)
+  # toc(log = TRUE)
 
   # construct constraint matrix
   if(verbose) message("Creating constraint matrix...")
-  tic("constraint matrix creation")
+  # tic("constraint matrix creation")
   if(is.null(data_in$constraints)) {
     constraints <- create_constraints_treatment_kernel(X0s, Xtaus, Z, S_factor,
                                                        pro_trt_split, pro_ctr_split,
@@ -109,7 +109,7 @@ standardize_treatment_hybrid <- function(X0, Xtau, target, S, Z, pscores,
     constraints$l[(J + 1):(J + n)] <- lowlim
     constraints$u[(J + 1):(J + n)] <- uplim
   }
-  toc(log = TRUE)
+  # toc(log = TRUE)
 
   # set optimization settings
   settings <- do.call(osqp::osqpSettings,
@@ -119,7 +119,7 @@ standardize_treatment_hybrid <- function(X0, Xtau, target, S, Z, pscores,
                         list(...)))
 
   # solve optimization problem (possibly with uniform weights)
-  tic("solve QP")
+  # tic("solve QP")
   if(init_uniform) {
     if(verbose) message("Initializing with uniform weights")
     unifw <- get_uniform_weights_treatment_kernel(nj)
@@ -132,9 +132,9 @@ standardize_treatment_hybrid <- function(X0, Xtau, target, S, Z, pscores,
                                  constraints$l, constraints$u,
                                  pars = settings)
   }
-  toc(log = TRUE)
+  # toc(log = TRUE)
 
-  tic("post-processing")
+  # tic("post-processing")
   # convert weights into a matrix
   if(verbose) message("Reordering weights...")
   weights <- matrix(0, ncol = J, nrow = n)
@@ -150,7 +150,7 @@ standardize_treatment_hybrid <- function(X0, Xtau, target, S, Z, pscores,
 
   # collapse weight matrix to vector
   weights <- rowSums(weights)
-  toc(log = TRUE)
+  # toc(log = TRUE)
 
   # package program components if requested by user
   if(return_program) {
