@@ -163,7 +163,7 @@ standardize_treatment <- function(X0, Xtau, target, S, Z, pscores, lambda = 0,
 #' @param aux_dim Dimension of auxiliary weights
 create_I0_matrix_treatment <- function(pro_trt_split, pro_ctr_split, scale_sample_size, nj, n, aux_dim) {
 
-  if(scale_sample_size) {
+  if(!scale_sample_size) {
     # diagonal matrix of inverse propensity scores scaled by group sample size
     I0 <- Matrix::Diagonal(n, rep(nj, nj) * (unlist(pro_trt_split) + unlist(pro_ctr_split)))
   } else {

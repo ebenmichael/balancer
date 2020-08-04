@@ -175,7 +175,7 @@ compute_block_diag_kernel <- function(Xs, kernel, gc) {
 #' @param n Total number of units
 create_I0_matrix_treatment_kernel <- function(pro_trt_split, pro_ctr_split, scale_sample_size, nj, n) {
 
-  if(scale_sample_size) {
+  if(!scale_sample_size) {
     # diagonal matrix of inverse propensity scores scaled by group sample size
     I0 <- Matrix::Diagonal(n, rep(nj, nj) * (unlist(pro_trt_split) + unlist(pro_ctr_split)))
   } else {
