@@ -165,10 +165,10 @@ create_I0_matrix_treatment <- function(pro_trt_split, pro_ctr_split, scale_sampl
 
   if(scale_sample_size) {
     # diagonal matrix of inverse propensity scores scaled by group sample size
-    I0 <- Matrix::Diagonal(n, rep(nj ^ 2, nj) * (unlist(pro_trt_split) + unlist(pro_ctr_split)))
+    I0 <- Matrix::Diagonal(n, rep(nj, nj) * (unlist(pro_trt_split) + unlist(pro_ctr_split)))
   } else {
     # diagonal matrix of inverse propensity scores not scaled by group sample size
-    I0 <- Matrix::Diagonal(n, rep(nj, nj) * (unlist(pro_trt_split) + unlist(pro_ctr_split)))
+    I0 <- Matrix::Diagonal(n, unlist(pro_trt_split) + unlist(pro_ctr_split))
   }
   # add placeholder 0s for auxiliary weight entries
   I0 <- Matrix::bdiag(I0, Matrix::Diagonal(aux_dim, 0))
