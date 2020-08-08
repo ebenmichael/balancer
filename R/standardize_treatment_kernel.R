@@ -291,8 +291,8 @@ create_constraints_treatment_kernel <- function(X0s, Xtaus, Z, S_factor,
   n <- sum(nj)
 
   # compute number of treated and control units within each site
-  n1j <- sapply(split(Z, S), sum)
-  n0j <- sapply(split(1 - Z, S), sum)
+  n1j <- sapply(split(Z, S_factor), sum)
+  n0j <- sapply(split(1 - Z, S_factor), sum)
 
   if(verbose) message("\tx Sum to one constraint")
   # sum-to-one constraint for each group
