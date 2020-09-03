@@ -4,10 +4,23 @@
 \alias{standardize}
 \title{Re-weight groups to target population means}
 \usage{
-standardize(X, target, Z, lambda = 0, lowlim = 0, uplim = 1,
-  scale_sample_size = T, data_in = NULL, verbose = TRUE,
-  return_data = TRUE, exact_global = T, init_uniform = F,
-  eps_abs = 1e-05, eps_rel = 1e-05, ...)
+standardize(
+  X,
+  target,
+  Z,
+  lambda = 0,
+  lowlim = 0,
+  uplim = 1,
+  scale_sample_size = T,
+  data_in = NULL,
+  verbose = TRUE,
+  return_data = TRUE,
+  exact_global = T,
+  init_uniform = F,
+  eps_abs = 1e-05,
+  eps_rel = 1e-05,
+  ...
+)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
