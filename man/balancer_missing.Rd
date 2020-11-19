@@ -4,8 +4,18 @@
 \alias{balancer_missing}
 \title{Balancing weights for missing outcomes}
 \usage{
-balancer_missing(X, trt, R, weightfunc, weightfunc_ptr, proxfunc,
-  hyperparam, ridge, Q, opts = list())
+balancer_missing(
+  X,
+  trt,
+  R,
+  weightfunc,
+  weightfunc_ptr,
+  proxfunc,
+  hyperparam,
+  ridge,
+  Q,
+  opts = list()
+)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}

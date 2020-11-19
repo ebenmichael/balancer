@@ -4,8 +4,18 @@
 \alias{cluster_weights}
 \title{Re-weight groups to target population means}
 \usage{
-cluster_weights(ind_covs, clus_covs, trt, lambda = 0, lowlim = 0,
-  uplim = 1, verbose = TRUE, eps_abs = 1e-05, eps_rel = 1e-05, ...)
+cluster_weights(
+  ind_covs,
+  clus_covs,
+  trt,
+  lambda = 0,
+  lowlim = 0,
+  uplim = 1,
+  verbose = TRUE,
+  eps_abs = 1e-05,
+  eps_rel = 1e-05,
+  ...
+)
 }
 \arguments{
 \item{ind_covs}{n x d1 matrix of covariates for individual units}

@@ -4,13 +4,28 @@
 \alias{balancer_cv}
 \title{Find Balancing weights by solving the dual optimization problem}
 \usage{
-balancer_cv(X, trt, y = NULL, k = 10, Z = NULL, V = NULL,
-  type = c("att", "subgrp", "subgrp_multi"), link = c("logit",
-  "linear", "pos-linear", "pos-enet", "posenet"), regularizer = c(NULL,
-  "l1", "grpl1", "l2", "ridge", "linf", "nuc", "l1_all", "l1_nuc"),
-  lambda = NULL, nlambda = 20, lambda.min.ratio = 0.001,
-  interact = F, normalized = TRUE, alpha = 1, Q = NULL,
-  ipw_weights = NULL, mu0 = NULL, opts = list())
+balancer_cv(
+  X,
+  trt,
+  y = NULL,
+  k = 10,
+  Z = NULL,
+  V = NULL,
+  type = c("att", "subgrp", "subgrp_multi"),
+  link = c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
+  regularizer = c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc", "l1_all",
+    "l1_nuc"),
+  lambda = NULL,
+  nlambda = 20,
+  lambda.min.ratio = 0.001,
+  interact = F,
+  normalized = TRUE,
+  alpha = 1,
+  Q = NULL,
+  ipw_weights = NULL,
+  mu0 = NULL,
+  opts = list()
+)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}

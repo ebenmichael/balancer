@@ -4,10 +4,23 @@
 \alias{balancer_att_cv}
 \title{Balancing weights for ATT (in subgroups)}
 \usage{
-balancer_att_cv(X, trt, k, y = NULL, weightfunc, weightfunc_ptr,
-  proxfunc, balancefunc, lambda = NULL, nlambda = 20,
-  lambda.min.ratio = 0.001, ipw_weights = NULL, mu0 = NULL,
-  opts = list(), prox_opts = list())
+balancer_att_cv(
+  X,
+  trt,
+  k,
+  y = NULL,
+  weightfunc,
+  weightfunc_ptr,
+  proxfunc,
+  balancefunc,
+  lambda = NULL,
+  nlambda = 20,
+  lambda.min.ratio = 0.001,
+  ipw_weights = NULL,
+  mu0 = NULL,
+  opts = list(),
+  prox_opts = list()
+)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}

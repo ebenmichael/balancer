@@ -4,10 +4,25 @@
 \alias{standardize_rct}
 \title{Re-weight groups to target population means}
 \usage{
-standardize_rct(X, trt, target, Z, lambda = 0, lowlim = 0, uplim = 1,
-  scale_sample_size = T, data_in = NULL, verbose = TRUE,
-  return_data = TRUE, constrain_trt_prop = TRUE, exact_global = F,
-  init_uniform = F, eps_abs = 1e-05, eps_rel = 1e-05, ...)
+standardize_rct(
+  X,
+  trt,
+  target,
+  Z,
+  lambda = 0,
+  lowlim = 0,
+  uplim = 1,
+  scale_sample_size = T,
+  data_in = NULL,
+  verbose = TRUE,
+  return_data = TRUE,
+  constrain_trt_prop = TRUE,
+  exact_global = F,
+  init_uniform = F,
+  eps_abs = 1e-05,
+  eps_rel = 1e-05,
+  ...
+)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}

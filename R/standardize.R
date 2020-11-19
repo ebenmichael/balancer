@@ -359,3 +359,85 @@ check_data <- function(X, target, Z, Xz, lambda, lowlim, uplim, data_in) {
     }
 
 }
+
+#' Re-weight populations to group targets
+#' @param X n x d matrix of covariates
+#' @param Z Vector of group indicators with J levels
+#' @param lambda Regularization hyper parameter, default 0
+#' @param lowlim Lower limit on weights, default 0
+#' @param uplim Upper limit on weights, default 1
+#' @param scale_sample_size Whether to scale the dispersion penalty by the sample size of each group, default T
+#' @param verbose Whether to show messages, default T
+#' @param n_cores Number of cores to find weights in parallel
+#' @param eps_abs Absolute error tolerance for solver
+#' @param eps_rel Relative error tolerance for solver
+#' @param ... Extra arguments for osqp solver
+#'
+#' @return \itemize{
+#'          \item{weights }{Estimated weights as an n x J matrix}
+#'          \item{imbalance }{Imbalance in covariates as a d X J matrix}
+#'          }
+#' @export
+standardize_indirect <- function(X, Z, lambda = 0, lowlim = 0, uplim = 1,
+                        scale_sample_size = F, verbose = TRUE, n_cores = 1,
+                        eps_abs = 1e-5, eps_rel = 1e-5, ...) {
+
+  # get distinct values of Z
+  uni_z <- sort(unique(Z))
+
+  # iterate over them, using the average in Z as the target
+  standz <- function(z) {
+    standardize_indirect_z(z, X, Z, lambda, lowlim, uplim, scale_sample_size,
+                           verbose, eps_abs, eps_rel)
+  }
+  out <- parallel::mclapply(uni_z, standz, mc.cores = n_cores)
+
+  # combine into one list
+  out <- Reduce(function(x,y) {
+    list(weights = cbind(x$weights, y$weights),
+         imbalance = cbind(x$imbalance, y$imbalance)
+         )}, out)
+
+  return(out)
+}
+
+#' Re-weight population to group z's target
+#' @param focal_z Group to use as target
+#' @param X n x d matrix of covariates
+#' @param Z Vector of group indicators with J levels
+#' @param lambda Regularization hyper parameter, default 0
+#' @param lowlim Lower limit on weights, default 0
+#' @param uplim Upper limit on weights, default 1
+#' @param scale_sample_size Whether to scale the dispersion penalty by the sample size of each group, default T
+#' @param verbose Whether to show messages, default T
+#' @param eps_abs Absolute error tolerance for solver
+#' @param eps_rel Relative error tolerance for solver
+#' @param ... Extra arguments for osqp solver
+#'
+#' @return \itemize{
+#'          \item{weights }{Estimated primal weights as an n x J matrix}
+#'          \item{imbalance }{Imbalance in covariates as a d X J matrix}
+#'          }
+#' @export
+standardize_indirect_z <- function(focal_z, X, Z, lambda = 0, 
+                                   lowlim = 0, uplim = 1,
+                                   scale_sample_size = F, verbose = TRUE,
+                                   eps_abs = 1e-5, eps_rel = 1e-5,
+                                   ...) {
+  # create target
+  z_idx <- which(Z == focal_z)
+  nz <- length(z_idx)
+  n <- nrow(X)
+  target_z <- colMeans(X[z_idx, , drop = F])
+
+  # get standardization weights
+  stand_z <- standardize(X[-z_idx, , drop = F], target_z, rep(1, n - nz),
+                         lambda, lowlim, uplim, scale_sample_size, NULL, 
+                         verbose, FALSE, FALSE, FALSE, eps_abs, eps_rel, ...)
+
+  # set weights to zero within group z
+  weights <- numeric(n)
+  weights[-z_idx] <- stand_z$weights
+
+  return(list(weights = weights, imbalance = stand_z$imbalance))
+}

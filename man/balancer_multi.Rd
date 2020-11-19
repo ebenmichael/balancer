@@ -4,9 +4,23 @@
 \alias{balancer_multi}
 \title{Balancing weights for ATT (with hierarchical structure)}
 \usage{
-balancer_multi(X, V = NULL, trt, Z, weightfunc, weightfunc_ptr, proxfunc,
-  balancefunc, lambda, nlambda, lambda.min.ratio, ipw_weights,
-  interact = F, opts = list(), prox_opts)
+balancer_multi(
+  X,
+  V = NULL,
+  trt,
+  Z,
+  weightfunc,
+  weightfunc_ptr,
+  proxfunc,
+  balancefunc,
+  lambda,
+  nlambda,
+  lambda.min.ratio,
+  ipw_weights,
+  interact = F,
+  opts = list(),
+  prox_opts
+)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}

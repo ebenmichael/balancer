@@ -5,8 +5,15 @@
 \title{Helper function to fit the dual for general odds function and prox
 estimates heterogeneous treatment effects}
 \usage{
-balancer_subgrp_old(X, trt, Z = NULL, weightfunc, proxfunc, hyperparam,
-  opts = list())
+balancer_subgrp_old(
+  X,
+  trt,
+  Z = NULL,
+  weightfunc,
+  proxfunc,
+  hyperparam,
+  opts = list()
+)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}

@@ -4,10 +4,16 @@
 \alias{map_to_param}
 \title{Map string choices to the proper parameters for the balancer sub-functions}
 \usage{
-map_to_param(X, link = c("logit", "linear", "pos-linear", "pos-enet",
-  "posenet"), regularizer = c(NULL, "l1", "grpl1", "l2", "ridge", "linf",
-  "nuc", "l1_all", "l1_nuc"), ipw_weights = NULL, normalized = F,
-  Q = NULL, alpha = 1)
+map_to_param(
+  X,
+  link = c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
+  regularizer = c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc", "l1_all",
+    "l1_nuc"),
+  ipw_weights = NULL,
+  normalized = F,
+  Q = NULL,
+  alpha = 1
+)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}

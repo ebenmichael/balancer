@@ -4,8 +4,19 @@
 \alias{apg}
 \title{Accelerated proximal gradient method}
 \usage{
-apg(grad_ptr, prox_ptr, loss_opts, prox_opts, x, max_it, eps, alpha, beta,
-  accel, verbose)
+apg(
+  grad_ptr,
+  prox_ptr,
+  loss_opts,
+  prox_opts,
+  x,
+  max_it,
+  eps,
+  alpha,
+  beta,
+  accel,
+  verbose
+)
 }
 \arguments{
 \item{grad_ptr}{Pointer to gradient function}

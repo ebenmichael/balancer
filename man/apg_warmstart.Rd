@@ -4,8 +4,20 @@
 \alias{apg_warmstart}
 \title{Accelerated proximal gradient method}
 \usage{
-apg_warmstart(grad_ptr, prox_ptr, loss_opts, prox_opts, lams, x, max_it,
-  eps, alpha, beta, accel, verbose)
+apg_warmstart(
+  grad_ptr,
+  prox_ptr,
+  loss_opts,
+  prox_opts,
+  lams,
+  x,
+  max_it,
+  eps,
+  alpha,
+  beta,
+  accel,
+  verbose
+)
 }
 \arguments{
 \item{grad_ptr}{Pointer to gradient function}

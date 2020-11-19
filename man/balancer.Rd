@@ -3,16 +3,29 @@
 \docType{package}
 \name{balancer}
 \alias{balancer}
-\alias{balancer-package}
 \title{balancer: A package for treatment effect heterogeneity and missing data in observational studies through matrix-constrained balancing weights}
 \usage{
-balancer(X, trt, y = NULL, Z = NULL, V = NULL, type = c("att",
-  "subgrp", "subgrp_multi"), link = c("logit", "linear", "pos-linear",
-  "pos-enet", "posenet"), regularizer = c(NULL, "l1", "grpl1", "l2",
-  "ridge", "linf", "nuc", "l1_all", "l1_nuc"), lambda = NULL,
-  nlambda = 20, lambda.min.ratio = 0.001, interact = F,
-  normalized = TRUE, alpha = 1, Q = NULL, ipw_weights = NULL,
-  mu0 = NULL, opts = list())
+balancer(
+  X,
+  trt,
+  y = NULL,
+  Z = NULL,
+  V = NULL,
+  type = c("att", "subgrp", "subgrp_multi"),
+  link = c("logit", "linear", "pos-linear", "pos-enet", "posenet"),
+  regularizer = c(NULL, "l1", "grpl1", "l2", "ridge", "linf", "nuc", "l1_all",
+    "l1_nuc"),
+  lambda = NULL,
+  nlambda = 20,
+  lambda.min.ratio = 0.001,
+  interact = F,
+  normalized = TRUE,
+  alpha = 1,
+  Q = NULL,
+  ipw_weights = NULL,
+  mu0 = NULL,
+  opts = list()
+)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
@@ -63,9 +76,4 @@ value that gives the reference weights}
          \item{theta }{Estimated dual propensity score parameters}
          \item{weights }{Estimated primal weights}
          \item{imbalance }{Imbalance in covariates}}
-}
-\description{
-balancer: A package for treatment effect heterogeneity and missing data in observational studies through matrix-constrained balancing weights
-
-Find Balancing weights by solving the dual optimization problem
 }

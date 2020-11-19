@@ -4,9 +4,21 @@
 \alias{balancer_subgrp}
 \title{Balancing weights for ATT (in subgroups)}
 \usage{
-balancer_subgrp(X, trt, Z = NULL, weightfunc, weightfunc_ptr, proxfunc,
-  hyperparam, ridge, Q = NULL, kernel, kern_param = 1,
-  ipw_weights = NULL, opts = list())
+balancer_subgrp(
+  X,
+  trt,
+  Z = NULL,
+  weightfunc,
+  weightfunc_ptr,
+  proxfunc,
+  hyperparam,
+  ridge,
+  Q = NULL,
+  kernel,
+  kern_param = 1,
+  ipw_weights = NULL,
+  opts = list()
+)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}

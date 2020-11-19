@@ -5,8 +5,15 @@
 \title{Helper function to fit the dual for general odds function and prox
 Estimates ATT with missing outcomes}
 \usage{
-balancer_missing_old(X, trt, R, weightfunc, proxfunc, hyperparam,
-  opts = list())
+balancer_missing_old(
+  X,
+  trt,
+  R,
+  weightfunc,
+  proxfunc,
+  hyperparam,
+  opts = list()
+)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}

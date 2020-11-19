@@ -4,8 +4,17 @@
 \alias{create_constraints_rct}
 \title{Create the constraints for QP: l <= Ax <= u}
 \usage{
-create_constraints_rct(Xz, trt, target, Z, lowlim, uplim, exact_global,
-  constrain_trt_prop, verbose)
+create_constraints_rct(
+  Xz,
+  trt,
+  target,
+  Z,
+  lowlim,
+  uplim,
+  exact_global,
+  constrain_trt_prop,
+  verbose
+)
 }
 \arguments{
 \item{Xz}{list of J n x d matrices of covariates split by group}

@@ -4,8 +4,7 @@
 \alias{create_constraints_cluster}
 \title{Create the constraints for QP: l <= Ax <= u}
 \usage{
-create_constraints_cluster(ind_covs, clus_covs, trt, lowlim, uplim,
-  verbose)
+create_constraints_cluster(ind_covs, clus_covs, trt, lowlim, uplim, verbose)
 }
 \arguments{
 \item{ind_covs}{n x d1 matrix of covariates for individual units}

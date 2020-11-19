@@ -4,10 +4,22 @@
 \alias{balancer_att}
 \title{Balancing weights for ATT (in subgroups)}
 \usage{
-balancer_att(X, trt, y = NULL, weightfunc, weightfunc_ptr, proxfunc,
-  balancefunc, lambda = NULL, nlambda = 20, lambda.min.ratio = 0.001,
-  ipw_weights = NULL, mu0 = NULL, opts = list(),
-  prox_opts = list())
+balancer_att(
+  X,
+  trt,
+  y = NULL,
+  weightfunc,
+  weightfunc_ptr,
+  proxfunc,
+  balancefunc,
+  lambda = NULL,
+  nlambda = 20,
+  lambda.min.ratio = 0.001,
+  ipw_weights = NULL,
+  mu0 = NULL,
+  opts = list(),
+  prox_opts = list()
+)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}

@@ -4,10 +4,21 @@
 \alias{multilevel_kernel_qp}
 \title{Re-weight control sub-groups to treated sub-group with kernel imbalance}
 \usage{
-multilevel_kernel_qp(X, trt, Z, kernel = kernlab::vanilladot(),
-  lambda = 0, lowlim = 0, uplim = 1, scale_sample_size = T,
-  exact_global = T, verbose = TRUE, eps_abs = 1e-05,
-  eps_rel = 1e-05, ...)
+multilevel_kernel_qp(
+  X,
+  trt,
+  Z,
+  kernel = kernlab::vanilladot(),
+  lambda = 0,
+  lowlim = 0,
+  uplim = 1,
+  scale_sample_size = T,
+  exact_global = T,
+  verbose = TRUE,
+  eps_abs = 1e-05,
+  eps_rel = 1e-05,
+  ...
+)
 }
 \arguments{
 \item{X}{n x d matrix of covariates}
