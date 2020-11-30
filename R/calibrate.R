@@ -9,6 +9,7 @@
 #' @param order What order interactions to balance
 #' @param lambda Regularization hyperparamter
 #' @param prob_weights Optional sampling weights to include
+#' @export
 calibrate <- function(formula, target_count, data,
                       order = NULL, lambda = 1, prob_weights = NULL,
                       verbose = FALSE, ...) {
