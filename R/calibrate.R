@@ -101,11 +101,11 @@ create_design_matrix <- function(cells, order) {
   contrast_cells <- lapply(cells, contrasts, contrasts = F)
 
   form <- as.formula(paste("~ . ^ ", order, " - . + 0"))
-  D <- Matrix::sparse.model.matrix(form, data = cells,
-                                    contrasts =  contrast_cells)
 
+  D <- Matrix::sparse.model.matrix(form, data = cells)
   return(D)
 }
+
 
 create_arrays <- function(cells, sample_counts, target_counts) {
 
@@ -131,7 +131,6 @@ create_rake_constraints <- function(cells, D, sample_counts, target_counts,
   if(verbose) message("Creating constraint matrix")
   # number of cells
   n_cells <- nrow(cells)
-  contrast_cells <- lapply(cells, contrasts, contrasts = F)
   # number of non-empty cells
   n_nempty <- sum(sample_counts != 0)
   sample_counts_nempty <- sample_counts[sample_counts != 0]
@@ -159,7 +158,7 @@ create_rake_constraints <- function(cells, D, sample_counts, target_counts,
 
   # marginal constraints
   if(verbose) message("\tx Exact marginal balance constraints")
-  design_mat <- Matrix::sparse.model.matrix(~ . - 1, cells, contrast_cells)
+  design_mat <- Matrix::sparse.model.matrix(~ . - 1, cells)
   # A_marg <- Matrix::cbind2(Matrix::t(design_mat * sample_counts),
   #                         Matrix::Matrix(0, nrow = ncol(design_mat),
   #                                        ncol = ncol(D)))
