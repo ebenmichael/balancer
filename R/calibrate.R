@@ -8,10 +8,14 @@
 #' @param target_count Number in cell in target
 #' @param order What order interactions to balance
 #' @param lambda Regularization hyperparamter
+#' @param lowlim Lower bound on weights, default 0
+#' @param uplim Upper bound on weights, default Inf
 #' @param prob_weights Optional sampling weights to include
 #' @export
 calibrate <- function(formula, target_count, data,
-                      order = NULL, lambda = 1, prob_weights = NULL,
+                      order = NULL, lambda = 1, 
+                      lowlim = 0, uplim = Inf, 
+                      prob_weights = NULL,
                       verbose = FALSE, ...) {
   
   # create distinct cells for all interactions
@@ -21,7 +25,7 @@ calibrate <- function(formula, target_count, data,
   # get weights
   weights <- calibrate_(cells %>% select(-sample_count, -target_count),
                         cells$sample_count, cells$target_count,
-                        order, lambda, prob_weights, verbose, ...)
+                        order, lambda, lowlim, uplim, prob_weights, verbose, ...)
 
   # combine back in and return
   cells %>% filter(sample_count != 0) %>%
@@ -53,7 +57,8 @@ create_cells <- function(formula, target_count, data) {
 }
 
 calibrate_ <- function(cells, sample_counts, target_counts, order = NULL,
-                      lambda = 1, prob_weights = NULL, verbose = FALSE,
+                      lambda = 1, lowlim = 0, uplim = Inf,
+                      prob_weights = NULL, verbose = FALSE,
                       ...) {
 
   if(verbose) message("Creating design matrix")
@@ -61,8 +66,9 @@ calibrate_ <- function(cells, sample_counts, target_counts, order = NULL,
   D <- create_design_matrix(cells, order)
 
   # create constraints for raking
-  constraints <- create_rake_constraints(cells, D, sample_counts, 
-                                         target_counts, verbose)
+  constraints <- create_rake_constraints(cells, D, sample_counts,
+                                         target_counts, lowlim, uplim,
+                                         verbose)
 
   # return(constraints)
   # P matrix and q vector
@@ -126,7 +132,7 @@ create_arrays <- function(cells, sample_counts, target_counts) {
 
 
 create_rake_constraints <- function(cells, D, sample_counts, target_counts,
-                                    verbose) {
+                                    lowlim, uplim, verbose) {
 
   if(verbose) message("Creating constraint matrix")
   # number of cells
@@ -153,8 +159,8 @@ create_rake_constraints <- function(cells, D, sample_counts, target_counts,
   A_nn <- Matrix::Diagonal(n_nempty)
   # l_nn <- rep(0, n_cells)
   # u_nn <- rep(Inf, n_cells)
-  l_nn <- rep(0, n_nempty)
-  u_nn <- rep(Inf, n_nempty)
+  l_nn <- rep(lowlim, n_nempty)
+  u_nn <- rep(uplim, n_nempty)
 
   # marginal constraints
   if(verbose) message("\tx Exact marginal balance constraints")
@@ -188,7 +194,8 @@ create_rake_Pmat <- function(D, sample_counts, lambda) {
   #                      as.list(rep(1, ncol(D)))))
   nnz_idxs <- which(sample_counts != 0)
   sqrtP <- D[nnz_idxs,, drop = F] * sample_counts[nnz_idxs]
-  P <- sqrtP %*% Matrix::t(sqrtP) + lambda * Matrix::Diagonal(length(nnz_idxs))
+  P <- sqrtP %*% Matrix::t(sqrtP) +
+    lambda * sample_counts[nnz_idxs] * Matrix::Diagonal(length(nnz_idxs))
   return(P)
 
 }
