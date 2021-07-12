@@ -13,7 +13,8 @@
 #' @param prob_weights Optional sampling weights to include
 #' @export
 calibrate <- function(formula, target_count, data,
-                      order = NULL, lambda = 1, 
+                      order = NULL, lambda = 1,
+                      lambda_max = NULL, n_lambda = 100,
                       lowlim = 0, uplim = Inf, 
                       prob_weights = NULL,
                       verbose = FALSE, ...) {
@@ -25,16 +26,18 @@ calibrate <- function(formula, target_count, data,
   # get weights
   weights <- calibrate_(cells %>% select(-sample_count, -target_count),
                         cells$sample_count, cells$target_count,
-                        order, lambda, lowlim, uplim, prob_weights, verbose, ...)
-
+                        order, lambda, lambda_max, n_lambda,
+                        lowlim, uplim, prob_weights, verbose, ...)
   # combine back in and return
   cells %>% filter(sample_count != 0) %>%
-    mutate(weight = weights) %>%
+    bind_cols(weights) %>%
     select(-sample_count, -target_count) %>%
     right_join(cells,
                by = cells %>% select(-sample_count, -target_count) %>%
                     names()) %>%
-    mutate(weight = replace_na(weight, 0)) %>%
+    pivot_longer(!names(cells), names_to = "lambda", values_to = "weight") %>%
+    mutate(weight = replace_na(weight, 0),
+           lambda = as.numeric(lambda)) %>%
     return()
 }
 
@@ -57,7 +60,8 @@ create_cells <- function(formula, target_count, data) {
 }
 
 calibrate_ <- function(cells, sample_counts, target_counts, order = NULL,
-                      lambda = 1, lowlim = 0, uplim = Inf,
+                      lambda = 1, lambda_max = NULL, n_lambda = 100,
+                      lowlim = 0, uplim = Inf,
                       prob_weights = NULL, verbose = FALSE,
                       ...) {
 
@@ -73,7 +77,17 @@ calibrate_ <- function(cells, sample_counts, target_counts, order = NULL,
   # return(constraints)
   # P matrix and q vector
   if(verbose) message("Creating quadratic term matrix")
-  P <- create_rake_Pmat(D, sample_counts, lambda)
+  if(is.null(lambda)) {
+    if(is.null(lambda_max)) {
+      unif_imbal <- Matrix::t(D) %*% (sample_counts - target_counts)
+      lambda_max <- sqrt(sum(unif_imbal ^ 2))
+    }
+    lam_seq <- lambda_max * 10 ^ seq(0, -5, length.out = n_lambda)
+    P <- create_rake_Pmat(D, sample_counts, 0)
+  } else {
+    P <- create_rake_Pmat(D, sample_counts, lambda)
+  }
+  
   
   if(verbose) message("Creating linear term vector")
   qvec <- create_rake_qvec(D, sample_counts, target_counts, lambda,
@@ -89,9 +103,35 @@ calibrate_ <- function(cells, sample_counts, target_counts, order = NULL,
   # solution <- osqp::solve_osqp(P, qvec, constraints$A,
   #                              constraints$l, constraints$u,
   #                              pars = settings)
-  solution <- solver$Solve()
-  return(solution$x)
-  # return(solution$x[1:nrow(cells)])
+  if(is.null(lambda)) {
+    
+    # get diagonal elements of P
+    # P_diag <- compute_Pmat_diag(D, sample_counts)
+    # diag_idx <- sapply(1: length(P_diag), function(i) c(i,i))
+    # print(diag_idx[1:10])
+      
+    x <- NULL
+    y <- NULL
+    solution <- matrix(, nrow = nrow(P), ncol = n_lambda)
+    for(i in 1:length(lam_seq)) {
+      if(verbose) message(paste0("Solving with lambda = ", lam_seq[i]))
+      
+      P_new <- update_rake_Pmat(P, sample_counts, lam_seq[i])
+      solver$Update(Px = Matrix::triu(P_new)@x)
+      # solver$Update(Px = Matrix::diag(P_new), Px_idx = 1:(nrow(P_new)))
+      solver$WarmStart(x = x, y = y)
+      sol_lam <- solver$Solve()
+      x <- sol_lam$x
+      y <- sol_lam$y
+      solution[, i] <- x
+    }
+    solution <- as.data.frame(solution)
+    names(solution) <- lam_seq
+  } else {
+    solution <- data.frame(solver$Solve()$x)
+    names(solution) <- lambda
+  }
+  return(solution)
 
 }
 
@@ -200,6 +240,23 @@ create_rake_Pmat <- function(D, sample_counts, lambda) {
 
 }
 
+update_rake_Pmat <- function(P, sample_counts, lambda) {
+
+  nnz_idxs <- which(sample_counts != 0)
+  P <- P +
+    lambda * sample_counts[nnz_idxs] * Matrix::Diagonal(length(nnz_idxs))
+  return(P)
+}
+
+
+
+compute_Pmat_diag <- function(D, sample_counts) {
+
+  nnz_idxs <- which(sample_counts != 0)
+  d_counts <- Matrix::diag(D[nnz_idxs,, drop = F] %*% Matrix::t(D[nnz_idxs,, drop = F]))
+  return(d_counts * sample_counts[nnz_idxs] ^ 2)
+}
+
 create_rake_qvec <- function(D, sample_counts, target_counts, lambda, prob_weights) {
 
   nnz_idxs <- which(sample_counts != 0)
@@ -215,5 +272,5 @@ create_rake_qvec <- function(D, sample_counts, target_counts, lambda, prob_weigh
 
   # return(-c(as.numeric(lhs %*% rhs) + lambda * prob_weights,
   #           numeric(ncol(D))))
-  return(-c(as.numeric(lhs %*% rhs) + lambda * prob_weights))
+  return(-c(as.numeric(lhs %*% rhs)))# + lambda * prob_weights))
 }
