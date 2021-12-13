@@ -231,7 +231,7 @@ create_constraints_multi <- function(Xz, trtz, lowlim, uplim, exact_global, verb
 
     if(verbose) message("\tx Constrain treated weights to be zero")
     # zero out treated units
-    A5 <- Matrix::bdiag(lapply(trtz, Matrix::diag))
+    A5 <- Matrix::bdiag(lapply(trtz, function(x) Matrix::Diagonal(x = x)))
     A5 <- Matrix::cbind2(A5, Matrix::Matrix(0, nrow = nrow(A5), ncol = aux_dim))
     l5 <- numeric(n)
     u5 <- numeric(n)
