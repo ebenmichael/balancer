@@ -10,6 +10,10 @@ calibrate(
   data,
   order = NULL,
   lambda = 1,
+  lambda_max = NULL,
+  n_lambda = 100,
+  lowlim = 0,
+  uplim = Inf,
   prob_weights = NULL,
   verbose = FALSE,
   ...
@@ -25,6 +29,10 @@ calibrate(
 \item{order}{What order interactions to balance}
 
 \item{lambda}{Regularization hyperparamter}
+
+\item{lowlim}{Lower bound on weights, default 0}
+
+\item{uplim}{Upper bound on weights, default Inf}
 
 \item{prob_weights}{Optional sampling weights to include}
 }
