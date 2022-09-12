@@ -8,6 +8,7 @@
 #' @param ind_covs n x d1 matrix of covariates for individual units
 #' @param clus_covs n x d2 matrix of covariates for clusters
 #' @param trt n vector of treatment assignment
+#' @param clusters n vector of cluster assignments
 #' @param lambda Regularization hyper parameter, default 0
 #' @param lowlim Lower limit on weights, default 0
 #' @param uplim Upper limit on weights, default 1
@@ -22,8 +23,8 @@
 #'          \item{clus_imbalance }{Imbalance in cluster-level covariates covariates}
 #'}
 #' @export
-cluster_weights <- function(ind_covs, clus_covs, trt, 
-                            lambda = 0, lowlim = 0, uplim = 1,
+cluster_weights <- function(ind_covs, clus_covs, trt, clusters,
+                            lambda = 0, icc = 0, lowlim = 0, uplim = 1,
                             verbose = TRUE,
                             eps_abs = 1e-5, eps_rel = 1e-5, ...) {
 
@@ -45,11 +46,8 @@ cluster_weights <- function(ind_covs, clus_covs, trt,
     q <- create_q_vector_cluster(ind_covs, clus_covs, trt)
 
     if(verbose) message("Creating quadratic term matrix...")
-    P <- create_P_matrix_cluster(n0, d)
+    P <- create_P_matrix_cluster(n0, d, clusters[trt == 0], lambda / sum(trt)^2, icc)
 
-    I0 <- Matrix::bdiag(Matrix::Diagonal(n0),
-                        Matrix::Diagonal(d, 0))
-    P <- P + lambda * I0
 
     if(verbose) message("Creating constraint matrix...")
     constraints <- create_constraints_cluster(ind_covs, clus_covs, trt,
@@ -89,8 +87,8 @@ create_q_vector_cluster <- function(ind_covs, clus_covs, trt) {
     n <- nrow(ind_covs)
     n0 <- n - sum(trt)
     # concenate treated averages for each group
-    q <- - c(colSums(ind_covs[trt == 1,, drop = F]),
-                     colSums(clus_covs[trt == 1,, drop = F]))
+    q <- - c(colMeans(ind_covs[trt == 1,, drop = F]),
+                     colMeans(clus_covs[trt == 1,, drop = F]))
     d <- length(q)
     q <- Matrix::sparseVector(q, (n0 + 1):(n0 + d),
                               n0 + d)
@@ -100,9 +98,24 @@ create_q_vector_cluster <- function(ind_covs, clus_covs, trt) {
 #' Create the P matrix for an QP that solves min_x 0.5 * x'Px + q'x
 #'
 #' @return P matrix
-create_P_matrix_cluster <- function(n0, d) {
-    return(Matrix::bdiag(Matrix::Matrix(0, n0, n0),
-                         Matrix::Diagonal(d)))
+create_P_matrix_cluster <- function(n0, d, clusters, lambda, icc) {
+
+
+  # first include a diagonal element for the auxiliary covariates X %*% gamma
+  P1 <- Matrix::bdiag(Matrix::Matrix(0, n0, n0),
+                        Matrix::Diagonal(d))
+  # Add iid variance term
+  I0 <- Matrix::bdiag(Matrix::Diagonal(n0),
+                      Matrix::Diagonal(d, 0))
+  P2 <- lambda * (1 - icc) * I0
+
+  # add correlation within cluster term
+  cluster_mat <- Matrix::sparse.model.matrix(~ as.factor(clusters) - 1)
+  P3 <- Matrix::bdiag(lambda * icc * cluster_mat %*% Matrix::t(cluster_mat),
+                      Matrix::Diagonal(d, 0))
+
+  P <- P1 + P2 + P3
+  return(P)
 }
 
 
@@ -142,7 +155,7 @@ create_constraints_cluster <- function(ind_covs, clus_covs, trt,
 
     if(verbose) message("\tx Fit weights to data")
     # constrain the auxiliary weights to be sqrt(P)'gamma
-    sqrtP <- t(cbind(ind_covs, clus_covs)[trt == 0, , drop = F])
+    sqrtP <- t(cbind(ind_covs, clus_covs)[trt == 0, , drop = F]) / sum(trt)
     A4 <- Matrix::cbind2(sqrtP, -Matrix::Diagonal(d))
     l4 <- rep(0, d)
     u4 <- rep(0, d)
