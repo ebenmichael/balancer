@@ -10,6 +10,7 @@
 #' @param trt n vector of treatment assignment
 #' @param clusters n vector of cluster assignments
 #' @param lambda Regularization hyper parameter, default 0
+#' @param icc Intraclass correlation coefficient for regularization
 #' @param lowlim Lower limit on weights, default 0
 #' @param uplim Upper limit on weights, default 1
 #' @param verbose Whether to show messages, default T

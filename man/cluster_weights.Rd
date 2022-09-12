@@ -8,7 +8,9 @@ cluster_weights(
   ind_covs,
   clus_covs,
   trt,
+  clusters,
   lambda = 0,
+  icc = 0,
   lowlim = 0,
   uplim = 1,
   verbose = TRUE,
@@ -24,7 +26,11 @@ cluster_weights(
 
 \item{trt}{n vector of treatment assignment}
 
+\item{clusters}{n vector of cluster assignments}
+
 \item{lambda}{Regularization hyper parameter, default 0}
+
+\item{icc}{Intraclass correlation coefficient for regularization}
 
 \item{lowlim}{Lower limit on weights, default 0}
 

@@ -2,13 +2,15 @@
 % Please edit documentation in R/overlap_weights.R
 \name{maxsubset_weights_cluster}
 \alias{maxsubset_weights_cluster}
-\title{Find maximum effective sample size balanced set for clustered observational studies}
+\title{Find maximum effective sample size balanced set}
 \usage{
 maxsubset_weights_cluster(
   ind_covs,
   clus_covs,
   trt,
+  clusters,
   lambda = 0,
+  icc = 0,
   lowlim = 0,
   uplim = 1,
   verbose = TRUE,
@@ -24,11 +26,15 @@ maxsubset_weights_cluster(
 
 \item{trt}{Vector of treatment assignments}
 
+\item{clusters}{n vector of cluster assignments}
+
 \item{lambda}{Regularization hyper parameter, default 0}
+
+\item{icc}{Intraclass correlation coefficient for regularization}
 
 \item{lowlim}{Lower limit on weights, default 0}
 
-\item{uplim}{Upper limit on weights, default 1 1 * number of treated/control units}
+\item{uplim}{Upper limit on weights, default 1 * number of treated/control units}
 
 \item{verbose}{Whether to show messages, default T}
 
@@ -45,5 +51,5 @@ maxsubset_weights_cluster(
          \item{global_imbalance}{Overall imbalance in covariates, as a length d vector }}
 }
 \description{
-Find maximum effective sample size balanced set for clustered observational studies
+Find maximum effective sample size balanced set
 }

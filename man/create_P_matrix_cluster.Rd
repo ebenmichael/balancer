@@ -4,7 +4,7 @@
 \alias{create_P_matrix_cluster}
 \title{Create the P matrix for an QP that solves min_x 0.5 * x'Px + q'x}
 \usage{
-create_P_matrix_cluster(n0, d)
+create_P_matrix_cluster(n0, d, clusters, lambda, icc)
 }
 \value{
 P matrix
