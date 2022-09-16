@@ -228,3 +228,21 @@ check_data_cluster <- function(ind_covs, clus_covs, trt, lambda, lowlim, uplim) 
         stop("Lower threshold must be lower than upper threshold")
     }
 }
+
+compute_cluster_se <- function(y, wts, trt, clusters, mhat) {
+
+  cluster_mat <- Matrix::sparse.model.matrix(~ as.factor(clusters) - 1)
+  resids <- y - mhat
+  n1 <- sum(trt)
+  n0 <- sum(1 - trt)
+  wtd_resids1 <- Matrix::t(cluster_mat[trt == 1,]) %*% (wts * resids)[trt == 1]
+  wtd_resids0 <- Matrix::t(cluster_mat[trt == 0,]) %*% (wts * resids)[trt == 0]
+
+  se1sq <- sum(wtd_resids1^2) / sum(wts[trt == 1]) ^ 2
+  se0sq <- sum(wtd_resids0^2) / sum(wts[trt == 0]) ^ 2
+
+  mu1 <- sum(y[trt == 1] * wts[trt == 1]) / sum(wts[trt == 1])
+  mu0 <- sum(y[trt == 0] * wts[trt == 0]) / sum(wts[trt == 0])
+
+  return(data.frame(Estimate = mu1 - mu0, SE = sqrt(se1sq + se0sq)))
+}
