@@ -4,7 +4,7 @@
 \alias{create_q_vector_cluster}
 \title{Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x}
 \usage{
-create_q_vector_cluster(ind_covs, clus_covs, trt)
+create_q_vector_cluster(ind_covs, clus_covs, trt, m)
 }
 \arguments{
 \item{ind_covs}{n x d1 matrix of covariates for individual units}
