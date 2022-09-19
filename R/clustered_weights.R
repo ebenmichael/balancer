@@ -229,6 +229,15 @@ check_data_cluster <- function(ind_covs, clus_covs, trt, lambda, lowlim, uplim) 
     }
 }
 
+#' Compute point estimate and standard error with clustered weights
+#' @param y Vector of outcomes
+#' @param wts Vector of weight 
+#' @param trt Vector of treatment assignments
+#' @param clusters Vector of cluster assignments
+#' @param mhat Vector of model predictions of E[Y | trt, X]
+#' 
+#' @return Data.Frame with the point estimate and standard error
+#' @export
 compute_cluster_se <- function(y, wts, trt, clusters, mhat) {
 
   cluster_mat <- Matrix::sparse.model.matrix(~ as.factor(clusters) - 1)

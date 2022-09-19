@@ -2,6 +2,7 @@
 
 export(calibrate)
 export(cluster_weights)
+export(compute_cluster_se)
 export(maxsubset_weights)
 export(maxsubset_weights_cluster)
 export(multilevel_kernel_qp)
