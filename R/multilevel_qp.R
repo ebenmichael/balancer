@@ -172,9 +172,11 @@ create_P_matrix_multi <- function(n, aux_dim) {
 
 #' Create the constraints for QP: l <= Ax <= u
 #' @param Xz list of J n x d matrices of covariates split by group
-#' @param target Vector of population means to re-weight to
+#' @param trtz list of treatment assignment vectors
 #' @param lowlim Lower limit on weights
 #' @param uplim Upper limit on weights
+#' @param exact_global Boolean whether to include an exact global constraint
+#' @param verbose Boolean whether to display progress
 #'
 #' @return A, l, and u
 create_constraints_multi <- function(Xz, trtz, lowlim, uplim, exact_global, verbose) {

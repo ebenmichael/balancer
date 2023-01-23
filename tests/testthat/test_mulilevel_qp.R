@@ -12,7 +12,7 @@ sample_simplex <- function(n) {
 
 ## make fake data
 n <- 2500
-d <- 1
+d <- 2
 k <- 10
 X <- matrix(rnorm(n * d), nrow = n)
 z_probs <- sample_simplex(k)
@@ -24,6 +24,11 @@ trt <- sapply(1:n,
     sample(c(0, 1), 1, prob = c(1 - pscore[i], pscore[i]))
   })
 X_fixed_eff <- model.matrix(~ as.factor(Z) + X - 1)
+
+# create a correlated Z
+beta <- matrix(rnorm(d * k), nrow = d)
+z_probs_cor <- t(apply(X %*% beta, 1, function(x) exp(x) / sum(exp(x))))
+Z_cor <- sapply(1:n, function(i) sample(1:k, 1, replace = T, prob = z_probs_cor[i,]))
 
 
 test_that("Two different ways of ignoring local balance are equivalent", {
