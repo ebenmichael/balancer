@@ -9,11 +9,15 @@ create_constraints_multi(Xz, trtz, lowlim, uplim, exact_global, verbose)
 \arguments{
 \item{Xz}{list of J n x d matrices of covariates split by group}
 
+\item{trtz}{list of treatment assignment vectors}
+
 \item{lowlim}{Lower limit on weights}
 
 \item{uplim}{Upper limit on weights}
 
-\item{target}{Vector of population means to re-weight to}
+\item{exact_global}{Boolean whether to include an exact global constraint}
+
+\item{verbose}{Boolean whether to display progress}
 }
 \value{
 A, l, and u
