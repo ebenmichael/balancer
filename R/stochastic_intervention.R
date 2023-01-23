@@ -60,11 +60,6 @@ stochastic_int <- function(X, trt, stoch_int,
       idxs <- do.call(c, idxs_trtz[Z_vals == Z_lev])
       length(idxs) / n
   })
-  print(do.call(c,target_trtz))
-  print(sum_constraints)
-  # target_prop_trtz <- sapply(idxs_trtz, length) / n
-  print(target_prop_trtz)
-  print(sum(sum_constraints))
 
   
   # Setup the components of the QP and solve
@@ -193,7 +188,6 @@ create_constraints_stochastic_int <- function(Xz, targetz, target_propz,
                      lapply(1:J,
                             function(j) targetz[[j]] * (trt_vals[j] == lev)))
              }))
-      print(avg_target)
       l3 <- avg_target
       u3 <- avg_target
       
