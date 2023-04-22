@@ -3,7 +3,7 @@
 ################################################################################
 
 #' Re-weight control sub-groups to treated sub-group means
-#' @param B_X n x k basis matrix of covariates (X)
+#' @param B_X n x k basis matrix of covariates 
 #' @param trt Vector of treatment assignments
 #' @param times Vector of event/censoring times (see events for if event or censoring time)
 #' @param events Vector of boolean censoring indicators (whether individual was censored)
@@ -49,7 +49,7 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, upli
   P <- P + lambda * I0
   
   if(verbose) message("Creating constraint matrix...")
-  constraints <- create_constraints_multi(n, trt, times, events, t, lowlim, uplim, verbose)
+  constraints <- create_constraints(n, trt, times, events, t, lowlim, uplim, verbose)
   
   settings <- do.call(osqp::osqpSettings,
                       c(list(verbose = verbose,
@@ -66,15 +66,14 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, upli
   # imbalance_root <- t(w) %*% B - Bbar_X
   # imbalance <- imbalance_root %*% t(imbalance_root)
   
-  imbalance <- sum(((t(weights) %*% B_X) - Bbar_X)^2)
+  imbalance <- sum(((t(weights) %*% B_X) - Bbar_X)^2) 
     
   return(list(weights = weights,
               imbalance = imbalance))
-  
 }
 
 #' Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x
-#' @param B_X list of J n x d matrices of covariates split by group
+#' @param B_X n x k basis matrix of covariates 
 #' @param Bbar_X Vector of population means to re-weight to
 #'
 #' @return q vector
@@ -85,7 +84,7 @@ create_q_vector_surv <- function(B_X, Bbar_X) {
 }
 
 #' Create the P matrix for an QP that solves min_x 0.5 * x'Px + q'x
-#' @param B_X list of J n x d matrices of covariates split by group
+#' @param B_X n x k basis matrix of covariates 
 #'
 #' @return P matrix
 create_P_matrix_surv <- function(B_X) {
@@ -116,7 +115,7 @@ create_I0_matrix_surv <- function(n, lambda) {
 #' @param verbose Whether to show messages, default T
 #' 
 #' @return A, l, and u
-create_constraints_multi <- function(n, trt, times, events, t, lowlim = 1, uplim = NULL, verbose = TRUE) {
+create_constraints <- function(n, trt, times, events, t, lowlim = 1, uplim = NULL, verbose = TRUE) {
 
   # Vector of booleans indicating if indiv is not censored at time t
   noncens_t <- ((times >= t) & (events == TRUE)) | (events == FALSE)
