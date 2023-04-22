@@ -18,8 +18,7 @@
 #'
 #' @return \itemize{
 #'          \item{weights}{Estimated weights as a length n vector}
-#'          \item{imbalance}{Imbalance in covariates as a d X J matrix}
-#'          \item{global_imbalance}{Overall imbalance in covariates, as a length d vector }}
+#'          \item{imbalance}{Imbalance in covariates as a d X J matrix}}
 #' @export
 survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, uplim = NULL,
                         verbose = TRUE, eps_abs = 1e-5, eps_rel = 1e-5, ...) {
@@ -30,7 +29,7 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, upli
   check_data_surv(B_X, trt, times, events, t, lambda, lowlim, uplim)
 
   n <- nrow(B_X)
-  # Set
+  # If no uplim set (default NULL), set uplim to be number of individuals n
   if (is.null(uplim)) {
     uplim <- n
   }
@@ -64,10 +63,10 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, upli
   
   weights <- solution$x
   
-  # imbalance_root <- t(w) %*% B - Bbar
+  # imbalance_root <- t(w) %*% B - Bbar_X
   # imbalance <- imbalance_root %*% t(imbalance_root)
   
-  imbalance <- sum(((t(weights) %*% B_X) - Bbar)^2)
+  imbalance <- sum(((t(weights) %*% B_X) - Bbar_X)^2)
     
   return(list(weights = weights,
               imbalance = imbalance))
