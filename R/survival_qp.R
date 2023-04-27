@@ -25,9 +25,9 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, upli
   # Convert X to a matrix
   B_X <- as.matrix(B_X)
   
-  # Split data and treatment by factor
+  # Simple data checks
   check_data_surv(B_X, trt, times, events, t, lambda, lowlim, uplim)
-
+  
   n <- nrow(B_X)
   # If no uplim set (default NULL), set uplim to be number of individuals n
   if (is.null(uplim)) {
@@ -36,13 +36,13 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, upli
   
   # Calculate mean basis vector from basis mx on covariates 
   Bbar_X <- colMeans(B_X)
-    
+  
   # Setup the components of the QP and solve
   if(verbose) message("Creating linear term vector...")
-  q <- create_q_vector_surv(B_X, Bbar_X)
+  q <- create_q_vector_surv(n, trt, B_X, Bbar_X)
   
   if(verbose) message("Creating quadratic term matrix...")
-  P <- create_P_matrix_surv(B_X)
+  P <- create_P_matrix_surv(n, trt, B_X)
   
   I0 <- create_I0_matrix_surv(n)
   
@@ -66,8 +66,8 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, upli
   # imbalance_root <- t(w) %*% B - Bbar_X
   # imbalance <- imbalance_root %*% t(imbalance_root)
   
-  imbalance <- sum(((t(weights) %*% B_X) - Bbar_X)^2) 
-    
+  imbalance <- mean(((t(weights) %*% B_X) - Bbar_X)^2) 
+  
   return(list(weights = weights,
               imbalance = imbalance))
 }
@@ -77,9 +77,14 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, upli
 #' @param Bbar_X Vector of population means to re-weight to
 #'
 #' @return q vector
-create_q_vector_surv <- function(B_X, Bbar_X) {
+create_q_vector_surv <- function(n, trt, B_X, Bbar_X) {
+  B0_X <- B_X*(trt == 0)
+  Bbar_B0 <- Bbar_X %*% t(B0_X)
   
-  q <- -1 * Bbar_X %*% t(B_X)
+  B1_X <- B_X*(trt == 1)
+  Bbar_B1 <- Bbar_X %*% t(B1_X)
+  
+  q <- -(2/n) * (Bbar_B0 + Bbar_B1) 
   return(q)
 }
 
@@ -87,9 +92,14 @@ create_q_vector_surv <- function(B_X, Bbar_X) {
 #' @param B_X n x k basis matrix of covariates 
 #'
 #' @return P matrix
-create_P_matrix_surv <- function(B_X) {
+create_P_matrix_surv <- function(n, trt, B_X) {
+  B0_X <- B_X*(trt == 0)
+  B0B0 <- B0_X %*% t(B0_X)
   
-  P <- B_X %*% t(B_X)
+  B1_X <- B_X*(trt == 1)
+  B1B1 <- B1_X %*% t(B1_X)
+  
+  P <- (1/n^2) * (B0B0 + B1B1)
   return(P)
 }
 
@@ -116,10 +126,10 @@ create_I0_matrix_surv <- function(n, lambda) {
 #' 
 #' @return A, l, and u
 create_constraints <- function(n, trt, times, events, t, lowlim = 1, uplim = NULL, verbose = TRUE) {
-
+  
   # Vector of booleans indicating if indiv is not censored at time t
   noncens_t <- ((times >= t) & (events == TRUE)) | (events == FALSE)
-
+  
   if(verbose) message("\tx Summed weight constraint for non-censored treatment group")
   A1 <- as.integer(noncens_t & (trt == 1))
   l1 <- n
@@ -150,7 +160,7 @@ create_constraints <- function(n, trt, times, events, t, lowlim = 1, uplim = NUL
   A <- A[nonNullConstrIdxs, ]
   l <- l[nonNullConstrIdxs]
   u <- u[nonNullConstrIdxs]
-
+  
   return(list(A = A, l = l, u = u))
 }
 
@@ -209,11 +219,11 @@ check_data_surv <- function(B_X, trt, times, events, t, lambda, lowlim = 1, upli
   if(lowlim > uplim) {
     stop("Lower threshold must be lower than upper threshold")
   }
-  if(lowlim < 0) {
-    stop("Lower threshold must be at least 0")
-  }
-  if(uplim > n) {
-    stop("Upper threshold must be at most n (",
-         n, ")")
-  }
+  # if(lowlim < 0) {
+  #   stop("Lower threshold must be at least 0")
+  # }
+  # if(uplim > n) {
+  #   stop("Upper threshold must be at most n (",
+  #        n, ")")
+  # }
 }
