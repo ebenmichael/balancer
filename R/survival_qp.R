@@ -62,14 +62,20 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, upli
                                settings)
   
   weights <- solution$x
+
+  # Return vectors of imbalances for treated and control 
+  noncens_t <- ((times >= t) & (events == TRUE)) | (events == FALSE)
+  B0_X <- B_X*(trt == 0)
+  B1_X <- B_X*(trt == 1)
   
-  # imbalance_root <- t(w) %*% B - Bbar_X
-  # imbalance <- imbalance_root %*% t(imbalance_root)
+  imbalance0 <- rowSums(((weights * noncens_t)*B0_X - Bbar_X)^2)
+  imbalance1 <- rowSums(((weights * noncens_t)*B1_X - Bbar_X)^2)
   
-  imbalance <- mean(((t(weights) %*% B_X) - Bbar_X)^2) 
+  # imbalance <- rowSums(((weights * noncens_t * B_X) - Bbar_X)^2)
   
   return(list(weights = weights,
-              imbalance = imbalance))
+              imbalance1 = imbalance1,
+              imbalance0 = imbalance0))
 }
 
 #' Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x
