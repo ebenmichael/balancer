@@ -18,7 +18,8 @@
 #'
 #' @return \itemize{
 #'          \item{weights}{Estimated weights as a length n vector}
-#'          \item{imbalance}{Imbalance in covariates as a d X J matrix}}
+#'          \item{imbalance1}{Imbalance in covariates for treated in vector}
+#'          \item(imbalance0){Imbalance in covariates for control in vector}}
 #' @export
 survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, uplim = NULL,
                         verbose = TRUE, eps_abs = 1e-5, eps_rel = 1e-5, ...) {
@@ -68,14 +69,13 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, upli
   B0_X <- B_X*(trt == 0)
   B1_X <- B_X*(trt == 1)
   
-  imbalance0 <- rowSums(((weights * noncens_t)*B0_X - Bbar_X)^2)
-  imbalance1 <- rowSums(((weights * noncens_t)*B1_X - Bbar_X)^2)
+  imbalance <- rowSums(sweep((weights * noncens_t)*B0_X, 2, Bbar_X)^2) + rowSums(sweep((weights * noncens_t)*B1_X, 2, Bbar_X)^2)
   
-  # imbalance <- rowSums(((weights * noncens_t * B_X) - Bbar_X)^2)
+  # imbalance <- rowSums(sweep((weights * noncens_t)* B_X, 2, Bbar_X)^2)
   
   return(list(weights = weights,
-              imbalance1 = imbalance1,
-              imbalance0 = imbalance0))
+              imbalance1 = imbalance[trt == 1],
+              imbalance0 = imbalance[trt == 0]))
 }
 
 #' Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x
@@ -85,12 +85,9 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, upli
 #' @return q vector
 create_q_vector_surv <- function(n, trt, B_X, Bbar_X) {
   B0_X <- B_X*(trt == 0)
-  Bbar_B0 <- Bbar_X %*% t(B0_X)
-  
   B1_X <- B_X*(trt == 1)
-  Bbar_B1 <- Bbar_X %*% t(B1_X)
-  
-  q <- -(2/n) * (Bbar_B0 + Bbar_B1) 
+
+  q <- -(2/n) * Bbar_X %*% t(B0_X + B1_X) 
   return(q)
 }
 
