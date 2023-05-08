@@ -21,7 +21,7 @@
 #'          \item{imbalance1}{Imbalance in covariates for treated in vector}
 #'          \item(imbalance0){Imbalance in covariates for control in vector}}
 #' @export
-survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, uplim = NULL,
+survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 0, uplim = NULL,
                         verbose = TRUE, eps_abs = 1e-5, eps_rel = 1e-5, ...) {
   # Convert X to a matrix
   B_X <- as.matrix(B_X)
@@ -45,8 +45,8 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 1, upli
   if(verbose) message("Creating quadratic term matrix...")
   P <- create_P_matrix_surv(n, trt, B_X)
   
+  # Add regularization
   I0 <- create_I0_matrix_surv(n)
-  
   P <- P + lambda * I0
   
   if(verbose) message("Creating constraint matrix...")
@@ -150,8 +150,8 @@ create_constraints <- function(n, trt, times, events, t, lowlim = 1, uplim = NUL
   
   if(verbose) message("\tx Restrict weights for censored individuals (equal to 0)")
   A4 <- diag(as.integer(!noncens_t))
-  l4 <- rep(0, length(noncens_t))
-  u4 <- rep(0, length(noncens_t))
+  l4 <- rep(0, n)
+  u4 <- rep(0, n)
   
   if(verbose) message("\tx Combining constraints")
   A <- rbind(A1, A2, A3, A4)
@@ -195,8 +195,8 @@ check_data_surv <- function(B_X, trt, times, events, t, lambda, lowlim = 1, upli
   }
   
   # Group size check
-  # Vector of booleans indicating if indiv is not censored at time t
-  # TRUE: indiv is not censored at time t, FALSE: indiv is censored at time t
+  # Vector of booleans indicating if indiv is either 1.  not censored at time t 
+  # (but was censored later) or 2. an individual that is never censored 
   noncens_t <- ((times >= t) & (events == TRUE)) | (events == FALSE)
   if(sum(noncens_t & (trt == 0)) == 0) {
     stop("No non-censored individuals in treatment group at time ", t)
