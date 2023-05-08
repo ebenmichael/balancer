@@ -18,8 +18,8 @@
 #'
 #' @return \itemize{
 #'          \item{weights}{Estimated weights as a length n vector}
-#'          \item{imbalance1}{Imbalance in covariates for treated in vector}
-#'          \item(imbalance0){Imbalance in covariates for control in vector}}
+#'          \item{imbalance0}{Imbalance in covariates for control in vector}
+#'          \item(imbalance1){Imbalance in covariates for treated in vector}}
 #' @export
 survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 0, uplim = NULL,
                         verbose = TRUE, eps_abs = 1e-5, eps_rel = 1e-5, ...) {
@@ -30,6 +30,8 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 0, upli
   check_data_surv(B_X, trt, times, events, t, lambda, lowlim, uplim)
   
   n <- nrow(B_X)
+  k <- ncol(B_X)
+  
   # If no uplim set (default NULL), set uplim to be number of individuals n
   if (is.null(uplim)) {
     uplim <- n
@@ -69,13 +71,12 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 0, upli
   B0_X <- B_X*(trt == 0)
   B1_X <- B_X*(trt == 1)
   
-  imbalance <- rowSums(sweep((weights * noncens_t)*B0_X, 2, Bbar_X)^2) + rowSums(sweep((weights * noncens_t)*B1_X, 2, Bbar_X)^2)
-  
-  # imbalance <- rowSums(sweep((weights * noncens_t)* B_X, 2, Bbar_X)^2)
-  
+  imbalance0 <- (t(B0_X) %*% Matrix(weights*noncens_t, n, 1)) - Matrix(Bbar_X, k, 1)
+  imbalance1 <- (t(B1_X) %*% Matrix(weights*noncens_t, n, 1)) - Matrix(Bbar_X, k, 1)
+
   return(list(weights = weights,
-              imbalance1 = imbalance[trt == 1],
-              imbalance0 = imbalance[trt == 0]))
+              imbalance0 = imbalance0[,1],
+              imbalance1 = imbalance1[,1]))
 }
 
 #' Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x
