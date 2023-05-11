@@ -71,12 +71,12 @@ survival_qp <- function(B_X, trt, times, events, t, lambda = 0, lowlim = 0, upli
   B0_X <- B_X*(trt == 0)
   B1_X <- B_X*(trt == 1)
   
-  imbalance0 <- (t(B0_X) %*% Matrix(weights*noncens_t, n, 1)) - Matrix(Bbar_X, k, 1)
-  imbalance1 <- (t(B1_X) %*% Matrix(weights*noncens_t, n, 1)) - Matrix(Bbar_X, k, 1)
+  imbalance0 <- colSums(B0_X*weights*noncens_t)/n - Bbar_X
+  imbalance1 <- colSums(B1_X*weights*noncens_t)/n - Bbar_X
 
   return(list(weights = weights,
-              imbalance0 = imbalance0[,1],
-              imbalance1 = imbalance1[,1]))
+              imbalance0 = imbalance0,
+              imbalance1 = imbalance1))
 }
 
 #' Create the q vector for an QP that solves min_x 0.5 * x'Px + q'x
@@ -88,7 +88,7 @@ create_q_vector_surv <- function(n, trt, B_X, Bbar_X) {
   B0_X <- B_X*(trt == 0)
   B1_X <- B_X*(trt == 1)
 
-  q <- -(2/n) * Bbar_X %*% t(B0_X + B1_X) 
+  q <- -(1/n) * Bbar_X %*% t(B0_X + B1_X) 
   return(q)
 }
 
