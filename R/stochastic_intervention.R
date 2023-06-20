@@ -11,7 +11,7 @@
 #' @export
 stochastic_int <- function(X, trt, stoch_int,
                            Z = NULL,
-                           lambda = 0, lowlim = 0, uplim = 1,
+                           lambda = 0, lowlim = 0, uplim = Inf,
                            exact_global = FALSE,
                            verbose = TRUE,
                            eps_abs = 1e-5, eps_rel = 1e-5, ...) {
@@ -121,8 +121,8 @@ stochastic_int <- function(X, trt, stoch_int,
 
 
   # scale weights to sum to number of units in the cell
-  # weights <- weights * target_prop_trtz[trt_by_z] * n / sum_constraints[trt_by_z]
-  weights <- weights * n
+  # also clip by upper and lower bound beyond machine precision
+  weights <- pmin(pmax(weights, lowlim), uplim) * n
 
   return(list(weights = weights,
               imbalance = imbalance,

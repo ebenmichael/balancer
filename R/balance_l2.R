@@ -110,7 +110,7 @@ create_constraints_l2 <- function(Xz, targetz, target_propz, lowlim, uplim,
 
 
   if(verbose) message("\tx Sum to one constraint")
-  # sum-to-1 constraint for each group
+  # sum-to-target proportions constraint for each group
   A1 <- Matrix::t(Matrix::bdiag(lapply(Xz, function(x) rep(1, nrow(x)))))
   A1 <- Matrix::cbind2(A1, Matrix::Matrix(0, nrow=nrow(A1), ncol = aux_dim))
   l1 <- rep(1, J)
