@@ -252,13 +252,13 @@ compute_cluster_se <- function(y, wts, trt, clusters, m1hat, m0hat) {
   mu0 <- sum(y[trt == 0] * wts[trt == 0]) / sum(wts[trt == 0])
 
 
-  wtd_resids1 <- Matrix::t(cluster_mat[trt == 1, ]) %*% (wts * resids)[trt == 1]
+  wtd_resids1 <- Matrix::t(cluster_mat[trt == 1, ]) %*% (y - mu1)[trt == 1]
   wtd_resids0 <- Matrix::t(cluster_mat[trt == 0, ]) %*% (wts * resids)[trt == 0]
   wtd_resids <- Matrix::t(cluster_mat) %*% (wts * resids)
   m1hat_clus <- Matrix::t(cluster_mat[trt == 1, ]) %*% (m1hat[trt == 1] - mu1)
   m0hat_clus <- Matrix::t(cluster_mat[trt == 1, ]) %*% (m0hat[trt == 1] - mu0)
   tauhat_clus <- Matrix::t(cluster_mat[trt == 1, ]) %*% ((m1hat - m0hat)[trt == 1] - (mu1 - mu0))
-  se1 <- sqrt(sum(wtd_resids1^2)/sum(wts[trt == 1])^2 + sum(m1hat_clus^2) / sum(trt == 1)^2)
+  se1 <- sqrt(sum(wtd_resids1^2)/sum(wts[trt == 1])^2)
   se0 <- sqrt(sum(wtd_resids0^2)/sum(wts[trt == 0])^2 +  sum(m1hat_clus^2) / sum(trt == 1)^2)
   se_tau <- sqrt(sum(wtd_resids^2)/sum(wts[trt == 1])^2 +  sum(tauhat_clus^2) / sum(trt == 1)^2)
 
