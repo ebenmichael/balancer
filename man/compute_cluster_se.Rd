@@ -4,7 +4,7 @@
 \alias{compute_cluster_se}
 \title{Compute point estimate and standard error with clustered weights}
 \usage{
-compute_cluster_se(y, wts, trt, clusters, mhat)
+compute_cluster_se(y, wts, trt, clusters, m1hat, m0hat)
 }
 \arguments{
 \item{y}{Vector of outcomes}
@@ -15,7 +15,9 @@ compute_cluster_se(y, wts, trt, clusters, mhat)
 
 \item{clusters}{Vector of cluster assignments}
 
-\item{mhat}{Vector of model predictions of E[Y | trt, X]}
+\item{m1hat}{Vector of model predictions of E[Y(1) | covariates]}
+
+\item{m0hat}{Vector of model predictions of E[Y(0) | covariates]}
 }
 \value{
 Data.Frame with the point estimate and standard error
