@@ -242,14 +242,16 @@ check_data_cluster <- function(ind_covs, clus_covs, trt, lambda, lowlim, uplim) 
 compute_cluster_se <- function(y, wts, trt, clusters, m1hat, m0hat) {
 
   cluster_mat <- Matrix::sparse.model.matrix(~ as.factor(clusters) - 1)
-  mhat <- m1hat * trt + m0hat * (1 - trt)
-  resids <- y - mhat
   n1 <- sum(trt)
   n0 <- sum(1 - trt)
 
 
   mu1 <- sum(y[trt == 1] * wts[trt == 1]) / sum(wts[trt == 1])
-  mu0 <- sum(y[trt == 0] * wts[trt == 0]) / sum(wts[trt == 0])
+  mu0 <- mean(m0hat[trt == 1]) + sum((y - m0hat)[trt == 0] * wts[trt == 0]) / sum(wts[trt == 0])
+  # mu0 <- sum(y[trt == 0] * wts[trt == 0]) / sum(wts[trt == 0])
+
+  mhat <- m1hat * trt + m0hat * (1 - trt)
+  resids <- y - mhat
 
 
   wtd_resids1 <- Matrix::t(cluster_mat[trt == 1, ]) %*% (y - mu1)[trt == 1]
@@ -260,7 +262,7 @@ compute_cluster_se <- function(y, wts, trt, clusters, m1hat, m0hat) {
   tauhat_clus <- Matrix::t(cluster_mat[trt == 1, ]) %*% ((m1hat - m0hat)[trt == 1] - (mu1 - mu0))
   se1 <- sqrt(sum(wtd_resids1^2)/sum(wts[trt == 1])^2)
   se0 <- sqrt(sum(wtd_resids0^2)/sum(wts[trt == 0])^2 +  sum(m1hat_clus^2) / sum(trt == 1)^2)
-  se_tau <- sqrt(sum(wtd_resids^2)/sum(wts[trt == 1])^2 +  sum(tauhat_clus^2) / sum(trt == 1)^2)
+  se_tau <- sqrt(sum(wtd_resids^2)/sum(trt == 1)^2 +  sum(tauhat_clus^2) / sum(trt == 1)^2)
 
 
   return(data.frame(Estimand = c("Average Outcome for Treated", "Average Counterfactual Outcome for Treated", "ATT"),

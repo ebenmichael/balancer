@@ -50,10 +50,10 @@ create_constraints_maxsize <- function(X, trt, lowlim, uplim, verbose, exact_bal
   n0 <- sum(1 - trt)
 
   # sum to number of treated/control units
-  A1 <- rbind(trt / n1, (1 - trt) / n0)
+  A1 <- rbind(trt, (1 - trt))
   A1 <- cbind(A1, Matrix::Matrix(0, 2, d))
-  l1 <- c(1, 1)
-  u1 <- c(1, 1)
+  l1 <- c(n1, n0)
+  u1 <- c(n1, n0)
 
 
   # upper and lower bounds
@@ -180,11 +180,11 @@ create_constraints_maxsize_cluster <- function(X, trt, clusters, lowlim, uplim, 
   m <- ncol(cluster_mat)
 
   # sum to number of treated/control units
-  A1 <- rbind(trt / n1, (1 - trt) / n0)
+  A1 <- rbind(trt, (1 - trt))
   A1 <- cbind(A1, Matrix::Matrix(0, 2, d))
   A1 <- Matrix::cbind2(A1, Matrix::Matrix(0, nrow = nrow(A1), ncol = m))
-  l1 <- c(1, 1)
-  u1 <- c(1, 1)
+  l1 <- c(n1, n0)
+  u1 <- c(n1, n0)
 
 
   # upper and lower bounds
