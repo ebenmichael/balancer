@@ -226,3 +226,43 @@ create_constraints_maxsize_cluster <- function(X, trt, clusters, lowlim, uplim, 
   return(list(A = A, l = l, u = u))
 }
 
+
+
+#' Compute point estimate and standard error with clustered max subset weights
+#' @param y Vector of outcomes
+#' @param wts Vector of weight
+#' @param trt Vector of treatment assignments
+#' @param clusters Vector of cluster assignments
+#' @param m1hat Vector of model predictions of E[Y(1) | covariates]
+#' @param m0hat Vector of model predictions of E[Y(0) | covariates]
+#' 
+#' @return Data.Frame with the point estimate and standard error
+#' @export
+compute_cluster_maxsubset_se <- function(y, wts, trt, clusters, m1hat, m0hat) {
+
+  cluster_mat <- Matrix::sparse.model.matrix(~ as.factor(clusters) - 1)
+  n1 <- sum(trt)
+  n0 <- sum(1 - trt)
+
+
+  mu1 <- sum(m1hat * wts) / sum(wts) +  sum((y - m1hat)[trt == 1] * wts[trt == 1]) / sum(wts[trt == 1])
+  mu0 <- sum(m0hat * wts) / sum(wts) +  sum((y - m0hat)[trt == 0] * wts[trt == 0]) / sum(wts[trt == 0])
+
+  mhat <- m1hat * trt + m0hat * (1 - trt)
+  resids <- y - mhat
+
+
+  wtd_resids1 <- Matrix::t(cluster_mat[trt == 1, ]) %*% (wts * resids)[trt == 1]
+  wtd_resids0 <- Matrix::t(cluster_mat[trt == 0, ]) %*% (wts * resids)[trt == 0]
+  wtd_resids <- Matrix::t(cluster_mat) %*% (wts * resids)
+  m1hat_clus <- Matrix::t(cluster_mat[trt == 1, ]) %*% (wts[trt == 1] * (m1hat[trt == 1] - mu1))
+  m0hat_clus <- Matrix::t(cluster_mat[trt == 0, ]) %*% (wts[trt == 0] * (m0hat[trt == 0] - mu0))
+  tauhat_clus <- Matrix::t(cluster_mat) %*% (wts * ((m1hat - m0hat) - (mu1 - mu0)))
+  se1 <- sqrt(sum(wtd_resids1^2)/sum(wts[trt == 1])^2 + sum(m1hat_clus^2) / sum(wts[trt == 1])^2)
+  se0 <- sqrt(sum(wtd_resids0^2)/sum(wts[trt == 0])^2 +  sum(m0hat_clus^2) / sum(wts[trt == 0])^2)
+  se_tau <- sqrt(sum(wtd_resids^2)/sum(wts)^2 +  sum(tauhat_clus^2) / sum(wts)^2)
+
+
+  return(data.frame(Estimand = c("Average Outcome for Treated", "Average Counterfactual Outcome for Treated", "ATT"),
+                    Estimate = c(mu1, mu0, mu1 - mu0), SE = c(se1, se0, se_tau)))
+}
