@@ -45,13 +45,9 @@ mundlak_weights <- function(ind_covs, interact_covs, trt, Z, lambda = 0, lowlim 
 
 
   unique_Z <- levels(Z_factor)
-  J <- length(unique_Z)
   n <- nrow(ind_covs)
 
 
-
-
-  idxs <- split(1:nrow(ind_covs), Z_factor)
 
 
 
@@ -128,20 +124,21 @@ create_constraints_mundlak <- function(ind_covs, interact_covs, trt, Z, lowlim,
   # dimension of auxiliary weights
   aux_dim <- ncol(ind_covs) + ncol(interact_covs)
 
-
   if(verbose) message("\tx Sum to one constraint")
   # sum-to-n1j constraint for each group
   A1_small <- Matrix::t(Matrix::sparse.model.matrix(~ as.factor(Z) - 1))
   A1 <- Matrix::cbind2(A1_small, Matrix::Matrix(0, nrow=nrow(A1_small), ncol = aux_dim))
   n1j <- as.vector(A1_small %*% trt)
-  l1 <- n1j
-  u1 <- n1j
+  l1 <- as.numeric(n1j)
+  u1 <- as.numeric(n1j)
   if(verbose) message("\tx Upper and lower bounds")
   # upper and lower bounds
   A2 <- Matrix::Diagonal(n)
   A2 <- Matrix::cbind2(A2, Matrix::Matrix(0, nrow = nrow(A2), ncol = aux_dim))
-  l2 <- sapply(Z, function(z) lowlim * n1j[z])
-  u2 <- sapply(Z, function(z) uplim * n1j[z])
+  # compute number of treated units in corresponding cluster
+  n1js <- sapply(Z, function(z) sum(trt == 1 & Z == z))
+  l2 <- lowlim * n1js
+  u2 <- uplim * n1js
 
   if(exact_global) {
       if(verbose) message("\tx Enforce exact global balance")
