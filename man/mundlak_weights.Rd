@@ -6,6 +6,7 @@
 \usage{
 mundlak_weights(
   ind_covs,
+  clus_covs,
   interact_covs,
   trt,
   Z,
@@ -14,6 +15,7 @@ mundlak_weights(
   uplim = 1,
   scale_sample_size = TRUE,
   exact_global = TRUE,
+  avg_to_one = FALSE,
   verbose = TRUE,
   eps_abs = 1e-05,
   eps_rel = 1e-05,
@@ -23,7 +25,9 @@ mundlak_weights(
 \arguments{
 \item{ind_covs}{n x d1 matrix of covariates for individual units}
 
-\item{interact_covs}{n x d2 matrix of interactions between individual and cluster covariates}
+\item{clus_covs}{n x d2 matrix of covariates for clusters (one row per unit)}
+
+\item{interact_covs}{n x d3 matrix of interactions between individual and cluster covariates}
 
 \item{trt}{Vector of treatment assignments}
 
@@ -38,6 +42,8 @@ mundlak_weights(
 \item{scale_sample_size}{Whether to scale the dispersion penalty by the sample size of each group, default TRUE}
 
 \item{exact_global}{Whether to enforce exact balance for overall population on individual covariates}
+
+\item{avg_to_one}{Whether to force weights to average to one within each cluster, default FALSE}
 
 \item{verbose}{Whether to show messages, default T}
 

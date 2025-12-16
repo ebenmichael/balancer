@@ -6,19 +6,23 @@
 \usage{
 create_constraints_mundlak(
   ind_covs,
+  clus_covs,
   interact_covs,
   trt,
   Z,
   lowlim,
   uplim,
   exact_global,
+  avg_to_one,
   verbose
 )
 }
 \arguments{
 \item{ind_covs}{n x d1 matrix of covariates for individual units}
 
-\item{interact_covs}{n x d2 matrix of interactions between individual and cluster covariates}
+\item{clus_covs}{n x d2 matrix of covariates for clusters (one row per unit)}
+
+\item{interact_covs}{n x d3 matrix of interactions between individual and cluster covariates}
 
 \item{trt}{Vector of treatment assignments}
 
@@ -29,6 +33,8 @@ create_constraints_mundlak(
 \item{uplim}{Upper limit on weights}
 
 \item{exact_global}{Boolean whether to include an exact global constraint}
+
+\item{avg_to_one}{Boolean whether to force weights to average to one within each cluster}
 
 \item{verbose}{Boolean whether to display progress}
 }
